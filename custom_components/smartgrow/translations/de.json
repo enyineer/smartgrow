@@ -1,0 +1,108 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartGrow einrichten",
+        "description": "Wähle die Entitäten, die SmartGrow beobachten soll. Der Probemodus bleibt an, bis du umstellst.",
+        "data": {
+          "fan_entity": "Abluftlüfter (prozentregelbar)",
+          "dehum_entity": "Entfeuchter (Schalter oder Luftbefeuchter-Entität)",
+          "tent_temp_entity": "Temperatursensor Zelt",
+          "tent_rh_entity": "Luftfeuchtigkeitssensor Zelt",
+          "lung_temp_entity": "Temperatursensor Lungenraum",
+          "lung_rh_entity": "Luftfeuchtigkeitssensor Lungenraum",
+          "vpd_entity": "VPD-Sensor (optional; wird sonst berechnet)",
+          "lamp_entity": "Lampen-Entität (optional; steuert Tag/Nacht)",
+          "stage_entity": "Stage-Auswahl (optional)",
+          "dry_run": "Probemodus (empfohlen: an)"
+        }
+      },
+      "extras": {
+        "title": "Bestehende Automatisierungen (optional)",
+        "description": "Falls du bereits Lüfter-/Entfeuchter-Automatisierungen nutzt, wähle sie hier aus – SmartGrow warnt solange sie im Probemodus noch aktiv eingreifen.",
+        "data": {
+          "legacy_vent_automation": "Vorhandene Lüfter-Automatisierung",
+          "legacy_dehum_automation": "Vorhandene Entfeuchter-Automatisierung",
+          "stage": "Aktuelle Grow-Phase"
+        }
+      }
+    },
+    "error": {},
+    "abort": {
+      "already_configured": "Dieses Sensorpaar ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartGrow Optionen",
+        "description": "Feinjustierung der Regelung. Die Vorgaben sind die bewährten Produktionswerte – nur mit Grund ändern.",
+        "data": {
+          "fan_floor_day": "Lüfterminimum Tag (%)",
+          "fan_floor_night": "Lüfterminimum Nacht (%)",
+          "delta_gain": "ΔAH-Verstärkung (Lüfter-% pro g/m³)",
+          "vpd_gain": "VPD-Verstärkung (Lüfter-% pro kPa Unterfangen)",
+          "need_gain": "Eskalations-Verstärkung (Lüfter-% pro kPa)",
+          "temp_gain": "Temperatur-Verstärkung (Lüfter-% pro °C über max−2)",
+          "cold_clamp": "Kalt-Dämpfungsfaktor",
+          "dehum_sat_trigger": "Entfeuchter-Sättigungsauslöser (Lüfter %)",
+          "dehum_dry_floor": "Entfeuchter-Trockenuntergrenze (LF Lungenraum %)",
+          "band_low_day": "VPD-Soll-Untergrenze Tag (kPa, 0 = Phasen-Vorgabe)",
+          "band_low_night": "VPD-Soll-Untergrenze Nacht (kPa, 0 = Phasen-Vorgabe)",
+          "adaptation_enabled": "Adaptation (Selbstjustage mit Watchdog)",
+          "adaptation_aggressiveness": "Adaptations-Aggressivität (0,1–3,0)",
+          "dry_run": "Probemodus"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "smartgrow_fan_target": {"name": "Lüfter-Sollwert"},
+      "smartgrow_fan_dah_term": {"name": "Lüfter-ΔAH-Term"},
+      "smartgrow_fan_vpd_term": {"name": "Lüfter-VPD-Term"},
+      "smartgrow_fan_need_term": {"name": "Lüfter-Bedarfsterm"},
+      "smartgrow_fan_temp_term": {"name": "Lüfter-Temperaturterm"},
+      "smartgrow_active_fan_term": {"name": "Aktiver Lüfterterm"},
+      "smartgrow_dah": {"name": "ΔAH"},
+      "smartgrow_ah_tent": {"name": "AH Zelt"},
+      "smartgrow_ah_lung": {"name": "AH Lungenraum"},
+      "smartgrow_dehumidifier_decision": {"name": "Entfeuchter-Entscheidung"},
+      "smartgrow_dry_run": {"name": "Probemodus"},
+      "smartgrow_dehumidifier_cycles_24h": {"name": "Entfeuchter-Zyklen (24 h)"},
+      "smartgrow_sensor_staleness": {"name": "Sensor-Aktualität"}
+    },
+    "binary_sensor": {
+      "smartgrow_legacy_automation_warning": {"name": "Warnung alte Automatisierung"},
+      "smartgrow_oscillation_warning": {"name": "Oszillationswarnung"}
+    },
+    "switch": {
+      "smartgrow_dry_run": {"name": "Probemodus"},
+      "smartgrow_adaptation": {"name": "Adaptation"}
+    },
+    "number": {
+      "smartgrow_fan_floor_day": {"name": "Lüfterminimum Tag"},
+      "smartgrow_fan_floor_night": {"name": "Lüfterminimum Nacht"},
+      "smartgrow_dah_gain": {"name": "ΔAH-Verstärkung"},
+      "smartgrow_vpd_gain": {"name": "VPD-Verstärkung"},
+      "smartgrow_need_gain": {"name": "Bedarfs-Verstärkung"},
+      "smartgrow_temp_gain": {"name": "Temperatur-Verstärkung"},
+      "smartgrow_cold_clamp": {"name": "Kalt-Dämpfung"},
+      "smartgrow_dehumidifier_saturation_trigger": {"name": "Entfeuchter-Sättigungsauslöser"},
+      "smartgrow_dehumidifier_dry_floor": {"name": "Entfeuchter-Trockenuntergrenze"}
+    },
+    "select": {
+      "smartgrow_stage": {"name": "Grow-Phase"}
+    }
+  },
+  "issues": {
+    "adaptation_watchdog": {
+      "title": "SmartGrow-Adaptation automatisch deaktiviert",
+      "description": "Der Konvergenz-Watchdog hat die Adaptation deaktiviert: {reason}. Parameter waren mehr als 40 % von den sicheren Vorgaben entfernt. Prüfe die angepassten Werte und aktiviere die Adaptation dann erneut."
+    },
+    "unreachable_band": {
+      "title": "SmartGrow-VPD-Sollband möglicherweise unerreichbar",
+      "description": "Der Lungenraum liegt bei {lung_rh} % LF; mit dem aktuellen Sollband (Untergrenze {band_low} kPa) kann das Zelt das Ziel nie erreichen – der Entfeuchter würde endlos laufen. Sollband anheben oder Lungenraum trocknen. (Erreichbare Zelt-LF ≈ {achievable_rh} %.)"
+    }
+  }
+}

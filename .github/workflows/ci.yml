@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install pytest pytest-cov hypothesis ruff black
+      - name: Ruff
+        run: ruff check custom_components/smartgrow tests
+      - name: Black (check)
+        run: black --check custom_components/smartgrow tests
+      - name: Pytest with coverage
+        run: |
+          pytest tests/ \
+            --cov=custom_components/smartgrow/logic \
+            --cov=custom_components/smartgrow/adaptation \
+            --cov-report=term --cov-fail-under=90
+
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration

@@ -1,0 +1,108 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "SmartGrow setup",
+        "description": "Pick the entities SmartGrow should observe. Dry-run stays on until you cut over.",
+        "data": {
+          "fan_entity": "Exhaust fan (percentage-controlled)",
+          "dehum_entity": "Dehumidifier (switch or humidifier entity)",
+          "tent_temp_entity": "Tent temperature sensor",
+          "tent_rh_entity": "Tent humidity sensor",
+          "lung_temp_entity": "Lung room temperature sensor",
+          "lung_rh_entity": "Lung room humidity sensor",
+          "vpd_entity": "VPD sensor (optional; computed if omitted)",
+          "lamp_entity": "Lamp entity (optional; drives day/night)",
+          "stage_entity": "Stage select (optional)",
+          "dry_run": "Dry-run mode (recommended: on)"
+        }
+      },
+      "extras": {
+        "title": "Legacy automations (optional)",
+        "description": "If you run existing vent/dehumidifier automations, select them here so SmartGrow can warn you while they still actuate during dry-run.",
+        "data": {
+          "legacy_vent_automation": "Existing vent control automation",
+          "legacy_dehum_automation": "Existing dehumidifier automation",
+          "stage": "Current grow stage"
+        }
+      }
+    },
+    "error": {},
+    "abort": {
+      "already_configured": "This tent sensor pair is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SmartGrow options",
+        "description": "Control law tuning. Defaults are the proven production values — change only with cause.",
+        "data": {
+          "fan_floor_day": "Fan floor day (%)",
+          "fan_floor_night": "Fan floor night (%)",
+          "delta_gain": "ΔAH gain (fan % per g/m³)",
+          "vpd_gain": "VPD gain (fan % per kPa shortfall)",
+          "need_gain": "Escalation gain (fan % per kPa shortfall)",
+          "temp_gain": "Temperature gain (fan % per °C over max−2)",
+          "cold_clamp": "Cold clamp multiplier",
+          "dehum_sat_trigger": "Dehumidifier saturation trigger (fan %)",
+          "dehum_dry_floor": "Dehumidifier dry floor (lung RH %)",
+          "band_low_day": "VPD band low day override (kPa, 0 = stage default)",
+          "band_low_night": "VPD band low night override (kPa, 0 = stage default)",
+          "adaptation_enabled": "Adaptation (auto-tuning with watchdog)",
+          "adaptation_aggressiveness": "Adaptation aggressiveness (0.1–3.0)",
+          "dry_run": "Dry-run mode"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "smartgrow_fan_target": {"name": "Fan target"},
+      "smartgrow_fan_dah_term": {"name": "Fan ΔAH term"},
+      "smartgrow_fan_vpd_term": {"name": "Fan VPD term"},
+      "smartgrow_fan_need_term": {"name": "Fan need term"},
+      "smartgrow_fan_temp_term": {"name": "Fan temp term"},
+      "smartgrow_active_fan_term": {"name": "Active fan term"},
+      "smartgrow_dah": {"name": "ΔAH"},
+      "smartgrow_ah_tent": {"name": "AH tent"},
+      "smartgrow_ah_lung": {"name": "AH lung room"},
+      "smartgrow_dehumidifier_decision": {"name": "Dehumidifier decision"},
+      "smartgrow_dry_run": {"name": "Dry run"},
+      "smartgrow_dehumidifier_cycles_24h": {"name": "Dehumidifier cycles (24h)"},
+      "smartgrow_sensor_staleness": {"name": "Sensor staleness"}
+    },
+    "binary_sensor": {
+      "smartgrow_legacy_automation_warning": {"name": "Legacy automation warning"},
+      "smartgrow_oscillation_warning": {"name": "Oscillation warning"}
+    },
+    "switch": {
+      "smartgrow_dry_run": {"name": "Dry run"},
+      "smartgrow_adaptation": {"name": "Adaptation"}
+    },
+    "number": {
+      "smartgrow_fan_floor_day": {"name": "Fan floor day"},
+      "smartgrow_fan_floor_night": {"name": "Fan floor night"},
+      "smartgrow_dah_gain": {"name": "ΔAH gain"},
+      "smartgrow_vpd_gain": {"name": "VPD gain"},
+      "smartgrow_need_gain": {"name": "Need gain"},
+      "smartgrow_temp_gain": {"name": "Temp gain"},
+      "smartgrow_cold_clamp": {"name": "Cold clamp"},
+      "smartgrow_dehumidifier_saturation_trigger": {"name": "Dehumidifier saturation trigger"},
+      "smartgrow_dehumidifier_dry_floor": {"name": "Dehumidifier dry floor"}
+    },
+    "select": {
+      "smartgrow_stage": {"name": "Grow stage"}
+    }
+  },
+  "issues": {
+    "adaptation_watchdog": {
+      "title": "SmartGrow adaptation auto-disabled",
+      "description": "The convergence watchdog disabled adaptation: {reason}. Parameters drifted more than 40% from safe defaults. Review the adapted values, then re-enable adaptation."
+    },
+    "unreachable_band": {
+      "title": "SmartGrow VPD band may be unreachable",
+      "description": "The lung room sits at {lung_rh}% RH; with the current band (low {band_low} kPa) the tent cannot reach the target — the dehumidifier would run indefinitely. Raise the band low or dry the lung room. (Achievable tent RH ≈ {achievable_rh}%.)"
+    }
+  }
+}
