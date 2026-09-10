@@ -150,12 +150,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def device_info(self) -> DeviceInfo:
         """DeviceInfo shared by all entities of this entry."""
+        name = self.entry.data.get("name") or "SmartGrow"
         return DeviceInfo(
             identifiers={(DOMAIN, self.entry.entry_id)},
-            name="SmartGrow",
+            name=f"SmartGrow {name}".strip(),
             manufacturer="SmartGrow",
             model="Grow tent climate controller",
-            sw_version="0.1.1",
+            sw_version="0.1.5",
             configuration_url=None,
         )
 

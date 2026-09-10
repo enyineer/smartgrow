@@ -27,7 +27,9 @@
         }
       }
     },
-    "error": {},
+    "error": {
+      "entities_already_configured": "One or more of these entities is already used by another SmartGrow entry. Each tent needs its own sensors/fan/dehumidifier."
+    },
     "abort": {
       "already_configured": "Dieses Sensorpaar ist bereits konfiguriert."
     }
@@ -58,41 +60,95 @@
   },
   "entity": {
     "sensor": {
-      "smartgrow_fan_target": {"name": "Lüfter-Sollwert"},
-      "smartgrow_fan_dah_term": {"name": "Lüfter-ΔAH-Term"},
-      "smartgrow_fan_vpd_term": {"name": "Lüfter-VPD-Term"},
-      "smartgrow_fan_need_term": {"name": "Lüfter-Bedarfsterm"},
-      "smartgrow_fan_temp_term": {"name": "Lüfter-Temperaturterm"},
-      "smartgrow_active_fan_term": {"name": "Aktiver Lüfterterm"},
-      "smartgrow_dah": {"name": "ΔAH"},
-      "smartgrow_ah_tent": {"name": "AH Zelt"},
-      "smartgrow_ah_lung": {"name": "AH Lungenraum"},
-      "smartgrow_dehumidifier_decision": {"name": "Entfeuchter-Entscheidung"},
-      "smartgrow_dry_run": {"name": "Probemodus"},
-      "smartgrow_dehumidifier_cycles_24h": {"name": "Entfeuchter-Zyklen (24 h)"},
-      "smartgrow_sensor_staleness": {"name": "Sensor-Aktualität"}
+      "smartgrow_fan_target": {
+        "name": "Lüfter-Sollwert"
+      },
+      "smartgrow_fan_dah_term": {
+        "name": "Lüfter-ΔAH-Term"
+      },
+      "smartgrow_fan_vpd_term": {
+        "name": "Lüfter-VPD-Term"
+      },
+      "smartgrow_fan_need_term": {
+        "name": "Lüfter-Bedarfsterm"
+      },
+      "smartgrow_fan_temp_term": {
+        "name": "Lüfter-Temperaturterm"
+      },
+      "smartgrow_active_fan_term": {
+        "name": "Aktiver Lüfterterm"
+      },
+      "smartgrow_dah": {
+        "name": "ΔAH"
+      },
+      "smartgrow_ah_tent": {
+        "name": "AH Zelt"
+      },
+      "smartgrow_ah_lung": {
+        "name": "AH Lungenraum"
+      },
+      "smartgrow_dehumidifier_decision": {
+        "name": "Entfeuchter-Entscheidung"
+      },
+      "smartgrow_dry_run": {
+        "name": "Probemodus"
+      },
+      "smartgrow_dehumidifier_cycles_24h": {
+        "name": "Entfeuchter-Zyklen (24 h)"
+      },
+      "smartgrow_sensor_staleness": {
+        "name": "Sensor-Aktualität"
+      }
     },
     "binary_sensor": {
-      "smartgrow_legacy_automation_warning": {"name": "Warnung alte Automatisierung"},
-      "smartgrow_oscillation_warning": {"name": "Oszillationswarnung"}
+      "smartgrow_legacy_automation_warning": {
+        "name": "Warnung alte Automatisierung"
+      },
+      "smartgrow_oscillation_warning": {
+        "name": "Oszillationswarnung"
+      }
     },
     "switch": {
-      "smartgrow_dry_run": {"name": "Probemodus"},
-      "smartgrow_adaptation": {"name": "Adaptation"}
+      "smartgrow_dry_run": {
+        "name": "Probemodus"
+      },
+      "smartgrow_adaptation": {
+        "name": "Adaptation"
+      }
     },
     "number": {
-      "smartgrow_fan_floor_day": {"name": "Lüfterminimum Tag"},
-      "smartgrow_fan_floor_night": {"name": "Lüfterminimum Nacht"},
-      "smartgrow_dah_gain": {"name": "ΔAH-Verstärkung"},
-      "smartgrow_vpd_gain": {"name": "VPD-Verstärkung"},
-      "smartgrow_need_gain": {"name": "Bedarfs-Verstärkung"},
-      "smartgrow_temp_gain": {"name": "Temperatur-Verstärkung"},
-      "smartgrow_cold_clamp": {"name": "Kalt-Dämpfung"},
-      "smartgrow_dehumidifier_saturation_trigger": {"name": "Entfeuchter-Sättigungsauslöser"},
-      "smartgrow_dehumidifier_dry_floor": {"name": "Entfeuchter-Trockenuntergrenze"}
+      "smartgrow_fan_floor_day": {
+        "name": "Lüfterminimum Tag"
+      },
+      "smartgrow_fan_floor_night": {
+        "name": "Lüfterminimum Nacht"
+      },
+      "smartgrow_dah_gain": {
+        "name": "ΔAH-Verstärkung"
+      },
+      "smartgrow_vpd_gain": {
+        "name": "VPD-Verstärkung"
+      },
+      "smartgrow_need_gain": {
+        "name": "Bedarfs-Verstärkung"
+      },
+      "smartgrow_temp_gain": {
+        "name": "Temperatur-Verstärkung"
+      },
+      "smartgrow_cold_clamp": {
+        "name": "Kalt-Dämpfung"
+      },
+      "smartgrow_dehumidifier_saturation_trigger": {
+        "name": "Entfeuchter-Sättigungsauslöser"
+      },
+      "smartgrow_dehumidifier_dry_floor": {
+        "name": "Entfeuchter-Trockenuntergrenze"
+      }
     },
     "select": {
-      "smartgrow_stage": {"name": "Grow-Phase"}
+      "smartgrow_stage": {
+        "name": "Grow-Phase"
+      }
     }
   },
   "issues": {

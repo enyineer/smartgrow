@@ -1,0 +1,126 @@
+# SmartGrow — Lovelace Dashboard
+#
+# Copy this into a new dashboard (Settings → Dashboards → Add Dashboard → edit in YAML)
+# or paste individual cards into an existing dashboard.
+#
+# Recommended HACS cards (for the nicer variants):
+#   - mini-graph-card   (history graphs for RH/VPD/ΔAH)
+#   - mushroom          (compact control chips)
+# Everything else is core Lovelace.
+#
+# Replace `smartgrow_smartgrow` with your device prefix if you named your
+# integration entry differently (check Developer Tools → States).
+
+title: SmartGrow
+path: smartgrow
+icon: mdi:sprout
+cards:
+  # ---------- Overview ----------
+  - type: vertical-stack
+    cards:
+      - type: markdown
+        content: "# 🌱 Grow Tent"
+
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            entity: sensor.smartgrow_smartgrow_fan_target
+            name: Fan target
+            unit: "%"
+            min: 0
+            max: 100
+            severity:
+              green: 0
+              yellow: 70
+              red: 90
+          - type: gauge
+            entity: sensor.smartgrow_smartgrow_dah
+            name: ΔAH tent↔lung
+            unit: "g/m³"
+            min: 0
+            max: 5
+
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_active_fan_term
+            name: Active term
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_dehumidifier_decision
+            name: Dehumidifier
+          - type: entity
+            entity: binary_sensor.smartgrow_smartgrow_dry_run_warning
+            name: Conflict
+
+  # ---------- Climate history ----------
+  - type: vertical-stack
+    cards:
+      - type: markdown
+        content: "## Climate"
+      - type: custom:mini-graph-card
+        entities:
+          - entity: sensor.temp_rh_sensor_humidity
+            name: Tent RH
+          - entity: sensor.0xa4c138be0ce5db67_humidity
+            name: Lung RH
+        hours_to_show: 48
+        line_width: 2
+        show:
+          fill: fade
+        lower_bound: 35
+        upper_bound: 75
+      - type: custom:mini-graph-card
+        entities:
+          - entity: sensor.smartgrow_smartgrow_dah
+            name: ΔAH (tent-lung)
+        hours_to_show: 48
+        line_width: 2
+
+  # ---------- Control trace ----------
+  - type: vertical-stack
+    cards:
+      - type: markdown
+        content: "## Fan decision terms"
+      - type: horizontal-stack
+        cards:
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_fan_dah_term
+            name: ΔAH term
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_fan_vpd_term
+            name: VPD term
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_fan_need_term
+            name: Need term
+          - type: entity
+            entity: sensor.smartgrow_smartgrow_fan_temp_term
+            name: Temp term
+
+  # ---------- Settings ----------
+  - type: entities
+    title: Settings
+    entities:
+      - entity: switch.smartgrow_smartgrow_dry_run
+        name: Dry run (no actuation)
+      - entity: switch.smartgrow_smartgrow_adaptation
+        name: Adaptation
+      - entity: select.smartgrow_smartgrow_stage
+        name: Stage
+      - entity: number.smartgrow_smartgrow_fan_floor_day
+        name: Fan floor day
+      - entity: number.smartgrow_smartgrow_fan_floor_night
+        name: Fan floor night
+      - entity: number.smartgrow_smartgrow_dah_gain
+        name: ΔAH gain
+      - entity: number.smartgrow_smartgrow_vpd_gain
+        name: VPD gain
+      - entity: number.smartgrow_smartgrow_need_gain
+        name: Need gain
+      - entity: number.smartgrow_smartgrow_temp_gain
+        name: Temp gain
+      - entity: number.smartgrow_smartgrow_cold_clamp
+        name: Cold clamp
+      - entity: number.smartgrow_smartgrow_dehumidifier_saturation_trigger
+        name: Dehum saturation trigger
+      - entity: number.smartgrow_smartgrow_dehumidifier_dry_floor
+        name: Dehum dry floor

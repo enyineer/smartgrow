@@ -27,7 +27,9 @@
         }
       }
     },
-    "error": {},
+    "error": {
+      "entities_already_configured": "One or more of these entities is already used by another SmartGrow entry. Each tent needs its own sensors/fan/dehumidifier."
+    },
     "abort": {
       "already_configured": "This tent sensor pair is already configured."
     }
@@ -58,41 +60,95 @@
   },
   "entity": {
     "sensor": {
-      "smartgrow_fan_target": {"name": "Fan target"},
-      "smartgrow_fan_dah_term": {"name": "Fan ΔAH term"},
-      "smartgrow_fan_vpd_term": {"name": "Fan VPD term"},
-      "smartgrow_fan_need_term": {"name": "Fan need term"},
-      "smartgrow_fan_temp_term": {"name": "Fan temp term"},
-      "smartgrow_active_fan_term": {"name": "Active fan term"},
-      "smartgrow_dah": {"name": "ΔAH"},
-      "smartgrow_ah_tent": {"name": "AH tent"},
-      "smartgrow_ah_lung": {"name": "AH lung room"},
-      "smartgrow_dehumidifier_decision": {"name": "Dehumidifier decision"},
-      "smartgrow_dry_run": {"name": "Dry run"},
-      "smartgrow_dehumidifier_cycles_24h": {"name": "Dehumidifier cycles (24h)"},
-      "smartgrow_sensor_staleness": {"name": "Sensor staleness"}
+      "smartgrow_fan_target": {
+        "name": "Fan target"
+      },
+      "smartgrow_fan_dah_term": {
+        "name": "Fan ΔAH term"
+      },
+      "smartgrow_fan_vpd_term": {
+        "name": "Fan VPD term"
+      },
+      "smartgrow_fan_need_term": {
+        "name": "Fan need term"
+      },
+      "smartgrow_fan_temp_term": {
+        "name": "Fan temp term"
+      },
+      "smartgrow_active_fan_term": {
+        "name": "Active fan term"
+      },
+      "smartgrow_dah": {
+        "name": "ΔAH"
+      },
+      "smartgrow_ah_tent": {
+        "name": "AH tent"
+      },
+      "smartgrow_ah_lung": {
+        "name": "AH lung room"
+      },
+      "smartgrow_dehumidifier_decision": {
+        "name": "Dehumidifier decision"
+      },
+      "smartgrow_dry_run": {
+        "name": "Dry run"
+      },
+      "smartgrow_dehumidifier_cycles_24h": {
+        "name": "Dehumidifier cycles (24h)"
+      },
+      "smartgrow_sensor_staleness": {
+        "name": "Sensor staleness"
+      }
     },
     "binary_sensor": {
-      "smartgrow_legacy_automation_warning": {"name": "Legacy automation warning"},
-      "smartgrow_oscillation_warning": {"name": "Oscillation warning"}
+      "smartgrow_legacy_automation_warning": {
+        "name": "Legacy automation warning"
+      },
+      "smartgrow_oscillation_warning": {
+        "name": "Oscillation warning"
+      }
     },
     "switch": {
-      "smartgrow_dry_run": {"name": "Dry run"},
-      "smartgrow_adaptation": {"name": "Adaptation"}
+      "smartgrow_dry_run": {
+        "name": "Dry run"
+      },
+      "smartgrow_adaptation": {
+        "name": "Adaptation"
+      }
     },
     "number": {
-      "smartgrow_fan_floor_day": {"name": "Fan floor day"},
-      "smartgrow_fan_floor_night": {"name": "Fan floor night"},
-      "smartgrow_dah_gain": {"name": "ΔAH gain"},
-      "smartgrow_vpd_gain": {"name": "VPD gain"},
-      "smartgrow_need_gain": {"name": "Need gain"},
-      "smartgrow_temp_gain": {"name": "Temp gain"},
-      "smartgrow_cold_clamp": {"name": "Cold clamp"},
-      "smartgrow_dehumidifier_saturation_trigger": {"name": "Dehumidifier saturation trigger"},
-      "smartgrow_dehumidifier_dry_floor": {"name": "Dehumidifier dry floor"}
+      "smartgrow_fan_floor_day": {
+        "name": "Fan floor day"
+      },
+      "smartgrow_fan_floor_night": {
+        "name": "Fan floor night"
+      },
+      "smartgrow_dah_gain": {
+        "name": "ΔAH gain"
+      },
+      "smartgrow_vpd_gain": {
+        "name": "VPD gain"
+      },
+      "smartgrow_need_gain": {
+        "name": "Need gain"
+      },
+      "smartgrow_temp_gain": {
+        "name": "Temp gain"
+      },
+      "smartgrow_cold_clamp": {
+        "name": "Cold clamp"
+      },
+      "smartgrow_dehumidifier_saturation_trigger": {
+        "name": "Dehumidifier saturation trigger"
+      },
+      "smartgrow_dehumidifier_dry_floor": {
+        "name": "Dehumidifier dry floor"
+      }
     },
     "select": {
-      "smartgrow_stage": {"name": "Grow stage"}
+      "smartgrow_stage": {
+        "name": "Grow stage"
+      }
     }
   },
   "issues": {

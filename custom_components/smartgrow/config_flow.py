@@ -79,9 +79,37 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 f"{self._data[CONF_TENT_TEMP_ENTITY]}|{self._data[CONF_TENT_RH_ENTITY]}"
             )
             self._abort_if_unique_id_configured()
-            return await self.async_step_extras()
+
+            # prevent reusing core entities across multiple entries (would
+            # silently run two controllers on the same tent)
+            from homeassistant.helpers import entity_registry as er
+
+            registry = er.async_get(self.hass)
+            core_entities = [
+                self._data[k]
+                for k in (
+                    CONF_FAN_ENTITY,
+                    CONF_DEHUM_ENTITY,
+                    CONF_TENT_TEMP_ENTITY,
+                    CONF_TENT_RH_ENTITY,
+                    CONF_LUNG_TEMP_ENTITY,
+                    CONF_LUNG_RH_ENTITY,
+                )
+                if self._data.get(k)
+            ]
+            for other in self._async_current_entries():
+                if other.entry_id == self.context.get("entry_id"):
+                    continue
+                other_set = set(other.data.values())
+                clash = [e for e in core_entities if e in other_set]
+                if clash:
+                    errors["base"] = "entities_already_configured"
+                    break
+            else:
+                return await self.async_step_extras()
 
         schema = {
+            vol.Optional(CONF_NAME, default=""): str,
             **ENTITY_SCHEMA_KEYS,
             vol.Optional(CONF_VPD_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain="sensor")
@@ -105,7 +133,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._data.update(user_input)
             return self.async_create_entry(
-                title=self._data.get(CONF_NAME, "SmartGrow"),
+                title=f"SmartGrow {self._data.get(CONF_NAME)}".strip() if self._data.get(CONF_NAME) else "SmartGrow",
                 data=self._data,
             )
 
