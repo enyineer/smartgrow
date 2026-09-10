@@ -96,7 +96,7 @@ The test suite replays real recorded fixture data (`tests/fixtures/`) through th
 
 There is a companion **SmartGrow Card** — a HACS lovelace custom card that renders the whole tent in one glanceable view: fan target (vs actual), VPD vs band bar, 24 h ΔAH sparkline, dehumidifier chip with its reason, the active-term breakdown, and dry-run/adaptation/warning indicators.
 
-1. HACS → ⋮ → *Custom repositories* → add `https://github.com/niggo/smartgrow-card` (category: *Lovelace*).
+1. HACS → ⋮ → *Custom repositories* → add `https://github.com/enyineer/smartgrow-card` (category: *Lovelace*).
 2. Add the card to a dashboard — `type: custom:smartgrow-card` with your entity prefix, or pick entities in the UI editor.
 
 A YAML-only dashboard without custom cards is in [docs/lovelace-example.yaml](docs/lovelace-example.yaml).
