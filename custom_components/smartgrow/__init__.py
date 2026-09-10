@@ -13,6 +13,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DEFAULTS, DOMAIN
 from .coordinator import RuntimeOptions, SmartGrowCoordinator
+from .frontend_reg import async_register_frontend, remove_extra_js_url
 
 _LOGGER = logging.getLogger(__name__)
 

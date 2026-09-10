@@ -15,13 +15,15 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
 _URL = "/smartgrow/smartgrow-card.js"
 
 _LOGGER = logging.getLogger(__name__)
+
+__all__ = ["async_register_frontend", "remove_extra_js_url"]
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
