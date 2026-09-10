@@ -58,6 +58,7 @@ class _TermSensor(SmartGrowEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self.entry = entry
 
@@ -222,6 +223,7 @@ class DehumDecisionSensor(SmartGrowEntity, SensorEntity):
     _attr_icon = "mdi:air-humidifier"
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self.entry = entry
         self._attr_unique_id = _uid(entry, "dehum_decision")
@@ -257,6 +259,7 @@ class DryRunSensor(SmartGrowEntity, SensorEntity):
     _attr_icon = "mdi:restart"
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self.entry = entry
         self._attr_unique_id = _uid(entry, "dry_run")
@@ -284,6 +287,7 @@ class Cycles24hSensor(SmartGrowEntity, SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self.entry = entry
         self._attr_unique_id = _uid(entry, "cycles_24h")
@@ -307,6 +311,7 @@ class StaleSensor(SmartGrowEntity, SensorEntity):
     _attr_entity_category = "diagnostic"
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self.entry = entry
         self._attr_unique_id = _uid(entry, "stale")
