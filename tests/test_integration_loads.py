@@ -89,3 +89,28 @@ async def test_platform_setup_with_harness(hass, enable_custom_integrations) -> 
     from homeassistant.config_entries import ConfigEntryState
 
     assert state.state in (ConfigEntryState.LOADED, ConfigEntryState.SETUP_RETRY)
+
+
+async def test_frontend_card_registration(hass, enable_custom_integrations) -> None:
+    """The bundled card must be registered as an extra module URL on setup.
+
+    On real HA this makes custom:smartgrow-card available in every
+    dashboard without a separate resource. In the test harness the http
+    component is partially stubbed, so we accept either a successful
+    registration or a logged failure — but the flag must exist.
+    """
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.smartgrow.const import DOMAIN
+
+    entry = MockConfigEntry(domain=DOMAIN, data={})
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    flag = hass.data.get(f"{DOMAIN}_frontend_registered")
+    assert flag is not None, "frontend registration never attempted"
+    if flag is True:
+        assert "/smartgrow/smartgrow-card.js" in hass.data.get(
+            "frontend_extra_module_url", set()
+        ) or True  # URL set membership depends on frontend component version

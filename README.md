@@ -92,12 +92,13 @@ pytest --cov=custom_components/smartgrow/logic --cov=custom_components/smartgrow
 
 The test suite replays real recorded fixture data (`tests/fixtures/`) through the control law: fan parity, dehumidifier ON/OFF alignment against recorded power, and the 26-flip oscillation regression.
 
-## Lovelace card
+## Lovelace card (bundled — no extra install)
 
-There is a companion **SmartGrow Card** — a HACS lovelace custom card that renders the whole tent in one glanceable view: fan target (vs actual), VPD vs band bar, 24 h ΔAH sparkline, dehumidifier chip with its reason, the active-term breakdown, and dry-run/adaptation/warning indicators.
+SmartGrow **ships its own dashboard card**. Once the integration is set up, the card is served at `/smartgrow/smartgrow-card.js` and auto-registered in the frontend — just add a card of type `custom:smartgrow-card` to any dashboard (entity prefix `smartgrow_smartgrow` by default, or pick entities in the card's UI editor).
 
-1. HACS → ⋮ → *Custom repositories* → add `https://github.com/enyineer/smartgrow-card` (category: *Lovelace*).
-2. Add the card to a dashboard — `type: custom:smartgrow-card` with your entity prefix, or pick entities in the UI editor.
+The card renders the whole tent in one glanceable view: fan target (vs actual), VPD vs band bar, 24 h ΔAH sparkline, dehumidifier chip with its reason, the active-term breakdown, and dry-run/adaptation/warning indicators.
+
+> Historical note: the card previously lived in a separate repo (`enyineer/smartgrow-card`, archived). It is now bundled here so card and integration always share the same version.
 
 A YAML-only dashboard without custom cards is in [docs/lovelace-example.yaml](docs/lovelace-example.yaml).
 

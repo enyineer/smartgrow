@@ -39,6 +39,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "coordinator": coordinator,
         "options": RuntimeOptions.from_entry(entry),
     }
+    if not hass.data.get(f"{DOMAIN}_frontend_registered"):
+        try:
+            await async_register_frontend(hass)
+            hass.data[f"{DOMAIN}_frontend_registered"] = True
+        except Exception as err:  # noqa: BLE001 — card is optional, never block setup
+            _LOGGER.warning("SmartGrow card registration failed: %s", err)
+            hass.data[f"{DOMAIN}_frontend_registered"] = False
     await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
@@ -53,6 +60,9 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok and not hass.data[DOMAIN]:
+        remove_extra_js_url(hass, "/smartgrow/smartgrow-card.js")
+        hass.data.pop(f"{DOMAIN}_frontend_registered", None)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok
