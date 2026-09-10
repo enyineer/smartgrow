@@ -19,7 +19,7 @@ SmartGrow replays the exact control law that has been running on a real grow box
 
 ### HACS (custom repository)
 
-1. HACS → ⋮ → *Custom repositories* → add `https://github.com/niggo/smartgrow` (category: *Integration*).
+1. HACS → ⋮ → *Custom repositories* → add `https://github.com/enyineer/smartgrow` (category: *Integration*).
 2. Install **SmartGrow**.
 3. Restart Home Assistant.
 4. *Settings → Devices & Services → Add Integration* → **SmartGrow**.
