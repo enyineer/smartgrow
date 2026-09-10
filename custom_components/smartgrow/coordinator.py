@@ -155,7 +155,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             name="SmartGrow",
             manufacturer="SmartGrow",
             model="Grow tent climate controller",
-            sw_version="0.1.0",
+            sw_version="0.1.1",
             configuration_url=None,
         )
 
@@ -164,6 +164,25 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         state = self.hass.states.get(entity_id)
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             raise UpdateFailed(f"{entity_id} unavailable")
+        try:
+            return float(state.state)
+        except ValueError as err:
+            raise UpdateFailed(f"{entity_id} not numeric: {state.state}") from err
+
+    def _read_fan_pct(self, entity_id: str) -> float:
+        """Read fan percentage: from the percentage attribute (fan domain),
+        falling back to the numeric state (e.g. a template sensor)."""
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            raise UpdateFailed(f"{entity_id} unavailable")
+        pct = state.attributes.get("percentage")
+        if pct is not None:
+            try:
+                return float(pct)
+            except (TypeError, ValueError) as err:
+                raise UpdateFailed(
+                    f"{entity_id} percentage not numeric: {pct}"
+                ) from err
         try:
             return float(state.state)
         except ValueError as err:
@@ -190,7 +209,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             lung_temp=self._read_float(src["lung_temp"]),
             lung_rh=self._read_float(src["lung_rh"]),
             vpd=self._read_vpd(),
-            fan_pct=self._read_float(src["fan"]),
+            fan_pct=self._read_fan_pct(src["fan"]),
             is_day=is_day,
             stage=stage,
             timestamp=time.time(),
