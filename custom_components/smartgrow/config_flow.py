@@ -16,7 +16,6 @@ from homeassistant.helpers.selector import (
     EntitySelectorConfig,
     SelectSelector,
     SelectSelectorConfig,
-    SelectSelectorOption,
 )
 
 from .const import (
@@ -119,7 +118,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Required("stage", default="Flowering"): SelectSelector(
                 SelectSelectorConfig(
-                    options=[SelectSelectorOption(value=s, label=s) for s in STAGES]
+                    options=[{"value": s, "label": s} for s in STAGES]
                 )
             ),
         }

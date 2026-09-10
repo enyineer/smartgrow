@@ -23,13 +23,8 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.llm import (
-    LLM_API_ASSIST,
-    LLMContext,
-    LLMTools,
-    Tool,
-    ToolInput,
-)
+from homeassistant.components.llm import LLMTools
+from homeassistant.helpers.llm import LLM_API_ASSIST, LLMContext, Tool, ToolInput
 from homeassistant.util.json import JsonObjectType
 
 from .const import DOMAIN
