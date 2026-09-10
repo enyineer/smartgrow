@@ -10,6 +10,20 @@
 #
 # Replace `smartgrow_smartgrow` with your device prefix if you named your
 # integration entry differently (check Developer Tools → States).
+#
+# ---------------------------------------------------------------------------
+# MANUAL CUSTOM CARD VARIANT
+# If you installed the companion SmartGrow Card (HACS → custom repository →
+# https://github.com/niggo/smartgrow-card, category "Lovelace"), a single card
+# replaces the Overview + Control-trace sections below:
+#
+#   - type: custom:smartgrow-card
+#     prefix: smartgrow_smartgrow
+#     # optional overrides (win over prefix):
+#     # entities:
+#     #   vpd: sensor.temp_rh_sensor_vpd
+#     #   fan_target: sensor.smartgrow_smartgrow_fan_target
+# ---------------------------------------------------------------------------
 
 title: SmartGrow
 path: smartgrow

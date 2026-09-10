@@ -92,6 +92,15 @@ pytest --cov=custom_components/smartgrow/logic --cov=custom_components/smartgrow
 
 The test suite replays real recorded fixture data (`tests/fixtures/`) through the control law: fan parity, dehumidifier ON/OFF alignment against recorded power, and the 26-flip oscillation regression.
 
+## Lovelace card
+
+There is a companion **SmartGrow Card** — a HACS lovelace custom card that renders the whole tent in one glanceable view: fan target (vs actual), VPD vs band bar, 24 h ΔAH sparkline, dehumidifier chip with its reason, the active-term breakdown, and dry-run/adaptation/warning indicators.
+
+1. HACS → ⋮ → *Custom repositories* → add `https://github.com/niggo/smartgrow-card` (category: *Lovelace*).
+2. Add the card to a dashboard — `type: custom:smartgrow-card` with your entity prefix, or pick entities in the UI editor.
+
+A YAML-only dashboard without custom cards is in [docs/lovelace-example.yaml](docs/lovelace-example.yaml).
+
 ## Dokumentation (DE)
 
 **Warum absolute Feuchte?** Relative Luftfeuchte "lügt" bei Temperaturunterschieden: 59 % LF bei 24,3 °C enthält fast exakt so viel Wasser wie 54 % bei 23,9 °C. SmartGrow vergleicht daher ΔAH (g/m³) zwischen Zelt und Lungenraum, berechnet über die Magnus-Formel — genau wie die bewährte Produktionsregelung. Details in [docs/CONTROL_LAW.md](docs/CONTROL_LAW.md).
