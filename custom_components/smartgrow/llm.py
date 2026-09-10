@@ -23,7 +23,10 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.components.llm import LLMTools
+try:  # HA >= 2026.8 exposes the llm component with LLMTools
+    from homeassistant.components.llm import LLMTools  # noqa: F401
+except ImportError:  # older HA: tools are registered via helpers.llm API instead
+    LLMTools = None  # type: ignore[assignment]
 from homeassistant.helpers.llm import LLM_API_ASSIST, LLMContext, Tool, ToolInput
 from homeassistant.util.json import JsonObjectType
 
