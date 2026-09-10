@@ -80,28 +80,27 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             self._abort_if_unique_id_configured()
 
-            # prevent reusing core entities across multiple entries (would
-            # silently run two controllers on the same tent)
-            from homeassistant.helpers import entity_registry as er
+            # Tent-unique entities: sharing these across entries means two
+            # controllers fighting over the same tent. Must be unique.
+            from homeassistant.helpers import entity_registry as er  # noqa: F401
 
-            registry = er.async_get(self.hass)
-            core_entities = [
+            unique_entities = [
                 self._data[k]
                 for k in (
                     CONF_FAN_ENTITY,
-                    CONF_DEHUM_ENTITY,
                     CONF_TENT_TEMP_ENTITY,
                     CONF_TENT_RH_ENTITY,
-                    CONF_LUNG_TEMP_ENTITY,
-                    CONF_LUNG_RH_ENTITY,
                 )
                 if self._data.get(k)
             ]
+            # Lung room + dehumidifier MAY be shared between tents (one lung
+            # room serving multiple tents with one dehumidifier is a valid
+            # setup — the cascade arbitrates shared demand).
             for other in self._async_current_entries():
                 if other.entry_id == self.context.get("entry_id"):
                     continue
                 other_set = set(other.data.values())
-                clash = [e for e in core_entities if e in other_set]
+                clash = [e for e in unique_entities if e in other_set]
                 if clash:
                     errors["base"] = "entities_already_configured"
                     break

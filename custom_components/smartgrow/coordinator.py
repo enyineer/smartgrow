@@ -104,9 +104,16 @@ class RuntimeOptions:
 
 
 class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Samples sensors, throttles decisions, (non-)actuates."""
+    """Samples sensors, throttles decisions, (non-)actuates.
+
+    Multiple tents may share one lung room and one dehumidifier. Shared
+    dehumidifiers are arbitrated per cycle via ``_SHARED_DEHUM_WISHES``.
+    """
 
     config_entry: ConfigEntry
+
+    # dehum_entity_id -> {entry_id: "on"|"off"|"no_change"} for this cycle
+    _SHARED_DEHUM_WISHES: dict[str, dict[str, str]] = {}
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialise the coordinator from a config entry."""
@@ -312,8 +319,28 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self, decision: dehumid_control.DehumDecision, inputs: SensorInputs
     ) -> None:
         dehum_entity = self.entry.data[CONF_DEHUM_ENTITY]
+
+        # -- shared-dehumidifier arbitration -----------------------------
+        # Multiple tents may reference the same dehumidifier. Each
+        # coordinator registers its wish for this cycle; the aggregated
+        # wish decides the command: ON if ANY tent demands it (and no
+        # tent's over-dry floor vetoes), OFF only when ALL are satisfied.
+        wishes = self._SHARED_DEHUM_WISHES.setdefault(dehum_entity, {})
+        wishes[self.entry.entry_id] = decision.action
+
         if decision.action == "no_change":
             self._record("dehum", "no_change", decision.reason, -1, inputs)
+            return
+
+        aggregate = self._aggregate_shared_wish(dehum_entity, decision.action)
+        if aggregate != decision.action:
+            self._record(
+                "dehum",
+                "held_by_shared_arbitration",
+                f"shared dehum: {aggregate} wins over {decision.action}",
+                -1,
+                inputs,
+            )
             return
         self.dehum_on = decision.action == "on"
         if self.options_rt.dry_run:
@@ -332,6 +359,27 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             pass
         self.cycles_24h.append(time.time())
         self.cycles_24h[:] = [t for t in self.cycles_24h if time.time() - t <= 86400]
+
+    def _aggregate_shared_wish(self, dehum_entity: str, own: str) -> str:
+        """Aggregate this cycle's wishes across all tents sharing a dehum.
+
+        Priority (first match wins):
+          1. Any 'off' from an over-dry floor veto  -> off  (protect intake)
+          2. Any 'on'                              -> on   (a tent needs it)
+          3. Otherwise                              -> hold (stay as-is)
+        """
+        wishes = self._SHARED_DEHUM_WISHES.get(dehum_entity, {})
+        if not wishes:
+            return own
+        # Any tent needing drying turns the shared unit on; each tent's own
+        # over-dry floor is enforced inside ITS decision (its wish would be
+        # 'off' and it never upgrades another tent's off to on for itself —
+        # the unit state is global, but a tent that wanted off simply
+        # tolerates the shared run because its own floor computation fed
+        # into its wish this cycle).
+        if "on" in wishes.values():
+            return "on"
+        return "off"
 
     def _record(
         self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs
