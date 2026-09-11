@@ -13,7 +13,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DEFAULTS, DOMAIN
 from .coordinator import RuntimeOptions, SmartGrowCoordinator
-from .frontend_reg import async_register_frontend, remove_extra_js_url
+from .frontend_reg import CARD_URL, async_register_frontend, remove_extra_js_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok and not hass.data[DOMAIN]:
-        remove_extra_js_url(hass, "/smartgrow/smartgrow-card.js")
+        remove_extra_js_url(hass, CARD_URL)
         hass.data.pop(f"{DOMAIN}_frontend_registered", None)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)

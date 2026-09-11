@@ -19,7 +19,16 @@ from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
-_URL = "/smartgrow/smartgrow-card.js"
+import json
+import pathlib
+
+_BASE_URL = "/smartgrow/smartgrow-card.js"
+# Versioned URL: every release changes the query, so browsers/webviews can
+# never serve a stale cached bundle after an update.
+_VERSION = json.loads(
+    (pathlib.Path(__file__).parent / "manifest.json").read_text()
+)["version"]
+_URL = f"{_BASE_URL}?v={_VERSION}"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +45,11 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         return
 
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(_URL, str(card_path), cache_headers=False)]
+        [StaticPathConfig(_BASE_URL, str(card_path), cache_headers=False)]
     )
     add_extra_js_url(hass, _URL)
     _LOGGER.debug("SmartGrow card registered at %s", _URL)
+
+
+CARD_URL = _URL
+"""Versioned URL of the bundled card (stable within a release)."""
