@@ -27,7 +27,6 @@ from .const import (
     CONF_CAMERA_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
-    CONF_CAMERA_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
@@ -138,9 +137,6 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_CAMERA_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain="camera")
             ),
-            vol.Optional(CONF_CAMERA_ENTITY, description="Camera (optional)"): EntitySelector(
-                EntitySelectorConfig(domain="camera")
-            ),
             vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
             vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
             vol.Optional(CONF_WAVEMAKER_ENTITY): EntitySelector(
@@ -180,6 +176,35 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
         }
         return self.async_show_form(step_id="extras", data_schema=vol.Schema(schema))
+
+
+    @staticmethod
+    @callback
+    def async_get_supported_reconfigure_features() -> dict[str, bool]:
+        """This integration supports reconfigure (HA 2024.4+)."""
+        return {"reconfigure": True}
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Reconfigure: update source entities in place."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()  # provided by ConfigFlow
+        if user_input is not None:
+            new_data = {**entry.data, **user_input}
+            self.hass.config_entries.async_update_entry(entry, data=new_data)
+            await self.hass.config_entries.async_reload(entry.entry_id)
+            return self.async_create_entry(title="", data=new_data)
+
+        schema = {
+            vol.Optional(k, default=entry.data.get(k, "")): v
+            for k, v in ENTITY_SCHEMA_KEYS.items()
+        }
+        from .const import CONF_CAMERA_ENTITY as _CAM
+        schema[vol.Optional(_CAM, default=entry.data.get("camera_entity", ""))] = EntitySelector(
+            EntitySelectorConfig(domain="camera")
+        )
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
+        )
 
     @staticmethod
     @callback

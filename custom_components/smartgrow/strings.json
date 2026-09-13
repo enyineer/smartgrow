@@ -21,7 +21,8 @@
           "wavemaker_run_s": "Wavemaker run duration (s, interval mode)",
           "wavemaker_every_min": "Wavemaker interval (min, interval mode)",
           "dry_run": "Dry-run mode (recommended: on)",
-          "camera_entity": "Camera (optional)"
+          "camera_entity": "Camera (optional)",
+          "hum_entity": "Humidifier (optional)"
         },
         "data_description": {
           "name": "Shown on the device and all SmartGrow entities. Use a name per tent if you have several.",
@@ -40,7 +41,8 @@
           "wavemaker_run_s": "How long the wavemaker runs each time (interval mode only).",
           "wavemaker_every_min": "How often the wavemaker switches on (interval mode only).",
           "dry_run": "While ON, SmartGrow only WATCHES: it calculates what the fan and dehumidifier should do and logs it, but does not touch your devices. This lets you verify its decisions safely first. Turn it OFF (from the device screen) only when you trust the decisions — typically after 24-48 hours of correct-looking logs.",
-          "camera_entity": "A camera watching the tent. SmartGrow links it to the card so you can see the plants at a glance; agents can later use it to optically check plant status."
+          "camera_entity": "A camera watching the tent. SmartGrow links it to the card so you can see the plants at a glance; agents can later use it to optically check plant status.",
+          "hum_entity": "Switch or humidifier entity of your humidifier. Used when the tent is too dry (VPD above the band) and the fan cannot raise humidity. If omitted, humidifier control stays off — fine for late flower, often wanted for seedlings and clones."
         }
       },
       "extras": {
