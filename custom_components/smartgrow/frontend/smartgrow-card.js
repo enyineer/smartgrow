@@ -334,10 +334,10 @@ b.elementStyles = [], b.shadowRootOptions = {
 const w = globalThis,
   x = t => t,
   A = w.trustedTypes,
-  S = A ? A.createPolicy("lit-html", {
+  k = A ? A.createPolicy("lit-html", {
     createHTML: t => t
   }) : void 0,
-  k = "$lit$",
+  S = "$lit$",
   E = `lit$${Math.random().toFixed(9).slice(2)}$`,
   C = "?" + E,
   P = `<${C}>`,
@@ -364,7 +364,7 @@ const w = globalThis,
   G = O.createTreeWalker(O, 129);
 function q(t, e) {
   if (!R(t) || !t.hasOwnProperty("raw")) throw Error("invalid template strings array");
-  return void 0 !== S ? S.createHTML(e) : e;
+  return void 0 !== k ? k.createHTML(e) : e;
 }
 const Z = (t, e) => {
   const s = t.length - 1,
@@ -380,7 +380,7 @@ const Z = (t, e) => {
       d = 0;
     for (; d < s.length && (a.lastIndex = d, c = a.exec(s), null !== c);) d = a.lastIndex, a === M ? "!--" === c[1] ? a = N : void 0 !== c[1] ? a = j : void 0 !== c[2] ? (F.test(c[2]) && (n = RegExp("</" + c[2], "g")), a = z) : void 0 !== c[3] && (a = z) : a === z ? ">" === c[0] ? (a = n !== null && n !== void 0 ? n : M, l = -1) : void 0 === c[1] ? l = -2 : (l = a.lastIndex - c[2].length, o = c[1], a = void 0 === c[3] ? z : '"' === c[3] ? D : L) : a === D || a === L ? a = z : a === N || a === j ? a = M : (a = z, n = void 0);
     const h = a === z && t[e + 1].startsWith("/>") ? " " : "";
-    r += a === M ? s + P : l >= 0 ? (i.push(o), s.slice(0, l) + k + s.slice(l) + E + h) : s + E + (-2 === l ? e : h);
+    r += a === M ? s + P : l >= 0 ? (i.push(o), s.slice(0, l) + S + s.slice(l) + E + h) : s + E + (-2 === l ? e : h);
   }
   return [q(t, r + (t[s] || "<?>") + (2 === e ? "</svg>" : 3 === e ? "</math>" : "")), i];
 };
@@ -402,7 +402,7 @@ class J {
     }
     for (; null !== (i = G.nextNode()) && o.length < a;) {
       if (1 === i.nodeType) {
-        if (i.hasAttributes()) for (const t of i.getAttributeNames()) if (t.endsWith(k)) {
+        if (i.hasAttributes()) for (const t of i.getAttributeNames()) if (t.endsWith(S)) {
           const e = l[r++],
             s = i.getAttribute(t).split(E),
             a = /([.?@])?(.*)/.exec(e);
@@ -1104,17 +1104,25 @@ function At(t, e) {
   for (const [t, s] of Object.entries(e !== null && e !== void 0 ? e : {})) !(t in n) && s && (n[t] = s);
   return n;
 }
-function St(t, e, s, i) {
+function kt(t, e, s, i) {
   const n = {
       ...s
     },
-    r = function (t, e, _t$states, _i$attributes) {
-      const s = `sensor.${e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, "")}_sources`,
-        i = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 ? void 0 : _t$states[s],
-        n = (_i$attributes = i === null || i === void 0 ? void 0 : i.attributes) !== null && _i$attributes !== void 0 ? _i$attributes : {},
-        r = {};
-      for (const [t, e] of Object.entries(n)) t.endsWith("_entity") && "string" == typeof e && e.length > 0 && (r[t] = e);
-      return r;
+    r = function (t, e) {
+      if (!(t !== null && t !== void 0 && t.states)) return {};
+      const s = e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
+        i = [`sensor.${s}_sources`, `sensor.${s}_configured_sources`];
+      for (const e of Object.keys(t.states)) (e.endsWith("_smartgrow_configured_sources") || e.endsWith("_smartgrow_sources")) && i.push(e);
+      for (const e of i) {
+        var _s$attributes;
+        const s = t.states[e];
+        if (!s) continue;
+        const i = (_s$attributes = s.attributes) !== null && _s$attributes !== void 0 ? _s$attributes : {},
+          n = {};
+        for (const [t, e] of Object.entries(i)) t.endsWith("_entity") && "string" == typeof e && e.length > 0 && (n[t] = e);
+        if (Object.keys(n).length > 0) return n;
+      }
+      return {};
     }(t, e),
     a = ["vpd", "camera", "lamp"];
   for (const t of a) {
@@ -1128,8 +1136,8 @@ function St(t, e, s, i) {
   }
   return n;
 }
-function kt(t, e) {
-  var _s$attributes;
+function St(t, e) {
+  var _s$attributes2;
   if (!e || !t || !t.states) return {
     entityId: e,
     missing: !0,
@@ -1145,20 +1153,20 @@ function kt(t, e) {
   return {
     entityId: e,
     state: s.state,
-    attrs: (_s$attributes = s.attributes) !== null && _s$attributes !== void 0 ? _s$attributes : {},
+    attrs: (_s$attributes2 = s.attributes) !== null && _s$attributes2 !== void 0 ? _s$attributes2 : {},
     missing: !1,
     unavailable: i
   };
 }
 function Et(t, e, s) {
-  var _e$vpd, _a$attrs, _kt$attrs$stage_confl, _kt;
-  const i = kt(t, e.fan_target),
-    n = kt(t, e.dah),
-    r = kt(t, e.stage),
-    a = kt(t, e.dehumidifier_decision),
-    o = function (t, e, _t$states2) {
+  var _e$vpd, _a$attrs, _St$attrs$stage_confl, _St;
+  const i = St(t, e.fan_target),
+    n = St(t, e.dah),
+    r = St(t, e.stage),
+    a = St(t, e.dehumidifier_decision),
+    o = function (t, e, _t$states) {
       if (!e.phase) return "unknown";
-      const s = t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 || (_t$states2 = _t$states2[e.phase]) === null || _t$states2 === void 0 ? void 0 : _t$states2.state;
+      const s = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 || (_t$states = _t$states[e.phase]) === null || _t$states === void 0 ? void 0 : _t$states.state;
       return "day" === s || "night" === s ? s : "unknown";
     }(t, e),
     c = function (t, e) {
@@ -1201,18 +1209,18 @@ function Et(t, e, s) {
     }(i.missing ? a : i),
     h = Object.values(e).filter(t => !!t),
     p = h.some(e => {
-      var _t$states3;
-      return void 0 !== (t === null || t === void 0 || (_t$states3 = t.states) === null || _t$states3 === void 0 ? void 0 : _t$states3[e]);
+      var _t$states2;
+      return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
     }),
-    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(kt(t, e.fan_vpd_term).state),
-    f = _t(kt(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
-    g = kt(t, e.dry_run),
-    m = kt(t, e.adaptation),
-    _ = kt(t, e.oscillation_warning),
-    v = kt(t, e.legacy_automation_warning),
+    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state),
+    f = _t(St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
+    g = St(t, e.dry_run),
+    m = St(t, e.adaptation),
+    _ = St(t, e.oscillation_warning),
+    v = St(t, e.legacy_automation_warning),
     $ = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
     y = $.fan_pct,
-    b = (_kt$attrs$stage_confl = (_kt = kt(t, e.stage)) === null || _kt === void 0 || (_kt = _kt.attrs) === null || _kt === void 0 ? void 0 : _kt.stage_conflict) !== null && _kt$attrs$stage_confl !== void 0 ? _kt$attrs$stage_confl : null;
+    b = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
@@ -1220,12 +1228,12 @@ function Et(t, e, s) {
     fanTarget: _t(i.state),
     fanActual: Pt(t, i),
     terms: {
-      dah: _t(kt(t, e.fan_dah_term).state),
-      vpd: _t(kt(t, e.fan_vpd_term).state),
-      need: _t(kt(t, e.fan_need_term).state),
-      temp: _t(kt(t, e.fan_temp_term).state)
+      dah: _t(St(t, e.fan_dah_term).state),
+      vpd: _t(St(t, e.fan_vpd_term).state),
+      need: _t(St(t, e.fan_need_term).state),
+      temp: _t(St(t, e.fan_temp_term).state)
     },
-    activeTerm: Ct(kt(t, e.active_fan_term)),
+    activeTerm: Ct(St(t, e.active_fan_term)),
     dah: _t(n.state),
     vpd: f,
     bandLow: l.low,
@@ -1237,7 +1245,7 @@ function Et(t, e, s) {
     adaptation: vt(m.state),
     oscillationWarning: vt(_.state),
     legacyWarning: vt(v.state),
-    cycles24h: _t(kt(t, e.cycles_24h).state),
+    cycles24h: _t(St(t, e.cycles_24h).state),
     stageConflict: b,
     empty: !p || !u && !p
   };
@@ -1249,9 +1257,9 @@ function Ct(t) {
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
 function Pt(t, e) {
-  var _e$attrs, _t$states4;
+  var _e$attrs, _t$states3;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states4 = t.states) !== null && _t$states4 !== void 0 && _t$states4[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
@@ -1455,7 +1463,7 @@ let Nt = (_Class = class Nt extends at {
       s && s !== t && (Rt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
     }
     const i = (_Rt$_prefixOverride = Rt._prefixOverride) !== null && _Rt$_prefixOverride !== void 0 ? _Rt$_prefixOverride : t;
-    return Rt._prefixOverride = null, St(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
+    return Rt._prefixOverride = null, kt(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
   }
   async _maybeLoadSparkline() {
     var _this$hass$states;
@@ -1561,8 +1569,8 @@ let Nt = (_Class = class Nt extends at {
           max: o
         };
       }(this._sparkPoints, 300, 54, 4),
-      f = yt(kt(this.hass, t.dehumidifier_decision)),
-      g = yt(kt(this.hass, t.humidifier_decision)),
+      f = yt(St(this.hass, t.dehumidifier_decision)),
+      g = yt(St(this.hass, t.humidifier_decision)),
       m = [{
         key: "dah",
         label: "ΔAH",
