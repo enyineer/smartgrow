@@ -65,14 +65,25 @@ class DryRunSwitch(SmartGrowEntity, SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Enable dry-run (safe observation mode)."""
-        self.coordinator.options_rt.dry_run = True
-        self._attr_is_on = True
-        self.async_write_ha_state()
+        await self._persist_and_apply(True)
 
     async def async_turn_off(self, **kwargs) -> None:
         """Disable dry-run — SmartGrow takes real control."""
-        self.coordinator.options_rt.dry_run = False
-        self._attr_is_on = False
+        await self._persist_and_apply(False)
+
+    async def _persist_and_apply(self, value: bool) -> None:
+        """Persist dry-run in entry.options so reloads keep it.
+
+        Mutating options_rt in memory only silently reverted on every entry
+        reload (config flow submits, reconfigure) because RuntimeOptions is
+        rebuilt from entry options where dry_run defaulted to True.
+        """
+        new_options = {**self.entry.options, "dry_run": value}
+        self.hass.config_entries.async_update_entry(
+            self.entry, options=new_options
+        )
+        self.coordinator.options_rt.dry_run = value
+        self._attr_is_on = value
         self.async_write_ha_state()
 
 
