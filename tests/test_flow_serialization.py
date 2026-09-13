@@ -247,17 +247,19 @@ async def test_reconfigure_clear_optional_sources(hass, enable_custom_integratio
         pass
     hass.config_entries.async_reload = _fake_reload
 
+    # Optional source keys ABSENT from user_input = user cleared them in the UI
+    # (selectors cannot submit ""); required keys are resubmitted by the browser.
     result = await flow.async_step_reconfigure({
         "fan_entity": "fan.demo",
         "tent_temp_entity": "sensor.demo_tent_temp",
         "tent_rh_entity": "sensor.demo_tent_rh",
-        "clear_optional_sources": True,
     })
     assert result["type"] == "abort"
     assert result["reason"] == "reconfigure_successful"
-    # required sources kept, optional externals cleared, flag not stored
+    # required sources kept, optional externals cleared
     assert entry.data.get("fan_entity") == "fan.demo"
     assert "vpd_entity" not in entry.data
     assert "camera_entity" not in entry.data
     assert "lung_temp_entity" not in entry.data
-    assert "clear_optional_sources" not in entry.data
+    # keys the form does not render survive the merge
+    assert entry.data.get("dry_run") is True

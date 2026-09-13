@@ -223,19 +223,21 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()  # provided by ConfigFlow
         if user_input is not None:
             new_data = {**entry.data, **user_input}
-            if user_input.get(CONF_CLEAR_OPTIONAL_SOURCES):
-                # Selector fields can't submit "" (EntitySelector rejects it and
-                # the browser omits cleared keys) — this flag is the explicit
-                # "unset the optional external sources" affordance.
-                for key in (
-                    CONF_VPD_ENTITY,
-                    CONF_LAMP_ENTITY,
-                    CONF_CAMERA_ENTITY,
-                    CONF_HUM_ENTITY,
-                    CONF_DEHUM_ENTITY,
-                    CONF_LUNG_TEMP_ENTITY,
-                    CONF_LUNG_RH_ENTITY,
-                ):
+            # Optional source selectors cannot submit "" (EntitySelector rejects
+            # it and the frontend omits cleared keys). Every optional source IS
+            # rendered by this form, so an ABSENT key means the user cleared it
+            # -> drop it from stored data. Keys the form does not render (name,
+            # lights times, wavemaker opts, dry_run, ...) survive the merge.
+            for key in (
+                CONF_VPD_ENTITY,
+                CONF_LAMP_ENTITY,
+                CONF_CAMERA_ENTITY,
+                CONF_HUM_ENTITY,
+                CONF_DEHUM_ENTITY,
+                CONF_LUNG_TEMP_ENTITY,
+                CONF_LUNG_RH_ENTITY,
+            ):
+                if not user_input.get(key):
                     new_data.pop(key, None)
             new_data.pop(CONF_CLEAR_OPTIONAL_SOURCES, None)
             self.hass.config_entries.async_update_entry(entry, data=new_data)
@@ -247,14 +249,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # values, no double-wrapping) is what keeps this dialog from 500ing —
         # see the comment there and tests/test_flow_serialization.py.
         merged = {**entry.data, **entry.options}
-        schema = {
-            **_entity_schema(merged),
-            vol.Required(
-                CONF_CLEAR_OPTIONAL_SOURCES,
-                default=False,
-                description={"suggested_value": False},
-            ): bool,
-        }
+        schema = _entity_schema(merged)
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )
