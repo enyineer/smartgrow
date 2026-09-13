@@ -444,10 +444,17 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return ""
 
     # -- actuation / dry-run -------------------------------------------------
+    def _source(self, key: str) -> str | None:
+        """Source-entity lookup: Configure-dialog options win over setup data."""
+        val = self.entry.options.get(key)
+        if val:
+            return val
+        return self.entry.data.get(key)
+
     async def _apply_fan(
         self, decision: fan_control.FanDecision, inputs: SensorInputs
     ) -> None:
-        fan_entity = self.entry.data[CONF_FAN_ENTITY]
+        fan_entity = self._source(CONF_FAN_ENTITY)
         if self.options_rt.dry_run:
             _LOGGER.debug(
                 "DRY-RUN fan -> %d%% (active term: %s)",
@@ -483,7 +490,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _apply_dehum(
         self, decision: dehumid_control.DehumDecision, inputs: SensorInputs
     ) -> None:
-        dehum_entity = self.entry.data.get(CONF_DEHUM_ENTITY, "")
+        dehum_entity = self._source(CONF_DEHUM_ENTITY)
         if not dehum_entity:
             # Fan-only build: decision still computed and recorded, no actuation.
             self._record("dehum", "unconfigured", decision.reason, -1, inputs)
@@ -531,7 +538,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _apply_hum(self, decision, inputs) -> None:
         """Actuate the optional humidifier (same dry-run guard as dehum)."""
-        hum_entity = self.entry.data.get(CONF_HUM_ENTITY, "")
+        hum_entity = self._source(CONF_HUM_ENTITY)
         if not hum_entity:
             self._record("hum", "unconfigured", decision.reason, -1, inputs)
             return
@@ -659,7 +666,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result["dehum"] = decision
 
         # Humidifier (optional): mirror cascade, only when configured.
-        if self.entry.data.get(CONF_HUM_ENTITY):
+        if self._source(CONF_HUM_ENTITY):
             from .logic.humid_control import compute_hum
 
             decision = compute_hum(inputs, params, self.hum_on)
@@ -725,7 +732,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
         now = time.time()
         for key in (CONF_LEGACY_VENT_AUTOMATION, CONF_LEGACY_DEHUM_AUTOMATION):
-            entity_id = self.entry.data.get(key)
+            entity_id = self._source(key)
             if not entity_id:
                 continue
             state = self.hass.states.get(entity_id)

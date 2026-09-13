@@ -10,16 +10,6 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers.selector import (
-    TimeSelector,
-    TimeSelectorConfig,
-    BooleanSelector,
-    EntitySelector,
-    EntitySelectorConfig,
-    SelectSelector,
-    SelectSelectorConfig,
-)
-
 from .const import (
     CONF_DRY_RUN,
     CONF_DEHUM_ENTITY,
@@ -47,28 +37,23 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# All source-entity fields use PLAIN str validators. EntitySelector markers
+# in a custom integration's flow schema are not JSON-serializable by
+# voluptuous-serialize (HA 2026.8) and 500 the whole dialog — this exact
+# bug shipped in v0.5.6 ("Config flow could not be loaded: 500"). The
+# strings.json field descriptions document the expected entity type, and
+# the coordinator validates the referenced entity exists at runtime.
+# Regressed against by tests/test_flow_serialization.py.
 ENTITY_SCHEMA_KEYS = {
-    vol.Required(CONF_FAN_ENTITY): EntitySelector(EntitySelectorConfig(domain="fan")),
-    vol.Required(CONF_TENT_TEMP_ENTITY): EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="temperature")
-    ),
-    vol.Required(CONF_TENT_RH_ENTITY): EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="humidity")
-    ),
+    vol.Required(CONF_FAN_ENTITY): str,
+    vol.Required(CONF_TENT_TEMP_ENTITY): str,
+    vol.Required(CONF_TENT_RH_ENTITY): str,
     # Everything below degrades gracefully when omitted — the flow tells the
     # user what stops working (labels), the logic never breaks.
-    vol.Optional(
-        CONF_DEHUM_ENTITY,
-    ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
-    vol.Optional(
-        CONF_HUM_ENTITY,
-    ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
-    vol.Optional(
-        CONF_LUNG_TEMP_ENTITY,
-    ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
-    vol.Optional(
-        CONF_LUNG_RH_ENTITY,
-    ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="humidity")),
+    vol.Optional(CONF_DEHUM_ENTITY): str,
+    vol.Optional(CONF_HUM_ENTITY): str,
+    vol.Optional(CONF_LUNG_TEMP_ENTITY): str,
+    vol.Optional(CONF_LUNG_RH_ENTITY): str,
 }
 
 
@@ -121,27 +106,20 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return await self.async_step_extras()
 
+        # Plain str/bool validators only — see the note on ENTITY_SCHEMA_KEYS:
+        # selector objects (EntitySelector/TimeSelector/SelectSelector) in a
+        # custom integration's schema 500 the dialog via voluptuous-serialize.
         schema = {
             vol.Optional(CONF_NAME, default=""): str,
             **ENTITY_SCHEMA_KEYS,
-            vol.Optional(CONF_VPD_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain="sensor")
-            ),
-            vol.Optional(CONF_LAMP_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
-            ),
-            vol.Optional(CONF_CAMERA_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain="camera")
-            ),
-            vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
-            vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
-            vol.Optional(CONF_WAVEMAKER_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain="switch")
-            ),
-            vol.Optional(CONF_WAVEMAKER_MODE): SelectSelector(
-                SelectSelectorConfig(options=[{"value": m, "label": m} for m in WAVEMAKER_MODES])
-            ),
-            vol.Required(CONF_DRY_RUN, default=True): BooleanSelector(),
+            vol.Optional(CONF_VPD_ENTITY): str,
+            vol.Optional(CONF_LAMP_ENTITY): str,
+            vol.Optional(CONF_CAMERA_ENTITY): str,
+            vol.Optional(CONF_LIGHTS_ON_TIME): str,
+            vol.Optional(CONF_LIGHTS_OFF_TIME): str,
+            vol.Optional(CONF_WAVEMAKER_ENTITY): str,
+            vol.Optional(CONF_WAVEMAKER_MODE): str,
+            vol.Required(CONF_DRY_RUN, default=True): bool,
         }
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema(schema), errors=errors
@@ -159,17 +137,9 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         schema = {
-            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): EntitySelector(
-                EntitySelectorConfig(domain="automation")
-            ),
-            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): EntitySelector(
-                EntitySelectorConfig(domain="automation")
-            ),
-            vol.Required("stage", default="Flowering"): SelectSelector(
-                SelectSelectorConfig(
-                    options=[{"value": s, "label": s} for s in STAGES]
-                )
-            ),
+            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): str,
+            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): str,
+            vol.Required("stage", default="Flowering"): str,
         }
         return self.async_show_form(step_id="extras", data_schema=vol.Schema(schema))
 
@@ -190,17 +160,29 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_abort(reason="reconfigure_successful")
 
+        # All fields are plain str validators: EntitySelector markers in a
+        # custom integration's flow schema are not JSON-serializable by
+        # voluptuous-serialize (HA 2026.8) and 500 the Reconfigure dialog
+        # (the exact bug from the v0.5.6 release). Descriptions in
+        # strings.json explain the expected entity type per field.
+        # ENTITY_SCHEMA_KEYS values are plain `str`; its KEYS are vol markers.
+        # Use marker.schema (the plain string) — NEVER nest a marker inside
+        # another marker: voluptuous-serialize then emits the inner Required
+        # object as the field name and HA's JSON encoder 500s the dialog.
         schema = {
-            vol.Optional(k, default=entry.data.get(k, "")): v
-            for k, v in ENTITY_SCHEMA_KEYS.items()
+            vol.Optional(
+                k.schema,
+                default=entry.options.get(k.schema) or entry.data.get(k.schema, ""),
+            ): str
+            for k in ENTITY_SCHEMA_KEYS
         }
         from .const import CONF_CAMERA_ENTITY as _CAM, CONF_LAMP_ENTITY as _LAMP
-        schema[vol.Optional(_CAM, default=entry.data.get("camera_entity", ""))] = EntitySelector(
-            EntitySelectorConfig(domain="camera")
-        )
-        schema[vol.Optional(_LAMP, default=entry.data.get("lamp_entity", ""))] = EntitySelector(
-            EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
-        )
+        schema[vol.Optional(
+            _CAM, default=entry.options.get(_CAM) or entry.data.get(_CAM, "")
+        )] = str
+        schema[vol.Optional(
+            _LAMP, default=entry.options.get(_LAMP) or entry.data.get(_LAMP, "")
+        )] = str
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )
@@ -262,9 +244,11 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
             CONF_LAMP_ENTITY,
             CONF_CAMERA_ENTITY,
         ):
-            entity_fields[vol.Optional(
-                k, default=self.config_entry.data.get(k)
-            )] = str
+            current_val = (
+                self.config_entry.options.get(k)
+                or self.config_entry.data.get(k)
+            )
+            entity_fields[vol.Optional(k, default=current_val)] = str
         schema = vol.Schema(
             {
                 **entity_fields,
@@ -303,14 +287,14 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
                 vol.Required(
                     CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]
-                ): BooleanSelector(),
+                ): bool,
                 vol.Required(
                     CONF_ADAPTATION_AGGRESSIVENESS,
                     default=current[CONF_ADAPTATION_AGGRESSIVENESS],
                 ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
                 vol.Required(
                     CONF_DRY_RUN, default=current[CONF_DRY_RUN]
-                ): BooleanSelector(),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
