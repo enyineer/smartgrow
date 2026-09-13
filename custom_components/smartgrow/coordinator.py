@@ -37,6 +37,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .adaptation import AdaptationEngine
 from .const import (
     CONF_DEHUM_ENTITY,
+    CONF_HUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
     CONF_CAMERA_ENTITY,
@@ -145,6 +146,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_dehum_ts: float = 0.0
         self.last_dehum_action: str = "no_change"
         self.dehum_on: bool = False
+        self.hum_on: bool = False
         self.last_fan_decision: fan_control.FanDecision | None = None
         self.last_dehum_decision: dehumid_control.DehumDecision | None = None
         self.cycles_24h: list[float] = []
@@ -161,6 +163,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return {
             "fan": data[CONF_FAN_ENTITY],
             "dehum": data.get(CONF_DEHUM_ENTITY, ""),
+            "hum": data.get(CONF_HUM_ENTITY, ""),
             "tent_temp": data[CONF_TENT_TEMP_ENTITY],
             "tent_rh": data[CONF_TENT_RH_ENTITY],
             "lung_temp": data.get(CONF_LUNG_TEMP_ENTITY, ""),
@@ -526,6 +529,28 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.cycles_24h.append(time.time())
         self.cycles_24h[:] = [t for t in self.cycles_24h if time.time() - t <= 86400]
 
+    async def _apply_hum(self, decision, inputs) -> None:
+        """Actuate the optional humidifier (same dry-run guard as dehum)."""
+        hum_entity = self.entry.data.get(CONF_HUM_ENTITY, "")
+        if not hum_entity:
+            self._record("hum", "unconfigured", decision.reason, -1, inputs)
+            return
+        if decision.action == "no_change":
+            self._record("hum", "no_change", decision.reason, -1, inputs)
+            return
+        self.hum_on = decision.action == "on"
+        if self.options_rt.dry_run:
+            _LOGGER.debug("DRY-RUN humidifier -> %s (%s)", decision.action, decision.reason)
+            self._record("hum", "dry_run", decision.reason, -1, inputs)
+            return
+        await self.hass.services.async_call(
+            "switch" if hum_entity.startswith("switch.") else "humidifier",
+            "turn_on" if self.hum_on else "turn_off",
+            {ATTR_ENTITY_ID: hum_entity},
+            blocking=True,
+        )
+        self._record("hum", "command", decision.reason, -1, inputs)
+
     def _aggregate_shared_wish(self, dehum_entity: str, own: str) -> str:
         """Aggregate this cycle's wishes across all tents sharing a dehum.
 
@@ -632,6 +657,15 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_dehum_decision = decision
             await self._apply_dehum(decision, inputs)
             result["dehum"] = decision
+
+        # Humidifier (optional): mirror cascade, only when configured.
+        if self.entry.data.get(CONF_HUM_ENTITY):
+            from .logic.humid_control import compute_hum
+
+            decision = compute_hum(inputs, params, self.hum_on)
+            self.last_hum_decision = decision
+            await self._apply_hum(decision, inputs)
+            result["hum"] = decision
 
         self._check_legacy_automations()
         return result

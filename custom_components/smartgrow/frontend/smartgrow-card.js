@@ -43,15 +43,15 @@ const a = s ? t => t : t => t instanceof CSSStyleSheet ? (t => {
     getPrototypeOf: p
   } = Object,
   u = globalThis,
-  g = u.trustedTypes,
-  f = g ? g.emptyScript : "",
+  f = u.trustedTypes,
+  g = f ? f.emptyScript : "",
   m = u.reactiveElementPolyfillSupport,
   _ = (t, e) => t,
   v = {
     toAttribute(t, e) {
       switch (e) {
         case Boolean:
-          t = t ? f : null;
+          t = t ? g : null;
           break;
         case Object:
         case Array:
@@ -343,13 +343,13 @@ const w = globalThis,
   P = `<${C}>`,
   O = document,
   U = () => O.createComment(""),
-  H = t => null === t || "object" != typeof t && "function" != typeof t,
+  T = t => null === t || "object" != typeof t && "function" != typeof t,
   R = Array.isArray,
-  T = "[ \t\n\f\r]",
+  H = "[ \t\n\f\r]",
   M = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,
   N = /-->/g,
   j = />/g,
-  z = RegExp(`>|${T}(?:([^\\s"'>=/]+)(${T}*=${T}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g"),
+  z = RegExp(`>|${H}(?:([^\\s"'>=/]+)(${H}*=${H}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g"),
   L = /'/g,
   D = /"/g,
   F = /^(?:script|style|textarea|title)$/i,
@@ -451,7 +451,7 @@ function K(t, e, s = t, i) {
   var _s$_$Co, _n, _n2, _n2$_$AO, _s$_$Co2;
   if (e === W) return e;
   let n = void 0 !== i ? (_s$_$Co = s._$Co) === null || _s$_$Co === void 0 ? void 0 : _s$_$Co[i] : s._$Cl;
-  const r = H(e) ? void 0 : e._$litDirective$;
+  const r = T(e) ? void 0 : e._$litDirective$;
   return ((_n = n) === null || _n === void 0 ? void 0 : _n.constructor) !== r && ((_n2 = n) !== null && _n2 !== void 0 && (_n2$_$AO = _n2._$AO) !== null && _n2$_$AO !== void 0 && _n2$_$AO.call(_n2, !1), void 0 === r ? n = void 0 : (n = new r(t), n._$AT(t, s, i)), void 0 !== i ? ((_s$_$Co2 = s._$Co) !== null && _s$_$Co2 !== void 0 ? _s$_$Co2 : s._$Co = [])[i] = n : s._$Cl = n), void 0 !== n && (e = K(t, n._$AS(t, e.values), n, i)), e;
 }
 class X {
@@ -515,7 +515,7 @@ class Y {
     return this._$AB;
   }
   _$AI(t, e = this) {
-    t = K(this, t, e), H(t) ? t === B || null == t || "" === t ? (this._$AH !== B && this._$AR(), this._$AH = B) : t !== this._$AH && t !== W && this._(t) : void 0 !== t._$litType$ ? this.$(t) : void 0 !== t.nodeType ? this.T(t) : (t => R(t) || "function" == typeof (t === null || t === void 0 ? void 0 : t[Symbol.iterator]))(t) ? this.k(t) : this._(t);
+    t = K(this, t, e), T(t) ? t === B || null == t || "" === t ? (this._$AH !== B && this._$AR(), this._$AH = B) : t !== this._$AH && t !== W && this._(t) : void 0 !== t._$litType$ ? this.$(t) : void 0 !== t.nodeType ? this.T(t) : (t => R(t) || "function" == typeof (t === null || t === void 0 ? void 0 : t[Symbol.iterator]))(t) ? this.k(t) : this._(t);
   }
   O(t) {
     return this._$AA.parentNode.insertBefore(t, this._$AB);
@@ -524,7 +524,7 @@ class Y {
     this._$AH !== t && (this._$AR(), this._$AH = this.O(t));
   }
   _(t) {
-    this._$AH !== B && H(this._$AH) ? this._$AA.nextSibling.data = t : this.T(O.createTextNode(t)), this._$AH = t;
+    this._$AH !== B && T(this._$AH) ? this._$AA.nextSibling.data = t : this.T(O.createTextNode(t)), this._$AH = t;
   }
   $(t) {
     var _this$_$AH;
@@ -576,10 +576,10 @@ class Q {
   _$AI(t, e = this, s, i) {
     const n = this.strings;
     let r = !1;
-    if (void 0 === n) t = K(this, t, e, 0), r = !H(t) || t !== this._$AH && t !== W, r && (this._$AH = t);else {
+    if (void 0 === n) t = K(this, t, e, 0), r = !T(t) || t !== this._$AH && t !== W, r && (this._$AH = t);else {
       const i = t;
       let a, o;
-      for (t = n[0], a = 0; a < n.length - 1; a++) o = K(this, i[s + a], e, a), o === W && (o = this._$AH[a]), r || (r = !H(o) || o !== this._$AH[a]), o === B ? t = B : t !== B && (t += (o !== null && o !== void 0 ? o : "") + n[a + 1]), this._$AH[a] = o;
+      for (t = n[0], a = 0; a < n.length - 1; a++) o = K(this, i[s + a], e, a), o === W && (o = this._$AH[a]), r || (r = !T(o) || o !== this._$AH[a]), o === B ? t = B : t !== B && (t += (o !== null && o !== void 0 ? o : "") + n[a + 1]), this._$AH[a] = o;
     }
     r && !i && this.j(t);
   }
@@ -1000,8 +1000,8 @@ const ut = ((t, ...e) => {
     }
   }
 `,
-  gt = "smartgrow_smartgrow",
-  ft = {
+  ft = "smartgrow_smartgrow",
+  gt = {
     low: 1.3,
     high: 1.6
   },
@@ -1095,7 +1095,7 @@ function xt(t) {
 }
 function At(t, e) {
   const s = t.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
-    i = [["fan_target", "fan_target", "sensor"], ["fan_dah_term", "fan_dah_term", "sensor"], ["fan_vpd_term", "fan_vpd_term", "sensor"], ["fan_need_term", "fan_need_term", "sensor"], ["fan_temp_term", "fan_temp_term", "sensor"], ["active_fan_term", "active_fan_term", "sensor"], ["dah", "dah", "sensor"], ["ah_tent", "ah_tent", "sensor"], ["ah_lung_room", "ah_lung_room", "sensor"], ["dehumidifier_decision", "dehumidifier_decision", "sensor"], ["dry_run", "dry_run", "sensor"], ["cycles_24h", "cycles_24h", "sensor"], ["stage", "stage", "select"], ["adaptation", "adaptation", "switch"], ["oscillation_warning", "oscillation_warning", "binary_sensor"], ["legacy_automation_warning", "legacy_automation_warning", "binary_sensor"]],
+    i = [["fan_target", "fan_target", "sensor"], ["fan_dah_term", "fan_dah_term", "sensor"], ["fan_vpd_term", "fan_vpd_term", "sensor"], ["fan_need_term", "fan_need_term", "sensor"], ["fan_temp_term", "fan_temp_term", "sensor"], ["active_fan_term", "active_fan_term", "sensor"], ["dah", "dah", "sensor"], ["ah_tent", "ah_tent", "sensor"], ["ah_lung_room", "ah_lung_room", "sensor"], ["dehumidifier_decision", "dehumidifier_decision", "sensor"], ["humidifier_decision", "humidifier_decision", "sensor"], ["dry_run", "dry_run", "sensor"], ["phase", "phase", "sensor"], ["cycles_24h", "cycles_24h", "sensor"], ["stage", "stage", "select"], ["adaptation", "adaptation", "switch"], ["oscillation_warning", "oscillation_warning", "binary_sensor"], ["legacy_automation_warning", "legacy_automation_warning", "binary_sensor"]],
     n = {};
   for (const [t, r, a] of i) {
     const i = e === null || e === void 0 ? void 0 : e[t];
@@ -1126,42 +1126,18 @@ function St(t, e) {
     unavailable: i
   };
 }
-function kt(t, e, s, i) {
-  var _e$vpd, _o$attrs, _t$states3;
-  const n = St(t, e.fan_target),
-    r = St(t, e.dah),
-    a = St(t, e.stage),
-    o = St(t, e.dehumidifier_decision),
-    c = function (t, e, s, _ref3, _t$states) {
-      const i = (_ref3 = s !== null && s !== void 0 ? s : t !== null && t !== void 0 && (_t$states = t.states) !== null && _t$states !== void 0 && _t$states.lamp ? "lamp" : null) !== null && _ref3 !== void 0 ? _ref3 : function (t) {
-        if (!(t !== null && t !== void 0 && t.states)) return null;
-        const e = Object.keys(t.states);
-        for (const t of [/^(light|switch)\.growlamp/i, /^(light|switch)\.grow_lamp/i, /^(light|switch)\.growlight/i, /^(light|switch)\.grow_box_lamp/i]) {
-          const s = e.find(e => t.test(e));
-          if (s) return s;
-        }
-        const s = e.find(e => {
-          var _t$states$e$attribute, _t$states$e;
-          const s = String((_t$states$e$attribute = (_t$states$e = t.states[e]) === null || _t$states$e === void 0 || (_t$states$e = _t$states$e.attributes) === null || _t$states$e === void 0 ? void 0 : _t$states$e.friendly_name) !== null && _t$states$e$attribute !== void 0 ? _t$states$e$attribute : "").toLowerCase();
-          return /grow\s*(lamp|light|lampe)|pflanzenlampe|anbaulampe/.test(s);
-        });
-        return s !== null && s !== void 0 ? s : null;
-      }(t);
-      if (i) {
-        const e = St(t, i);
-        if (!e.missing && void 0 !== e.state) {
-          const t = vt(e.state);
-          if (null !== t) return t ? "day" : "night";
-        }
-      }
-      try {
-        const t = new Date().getHours();
-        return t >= 6 && t < 18 ? "day" : "night";
-      } catch {
-        return "unknown";
-      }
-    }(t, 0, i),
-    l = function (t, e) {
+function kt(t, e, s) {
+  var _e$vpd, _a$attrs, _St$attrs$stage_confl, _St;
+  const i = St(t, e.fan_target),
+    n = St(t, e.dah),
+    r = St(t, e.stage),
+    a = St(t, e.dehumidifier_decision),
+    o = function (t, e, _t$states) {
+      if (!e.phase) return "unknown";
+      const s = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 || (_t$states = _t$states[e.phase]) === null || _t$states === void 0 ? void 0 : _t$states.state;
+      return "day" === s || "night" === s ? s : "unknown";
+    }(t, e),
+    c = function (t, e) {
       if (!t) return {
         low: 1.3,
         high: 1.6
@@ -1189,42 +1165,36 @@ function kt(t, e, s, i) {
         low: 1.3,
         high: 1.6
       };
-    }(a === null || a === void 0 ? void 0 : a.state, c),
-    d = (!a || a.missing) && s ? s : l,
-    h = function (t, _t$attrs2) {
+    }(r === null || r === void 0 ? void 0 : r.state, o),
+    l = (!r || r.missing) && s ? s : c,
+    d = function (t, _t$attrs2) {
       const e = t === null || t === void 0 || (_t$attrs2 = t.attrs) === null || _t$attrs2 === void 0 ? void 0 : _t$attrs2.friendly_name;
       if ("string" == typeof e && e.length > 0) {
         const t = e.replace(/\s+(fan\s+target|fan\s+ΔAH\s+term|fan\s+VPD\s+term|fan\s+need\s+term|fan\s+temp\s+term|active\s+fan\s+term|ΔAH|AH.*|dehumidifier.*|dry\s+run.*|dehumidifier.*cycles.*|cycles.*24\s?h.*|stage|adaptation.*|oscillation.*|legacy.*)$/i, "");
         if (t.length > 0) return t.trim();
       }
       return "SmartGrow";
-    }(n.missing ? o : n),
-    p = Object.values(e).filter(t => !!t),
-    u = p.some(e => {
+    }(i.missing ? a : i),
+    h = Object.values(e).filter(t => !!t),
+    p = h.some(e => {
       var _t$states2;
       return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
     }),
-    g = null !== _t(n.state) || null !== _t(r.state) || null !== _t(St(t, e.fan_vpd_term).state),
+    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state),
     f = _t(St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
-    m = St(t, e.dry_run),
-    _ = St(t, e.adaptation),
-    v = St(t, e.oscillation_warning),
-    $ = St(t, e.legacy_automation_warning),
-    y = (_o$attrs = o.attrs) !== null && _o$attrs !== void 0 ? _o$attrs : {},
-    b = y.fan_pct;
-  let w = null;
-  const x = t === null || t === void 0 || (_t$states3 = t.states) === null || _t$states3 === void 0 ? void 0 : _t$states3["input_select.growbox_stage"];
-  if (a && !a.missing && x) {
-    const t = String(a.state).trim(),
-      e = String(x.state).trim();
-    t && e && t.toLowerCase() !== e.toLowerCase() && (w = e);
-  }
+    g = St(t, e.dry_run),
+    m = St(t, e.adaptation),
+    _ = St(t, e.oscillation_warning),
+    v = St(t, e.legacy_automation_warning),
+    $ = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
+    y = $.fan_pct,
+    b = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
   return {
-    device: h,
-    stage: a && !a.missing ? String(a.state) : "",
-    phase: c,
-    fanTarget: _t(n.state),
-    fanActual: Ct(t, n),
+    device: d,
+    stage: r && !r.missing ? String(r.state) : "",
+    phase: o,
+    fanTarget: _t(i.state),
+    fanActual: Ct(t, i),
     terms: {
       dah: _t(St(t, e.fan_dah_term).state),
       vpd: _t(St(t, e.fan_vpd_term).state),
@@ -1232,20 +1202,20 @@ function kt(t, e, s, i) {
       temp: _t(St(t, e.fan_temp_term).state)
     },
     activeTerm: Et(St(t, e.active_fan_term)),
-    dah: _t(r.state),
+    dah: _t(n.state),
     vpd: f,
-    bandLow: d.low,
-    bandHigh: d.high,
-    dehumAction: o && !o.missing ? String(o.state) : null,
-    dehumReason: "string" == typeof y.reason ? y.reason : null,
-    dehumFanPct: "number" == typeof b ? b : null,
-    dryRun: vt(m.state),
-    adaptation: vt(_.state),
-    oscillationWarning: vt(v.state),
-    legacyWarning: vt($.state),
+    bandLow: l.low,
+    bandHigh: l.high,
+    dehumAction: a && !a.missing ? String(a.state) : null,
+    dehumReason: "string" == typeof $.reason ? $.reason : null,
+    dehumFanPct: "number" == typeof y ? y : null,
+    dryRun: vt(g.state),
+    adaptation: vt(m.state),
+    oscillationWarning: vt(_.state),
+    legacyWarning: vt(v.state),
     cycles24h: _t(St(t, e.cycles_24h).state),
-    stageConflict: w,
-    empty: !u || !g && !u
+    stageConflict: b,
+    empty: !p || !u && !p
   };
 }
 function Et(t) {
@@ -1255,9 +1225,9 @@ function Et(t) {
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
 function Ct(t, e) {
-  var _e$attrs, _t$states4;
+  var _e$attrs, _t$states3;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states4 = t.states) !== null && _t$states4 !== void 0 && _t$states4[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
@@ -1327,15 +1297,15 @@ let Ut = class extends at {
     return this;
   }
   render() {
-    var _this$_config$prefix, _ref4, _this$_config$device_, _s$find, _this$_config$title;
+    var _this$_config$prefix, _ref3, _this$_config$device_, _s$find, _this$_config$title;
     if (!this._config) return B;
-    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : gt,
+    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : ft,
       e = At(t, this._config.entities),
       s = xt(this.hass),
-      i = (_ref4 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
+      i = (_ref3 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
         var _this$_config$prefix2, _this$_config2;
         return t.prefix === ((_this$_config$prefix2 = (_this$_config2 = this._config) === null || _this$_config2 === void 0 ? void 0 : _this$_config2.prefix) !== null && _this$_config$prefix2 !== void 0 ? _this$_config$prefix2 : "");
-      })) === null || _s$find === void 0 ? void 0 : _s$find.device_id) !== null && _ref4 !== void 0 ? _ref4 : "",
+      })) === null || _s$find === void 0 ? void 0 : _s$find.device_id) !== null && _ref3 !== void 0 ? _ref3 : "",
       n = "width:100%;box-sizing:border-box;padding:10px 12px;margin:2px 0 10px;border:1px solid var(--divider-color,#444);border-radius:6px;background:var(--card-background-color,#1c1c1c);color:var(--primary-text-color,#eee);font-size:14px",
       r = "font-size:0.85rem;opacity:0.75;margin-top:6px";
     return I`
@@ -1358,7 +1328,7 @@ let Ut = class extends at {
           type="text"
           style=${n}
           .value=${t}
-          placeholder=${gt}
+          placeholder=${ft}
           @change=${this._prefixChanged}
         />
 
@@ -1393,9 +1363,9 @@ let Ut = class extends at {
 t([ht({
   attribute: !1
 })], Ut.prototype, "hass", void 0), t([pt()], Ut.prototype, "_config", void 0), Ut = t([ct("smartgrow-card-editor")], Ut), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Ut);
-const Ht = "0.1.0",
+const Tt = "0.1.0",
   Rt = "smartgrow-card";
-let Tt = (_Class = class Tt extends at {
+let Ht = (_Class = class Ht extends at {
   constructor() {
     super(...arguments), this._sparkPoints = [];
   }
@@ -1410,7 +1380,7 @@ let Tt = (_Class = class Tt extends at {
   setConfig(t) {
     if (!t || "object" != typeof t) throw new Error("Invalid configuration");
     this._config = {
-      prefix: gt,
+      prefix: ft,
       show_setup_hint: !0,
       ...t
     }, this._sparkLoadedFor = void 0, this._sparkPoints = [];
@@ -1423,7 +1393,7 @@ let Tt = (_Class = class Tt extends at {
   }
   _ids() {
     var _this$_config$prefix3, _this$_config4, _this$_config5, _this$hass;
-    const t = (_this$_config$prefix3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 ? void 0 : _this$_config4.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : gt,
+    const t = (_this$_config$prefix3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 ? void 0 : _this$_config4.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft,
       e = At(t, (_this$_config5 = this._config) === null || _this$_config5 === void 0 ? void 0 : _this$_config5.entities),
       s = e.fan_target;
     if (s && !((_this$hass = this.hass) !== null && _this$hass !== void 0 && (_this$hass = _this$hass.states) !== null && _this$hass !== void 0 && _this$hass[s])) {
@@ -1489,7 +1459,7 @@ let Tt = (_Class = class Tt extends at {
       <div class="setup-hint">
         <div>🌱 SmartGrow entities not found.</div>
         <div>
-          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : gt}</code>
+          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ft}</code>
           (${t.slice(0, 3).join(", ")}…).
         </div>
         <div>
@@ -1500,10 +1470,10 @@ let Tt = (_Class = class Tt extends at {
     `;
   }
   render() {
-    var _this$_config9, _this$_config$title2;
+    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config9, _this$hass$auth$acces, _this$hass3;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
-      e = kt(this.hass, t, ft, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.lamp_entity);
+      e = kt(this.hass, t, gt);
     if (e.empty) {
       const e = Object.values(t).filter(t => {
         var _this$hass2;
@@ -1544,8 +1514,9 @@ let Tt = (_Class = class Tt extends at {
           max: o
         };
       }(this._sparkPoints, 300, 54, 4),
-      g = yt(St(this.hass, t.dehumidifier_decision)),
-      f = [{
+      f = yt(St(this.hass, t.dehumidifier_decision)),
+      g = yt(St(this.hass, t.humidifier_decision)),
+      m = [{
         key: "dah",
         label: "ΔAH",
         value: e.terms.dah,
@@ -1566,7 +1537,9 @@ let Tt = (_Class = class Tt extends at {
         value: e.terms.temp,
         active: "temp" === e.activeTerm
       }],
-      m = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
+      _ = (_ref4 = (_this$_config$camera_ = (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.camera_entity) !== null && _this$_config$camera_ !== void 0 ? _this$_config$camera_ : t.camera) !== null && _ref4 !== void 0 ? _ref4 : null,
+      v = _ ? `/api/camera_proxy_stream/${_}?token=${(_this$hass$auth$acces = (_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.auth) === null || _this$hass3 === void 0 ? void 0 : _this$hass3.accessToken) !== null && _this$hass$auth$acces !== void 0 ? _this$hass$auth$acces : ""}` : null,
+      $ = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
     return I`
       <ha-card>
         <div class="header">
@@ -1604,17 +1577,19 @@ let Tt = (_Class = class Tt extends at {
         </div>
 
         <div class="chip-row">
-          <span class="chip ${null === g.on ? "" : g.on ? "on" : "off"}">
-            💧 dehum ${g.label}
+          <span class="chip ${null === f.on ? "" : f.on ? "on" : "off"}">
+            💧 dehum ${f.label}
           </span>
           ${null !== e.dryRun ? I`<span class="chip ${e.dryRun ? "dryrun" : "off"}">${e.dryRun ? "DRY RUN" : "live"}</span>` : B}
           ${null !== e.adaptation ? I`<span class="chip ${e.adaptation ? "on" : "off"}">adaptation ${e.adaptation ? "on" : "off"}</span>` : B}
-          ${m ? I`<span class="chip">${m}</span>` : B}
+          ${$ ? I`<span class="chip">${$}</span>` : B}
         </div>
-        ${g.reason ? I`<p class="dehum-reason">reason: ${g.reason}</p>` : B}
+        ${null !== g.on ? I`<span class="chip ${g.on ? "on" : "off"}">💦 hum ${g.label}</span>${g.reason ? I`<span class="chip-note"> ${g.reason}</span>` : B}` : B}
+        ${f.reason ? I`<p class="dehum-reason">reason: ${f.reason}</p>` : B}
+        ${_ ? I`<img class="camera-thumb" src=${v} alt="tent camera" loading="lazy" />` : B}
 
         <div class="terms">
-          ${f.map(t => I`
+          ${m.map(t => I`
               <div class="term ${t.active ? "active" : ""}">
                 <div class="term-name">
                   <span>${t.label}</span>
@@ -1644,10 +1619,10 @@ let Tt = (_Class = class Tt extends at {
 }, _Class.styles = ut, _Class);
 t([ht({
   attribute: !1
-})], Tt.prototype, "hass", void 0), t([pt()], Tt.prototype, "_config", void 0), t([pt()], Tt.prototype, "_sparkPoints", void 0), Tt = t([ct("smartgrow-card")], Tt), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Tt), window.customCards = window.customCards || [], window.customCards.push({
+})], Ht.prototype, "hass", void 0), t([pt()], Ht.prototype, "_config", void 0), t([pt()], Ht.prototype, "_sparkPoints", void 0), Ht = t([ct("smartgrow-card")], Ht), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Ht), window.customCards = window.customCards || [], window.customCards.push({
   type: "smartgrow-card",
   name: "SmartGrow Card",
   description: "Grow-tent overview for the SmartGrow integration: fan gauge, VPD band, ΔAH sparkline, dehumidifier chip.",
   documentationURL: "https://github.com/niggo/smartgrow-card"
 });
-export { Rt as CARD_NAME, Ht as CARD_VERSION, Tt as SmartGrowCard, Ut as SmartGrowCardEditor };
+export { Rt as CARD_NAME, Tt as CARD_VERSION, Ht as SmartGrowCard, Ut as SmartGrowCardEditor };

@@ -23,6 +23,8 @@ from homeassistant.helpers.selector import (
 from .const import (
     CONF_DRY_RUN,
     CONF_DEHUM_ENTITY,
+    CONF_HUM_ENTITY,
+    CONF_CAMERA_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
     CONF_CAMERA_ENTITY,
@@ -59,6 +61,10 @@ ENTITY_SCHEMA_KEYS = {
     vol.Optional(
         CONF_DEHUM_ENTITY,
         description="Dehumidifier (optional — omit for fan-only control)",
+    ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
+    vol.Optional(
+        CONF_HUM_ENTITY,
+        description="Humidifier (optional — for early stages with high RH targets)",
     ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
     vol.Optional(
         CONF_LUNG_TEMP_ENTITY,
@@ -128,6 +134,9 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Optional(CONF_LAMP_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
+            ),
+            vol.Optional(CONF_CAMERA_ENTITY): EntitySelector(
+                EntitySelectorConfig(domain="camera")
             ),
             vol.Optional(CONF_CAMERA_ENTITY, description="Camera (optional)"): EntitySelector(
                 EntitySelectorConfig(domain="camera")

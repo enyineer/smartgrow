@@ -10,6 +10,8 @@ MANUFACTURER = "SmartGrow"
 # Config-flow keys.
 CONF_FAN_ENTITY = "fan_entity"
 CONF_DEHUM_ENTITY = "dehum_entity"
+CONF_HUM_ENTITY = "hum_entity"
+CONF_CAMERA_ENTITY = "camera_entity"
 CONF_TENT_TEMP_ENTITY = "tent_temp_entity"
 CONF_TENT_RH_ENTITY = "tent_rh_entity"
 CONF_LUNG_TEMP_ENTITY = "lung_temp_entity"

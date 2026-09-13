@@ -64,7 +64,14 @@ class ControlParams:
     dehum_dry_floor: float = 44.0  # lung RH below this -> over-dry, force OFF
     dehum_hysteresis: float = 3.0  # sat assist needs lung_rh >= floor + hysteresis
     dehum_vpd_margin: float = 0.05  # anti-churn margin around the band low
-    dehum_severity: float = 0.1  # severity backstop depth below band low
+    dehum_severity: float = 0.1
+
+    # Humidifier cascade (mirror of dehum; for seedling/clone stages).
+    hum_sat_trigger: float = 70.0
+    hum_wet_ceiling: float = 70.0  # lung RH above this -> over-wet, force OFF
+    hum_hysteresis: float = 3.0
+    hum_vpd_margin: float = 0.05
+    hum_severity: float = 0.1  # severity backstop depth below band low
 
     # VPD band overrides (0 = use stage default).
     band_low_day: float = 0.0

@@ -30,7 +30,7 @@ except ImportError:  # older HA: tools are registered via helpers.llm API instea
 from homeassistant.helpers.llm import LLM_API_ASSIST, LLMContext, Tool, ToolInput
 from homeassistant.util.json import JsonObjectType
 
-from .const import DOMAIN
+from .const import CONF_CAMERA_ENTITY, DOMAIN
 from .logic.params import STAGES, ControlParams
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,6 +60,7 @@ def async_get_tools(
             SetTargetsTool(hass),
             SetAdaptationTool(hass),
             ForceRecalibrateTool(hass),
+            GetCameraSnapshotTool(hass),
             GetParameterExplanationsTool(hass),
         ],
         prompt=TOOLS_PROMPT,
@@ -322,3 +323,41 @@ def explain_parameters(coordinator: Any) -> dict[str, Any]:
         ),
     }
     return explanations
+
+
+class GetCameraSnapshotTool(_SmartGrowTool):
+    """Grab a still from the tent camera for optical inspection."""
+
+    name = "get_camera_snapshot"
+    description = (
+        "Capture a still image from the grow tent camera. Use it to visually "
+        "check plant health, colour, posture or height. Returns a URL that "
+        "can be fetched and analysed."
+    )
+
+    async def async_get_value(self, llm_context: LLMContext, **kwargs: Any) -> Any:
+        camera = None
+        for entry_id, data in self.hass.data.get(DOMAIN, {}).items():
+            entry = self.hass.config_entries.async_get_entry(entry_id)
+            if entry and entry.data.get(CONF_CAMERA_ENTITY):
+                camera = entry.data[CONF_CAMERA_ENTITY]
+                break
+        if not camera:
+            return "No camera configured for SmartGrow."
+
+        # Ask HA to take a snapshot into the media dir via camera.snapshot
+        snapshot_name = f"smartgrow_snapshot_{int(time.time())}.jpg"
+        path = f"/config/www/smartgrow/{snapshot_name}"
+        await self.hass.services.async_call(
+            "camera",
+            "snapshot",
+            {"entity_id": camera, "filename": path},
+            blocking=True,
+        )
+        # Serve it from /local
+        return {
+            "camera_entity": camera,
+            "url": f"/local/smartgrow/{snapshot_name}",
+            "note": "Fetch http(s)://<ha-address>{url} to analyse the image.",
+        }
+
