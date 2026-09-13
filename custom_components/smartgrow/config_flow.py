@@ -11,6 +11,8 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
+    TimeSelector,
+    TimeSelectorConfig,
     BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
@@ -35,7 +37,13 @@ from .const import (
     DEFAULTS,
     DOMAIN,
     STAGES,
-)
+    CONF_LIGHTS_ON_TIME,
+    CONF_LIGHTS_OFF_TIME,
+    CONF_WAVEMAKER_ENTITY,
+    CONF_WAVEMAKER_MODE,
+    CONF_WAVEMAKER_RUN_S,
+    CONF_WAVEMAKER_EVERY_MIN,
+    WAVEMAKER_MODES,)
 
 _LOGGER = logging.getLogger(__name__)
 

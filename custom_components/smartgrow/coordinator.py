@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import time as dtime, timedelta
 from typing import Any, TypedDict
 
 from homeassistant.config_entries import ConfigEntry
@@ -37,6 +37,15 @@ from .const import (
     CONF_DEHUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
+    CONF_LIGHTS_ON_TIME,
+    CONF_LIGHTS_OFF_TIME,
+    CONF_WAVEMAKER_ENTITY,
+    CONF_WAVEMAKER_MODE,
+    CONF_WAVEMAKER_RUN_S,
+    CONF_WAVEMAKER_EVERY_MIN,
+    WAVEMAKER_MODE_NONE,
+    WAVEMAKER_MODE_WITH_LIGHTS,
+    WAVEMAKER_MODE_INTERVAL,
     CONF_VPD_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_STAGE_ENTITY,
@@ -140,6 +149,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.cycles_24h: list[float] = []
         self.legacy_last_warned: dict[str, float] = {}
         self.last_sample_ts: float | None = None  # availability/staleness
+        self._wavemaker_last_toggle: float = 0.0
         self.last_inputs: SensorInputs | None = None
 
     # -- entity id helpers -------------------------------------------------
@@ -316,6 +326,106 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return "unknown"
         return "day" if st.state == STATE_ON else "night"
 
+    # -- lights schedule (day/night cycle) --------------------------------
+    def _schedule_times(self) -> tuple[dtime | None, dtime | None]:
+        """Configured on/off times as datetime.time (None if unset)."""
+        def parse(v: Any) -> dtime | None:
+            if not v:
+                return None
+            try:
+                hh, mm = str(v).split(":")[:2]
+                return dtime(int(hh), int(mm))
+            except (ValueError, AttributeError):
+                return None
+        on = parse(self.entry.data.get(CONF_LIGHTS_ON_TIME))
+        off = parse(self.entry.data.get(CONF_LIGHTS_OFF_TIME))
+        return on, off
+
+    def _schedule_wants_day(self, now: dtime) -> bool | None:
+        """True=day window, False=night window, None=no schedule configured."""
+        on, off = self._schedule_times()
+        if on is None or off is None:
+            return None
+        if on < off:
+            return on <= now < off
+        # overnight schedule (e.g. on 20:00, off 04:00)
+        return now >= on or now < off
+
+    def _apply_lamp(self, turn_on: bool) -> None:
+        """Drive the configured lamp entity (light/switch/input_boolean)."""
+        lamp = self.source_entities.get("lamp", "")
+        if not lamp:
+            return
+        domain = lamp.split(".", 1)[0]
+        service = "turn_on" if turn_on else "turn_off"
+        self.hass.async_create_task(
+            self.hass.services.async_call(domain, service, {"entity_id": lamp})
+        )
+        _LOGGER.debug("Schedule: lamp %s -> %s", lamp, service)
+
+    def _apply_schedule(self) -> None:
+        """Evaluate the lights schedule and actuate the lamp if needed."""
+        on, off = self._schedule_times()
+        if on is None or off is None:
+            return
+        wants_day = self._schedule_wants_day(dtime.now())
+        if wants_day is None:
+            return
+        lamp = self.source_entities.get("lamp", "")
+        if not lamp:
+            return
+        st = self.hass.states.get(lamp)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return
+        is_on = st.state == STATE_ON
+        if wants_day and not is_on:
+            self._apply_lamp(True)
+        elif not wants_day and is_on:
+            self._apply_lamp(False)
+
+    # -- optional wavemaker ------------------------------------------------
+    def _wavemaker_tick(self) -> None:
+        """Run the configured wavemaker program (interval mode) or mirror lights."""
+        entity = self.entry.data.get(CONF_WAVEMAKER_ENTITY, "")
+        if not entity:
+            return
+        mode = self.entry.data.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE)
+        if mode == WAVEMAKER_MODE_NONE:
+            return
+
+        st = self.hass.states.get(entity)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return
+        is_on = st.state == STATE_ON
+
+        if mode == WAVEMAKER_MODE_WITH_LIGHTS:
+            wants = self._schedule_wants_day(dtime.now())
+            if wants is not None and wants != is_on:
+                self._async_switch(entity, wants)
+            return
+
+        if mode == WAVEMAKER_MODE_INTERVAL:
+            run_s = int(self.entry.data.get(CONF_WAVEMAKER_RUN_S, 30))
+            every_min = int(self.entry.data.get(CONF_WAVEMAKER_EVERY_MIN, 60))
+            if run_s <= 0 or every_min <= 0:
+                return
+            now = time.time()
+            last = self._wavemaker_last_toggle or 0.0
+            if not is_on:
+                if now - last >= every_min * 60:
+                    self._async_switch(entity, True)
+                    self._wavemaker_last_toggle = now
+            else:
+                if now - last >= run_s:
+                    self._async_switch(entity, False)
+                    self._wavemaker_last_toggle = now
+
+    def _async_switch(self, entity: str, turn_on: bool) -> None:
+        service = "turn_on" if turn_on else "turn_off"
+        self.hass.async_create_task(
+            self.hass.services.async_call("switch", service, {"entity_id": entity})
+        )
+
     def _current_stage(self) -> str:
         """Stage from the configured stage entity; '' when unavailable."""
         stage_e = self.source_entities.get("stage", "")
@@ -351,6 +461,16 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
         self.last_inputs = inputs
         self.last_sample_ts = time.time()
+
+        # Lights schedule (day/night cycle): cheap check, every sample.
+        try:
+            self._apply_schedule()
+        except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
+            _LOGGER.warning("Lights schedule evaluation failed: %s", err)
+        try:
+            self._wavemaker_tick()
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Wavemaker tick failed: %s", err)
 
         now = time.time()
         base = self.options_rt.control
