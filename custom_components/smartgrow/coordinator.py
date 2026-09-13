@@ -364,9 +364,20 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return now >= on or now < off
 
     def _apply_lamp(self, turn_on: bool) -> None:
-        """Drive the configured lamp entity (light/switch/input_boolean)."""
+        """Drive the configured lamp entity (light/switch/input_boolean).
+
+        Honors dry-run like the fan/dehumidifier/humidifier actuators: in
+        dry-run the intended action is only logged, so the schedule cannot
+        fight the legacy Growlampe automations during shadow mode.
+        """
         lamp = self.source_entities.get("lamp", "")
         if not lamp:
+            return
+        if self.options_rt.dry_run:
+            _LOGGER.info(
+                "DRY-RUN: schedule wants lamp %s -> %s (not actuated)",
+                lamp, "on" if turn_on else "off",
+            )
             return
         domain = lamp.split(".", 1)[0]
         service = "turn_on" if turn_on else "turn_off"
