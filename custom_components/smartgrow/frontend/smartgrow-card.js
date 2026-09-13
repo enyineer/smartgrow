@@ -43,15 +43,15 @@ const a = s ? t => t : t => t instanceof CSSStyleSheet ? (t => {
     getPrototypeOf: p
   } = Object,
   u = globalThis,
-  f = u.trustedTypes,
-  g = f ? f.emptyScript : "",
+  g = u.trustedTypes,
+  f = g ? g.emptyScript : "",
   m = u.reactiveElementPolyfillSupport,
   _ = (t, e) => t,
   v = {
     toAttribute(t, e) {
       switch (e) {
         case Boolean:
-          t = t ? g : null;
+          t = t ? f : null;
           break;
         case Object:
         case Array:
@@ -1000,8 +1000,8 @@ const ut = ((t, ...e) => {
     }
   }
 `,
-  ft = "smartgrow_smartgrow",
-  gt = {
+  gt = "smartgrow_smartgrow",
+  ft = {
     low: 1.3,
     high: 1.6
   },
@@ -1126,17 +1126,33 @@ function St(t, e) {
     unavailable: i
   };
 }
-function kt(t, e, s) {
-  var _e$vpd, _a$attrs;
-  const i = St(t, e.fan_target),
-    n = St(t, e.dah),
-    r = St(t, e.stage),
-    a = St(t, e.dehumidifier_decision),
-    o = function (t) {
-      const e = St(t, "lamp");
-      if (!e.missing && e.state) {
-        const t = vt(e.state);
-        if (null !== t) return t ? "day" : "night";
+function kt(t, e, s, i) {
+  var _e$vpd, _o$attrs, _t$states3;
+  const n = St(t, e.fan_target),
+    r = St(t, e.dah),
+    a = St(t, e.stage),
+    o = St(t, e.dehumidifier_decision),
+    c = function (t, e, s, _ref3, _t$states) {
+      const i = (_ref3 = s !== null && s !== void 0 ? s : t !== null && t !== void 0 && (_t$states = t.states) !== null && _t$states !== void 0 && _t$states.lamp ? "lamp" : null) !== null && _ref3 !== void 0 ? _ref3 : function (t) {
+        if (!(t !== null && t !== void 0 && t.states)) return null;
+        const e = Object.keys(t.states);
+        for (const t of [/^(light|switch)\.growlamp/i, /^(light|switch)\.grow_lamp/i, /^(light|switch)\.growlight/i, /^(light|switch)\.grow_box_lamp/i]) {
+          const s = e.find(e => t.test(e));
+          if (s) return s;
+        }
+        const s = e.find(e => {
+          var _t$states$e$attribute, _t$states$e;
+          const s = String((_t$states$e$attribute = (_t$states$e = t.states[e]) === null || _t$states$e === void 0 || (_t$states$e = _t$states$e.attributes) === null || _t$states$e === void 0 ? void 0 : _t$states$e.friendly_name) !== null && _t$states$e$attribute !== void 0 ? _t$states$e$attribute : "").toLowerCase();
+          return /grow\s*(lamp|light|lampe)|pflanzenlampe|anbaulampe/.test(s);
+        });
+        return s !== null && s !== void 0 ? s : null;
+      }(t);
+      if (i) {
+        const e = St(t, i);
+        if (!e.missing && void 0 !== e.state) {
+          const t = vt(e.state);
+          if (null !== t) return t ? "day" : "night";
+        }
       }
       try {
         const t = new Date().getHours();
@@ -1144,8 +1160,8 @@ function kt(t, e, s) {
       } catch {
         return "unknown";
       }
-    }(t),
-    c = function (t, e) {
+    }(t, 0, i),
+    l = function (t, e) {
       if (!t) return {
         low: 1.3,
         high: 1.6
@@ -1173,35 +1189,42 @@ function kt(t, e, s) {
         low: 1.3,
         high: 1.6
       };
-    }(r === null || r === void 0 ? void 0 : r.state, o),
-    l = (!r || r.missing) && s ? s : c,
-    d = function (t, _t$attrs2) {
+    }(a === null || a === void 0 ? void 0 : a.state, c),
+    d = (!a || a.missing) && s ? s : l,
+    h = function (t, _t$attrs2) {
       const e = t === null || t === void 0 || (_t$attrs2 = t.attrs) === null || _t$attrs2 === void 0 ? void 0 : _t$attrs2.friendly_name;
       if ("string" == typeof e && e.length > 0) {
         const t = e.replace(/\s+(fan\s+target|fan\s+ΔAH\s+term|fan\s+VPD\s+term|fan\s+need\s+term|fan\s+temp\s+term|active\s+fan\s+term|ΔAH|AH.*|dehumidifier.*|dry\s+run.*|dehumidifier.*cycles.*|cycles.*24\s?h.*|stage|adaptation.*|oscillation.*|legacy.*)$/i, "");
         if (t.length > 0) return t.trim();
       }
       return "SmartGrow";
-    }(i.missing ? a : i),
-    h = Object.values(e).filter(t => !!t),
-    p = h.some(e => {
-      var _t$states;
-      return void 0 !== (t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 ? void 0 : _t$states[e]);
+    }(n.missing ? o : n),
+    p = Object.values(e).filter(t => !!t),
+    u = p.some(e => {
+      var _t$states2;
+      return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
     }),
-    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state),
+    g = null !== _t(n.state) || null !== _t(r.state) || null !== _t(St(t, e.fan_vpd_term).state),
     f = _t(St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
-    g = St(t, e.dry_run),
-    m = St(t, e.adaptation),
-    _ = St(t, e.oscillation_warning),
-    v = St(t, e.legacy_automation_warning),
-    $ = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
-    y = $.fan_pct;
+    m = St(t, e.dry_run),
+    _ = St(t, e.adaptation),
+    v = St(t, e.oscillation_warning),
+    $ = St(t, e.legacy_automation_warning),
+    y = (_o$attrs = o.attrs) !== null && _o$attrs !== void 0 ? _o$attrs : {},
+    b = y.fan_pct;
+  let w = null;
+  const x = t === null || t === void 0 || (_t$states3 = t.states) === null || _t$states3 === void 0 ? void 0 : _t$states3["input_select.growbox_stage"];
+  if (a && !a.missing && x) {
+    const t = String(a.state).trim(),
+      e = String(x.state).trim();
+    t && e && t.toLowerCase() !== e.toLowerCase() && (w = e);
+  }
   return {
-    device: d,
-    stage: r && !r.missing ? String(r.state) : "",
-    phase: o,
-    fanTarget: _t(i.state),
-    fanActual: Ct(t, i),
+    device: h,
+    stage: a && !a.missing ? String(a.state) : "",
+    phase: c,
+    fanTarget: _t(n.state),
+    fanActual: Ct(t, n),
     terms: {
       dah: _t(St(t, e.fan_dah_term).state),
       vpd: _t(St(t, e.fan_vpd_term).state),
@@ -1209,19 +1232,20 @@ function kt(t, e, s) {
       temp: _t(St(t, e.fan_temp_term).state)
     },
     activeTerm: Et(St(t, e.active_fan_term)),
-    dah: _t(n.state),
+    dah: _t(r.state),
     vpd: f,
-    bandLow: l.low,
-    bandHigh: l.high,
-    dehumAction: a && !a.missing ? String(a.state) : null,
-    dehumReason: "string" == typeof $.reason ? $.reason : null,
-    dehumFanPct: "number" == typeof y ? y : null,
-    dryRun: vt(g.state),
-    adaptation: vt(m.state),
-    oscillationWarning: vt(_.state),
-    legacyWarning: vt(v.state),
+    bandLow: d.low,
+    bandHigh: d.high,
+    dehumAction: o && !o.missing ? String(o.state) : null,
+    dehumReason: "string" == typeof y.reason ? y.reason : null,
+    dehumFanPct: "number" == typeof b ? b : null,
+    dryRun: vt(m.state),
+    adaptation: vt(_.state),
+    oscillationWarning: vt(v.state),
+    legacyWarning: vt($.state),
     cycles24h: _t(St(t, e.cycles_24h).state),
-    empty: !p || !u && !p
+    stageConflict: w,
+    empty: !u || !g && !u
   };
 }
 function Et(t) {
@@ -1231,9 +1255,9 @@ function Et(t) {
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
 function Ct(t, e) {
-  var _e$attrs, _t$states2;
+  var _e$attrs, _t$states4;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states2 = t.states) !== null && _t$states2 !== void 0 && _t$states2[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states4 = t.states) !== null && _t$states4 !== void 0 && _t$states4[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
@@ -1303,15 +1327,15 @@ let Ut = class extends at {
     return this;
   }
   render() {
-    var _this$_config$prefix, _ref3, _this$_config$device_, _s$find, _this$_config$title;
+    var _this$_config$prefix, _ref4, _this$_config$device_, _s$find, _this$_config$title;
     if (!this._config) return B;
-    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : ft,
+    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : gt,
       e = At(t, this._config.entities),
       s = xt(this.hass),
-      i = (_ref3 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
+      i = (_ref4 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
         var _this$_config$prefix2, _this$_config2;
         return t.prefix === ((_this$_config$prefix2 = (_this$_config2 = this._config) === null || _this$_config2 === void 0 ? void 0 : _this$_config2.prefix) !== null && _this$_config$prefix2 !== void 0 ? _this$_config$prefix2 : "");
-      })) === null || _s$find === void 0 ? void 0 : _s$find.device_id) !== null && _ref3 !== void 0 ? _ref3 : "",
+      })) === null || _s$find === void 0 ? void 0 : _s$find.device_id) !== null && _ref4 !== void 0 ? _ref4 : "",
       n = "width:100%;box-sizing:border-box;padding:10px 12px;margin:2px 0 10px;border:1px solid var(--divider-color,#444);border-radius:6px;background:var(--card-background-color,#1c1c1c);color:var(--primary-text-color,#eee);font-size:14px",
       r = "font-size:0.85rem;opacity:0.75;margin-top:6px";
     return I`
@@ -1334,7 +1358,7 @@ let Ut = class extends at {
           type="text"
           style=${n}
           .value=${t}
-          placeholder=${ft}
+          placeholder=${gt}
           @change=${this._prefixChanged}
         />
 
@@ -1386,7 +1410,7 @@ let Tt = (_Class = class Tt extends at {
   setConfig(t) {
     if (!t || "object" != typeof t) throw new Error("Invalid configuration");
     this._config = {
-      prefix: ft,
+      prefix: gt,
       show_setup_hint: !0,
       ...t
     }, this._sparkLoadedFor = void 0, this._sparkPoints = [];
@@ -1399,7 +1423,7 @@ let Tt = (_Class = class Tt extends at {
   }
   _ids() {
     var _this$_config$prefix3, _this$_config4, _this$_config5, _this$hass;
-    const t = (_this$_config$prefix3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 ? void 0 : _this$_config4.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft,
+    const t = (_this$_config$prefix3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 ? void 0 : _this$_config4.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : gt,
       e = At(t, (_this$_config5 = this._config) === null || _this$_config5 === void 0 ? void 0 : _this$_config5.entities),
       s = e.fan_target;
     if (s && !((_this$hass = this.hass) !== null && _this$hass !== void 0 && (_this$hass = _this$hass.states) !== null && _this$hass !== void 0 && _this$hass[s])) {
@@ -1465,7 +1489,7 @@ let Tt = (_Class = class Tt extends at {
       <div class="setup-hint">
         <div>🌱 SmartGrow entities not found.</div>
         <div>
-          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ft}</code>
+          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : gt}</code>
           (${t.slice(0, 3).join(", ")}…).
         </div>
         <div>
@@ -1476,10 +1500,10 @@ let Tt = (_Class = class Tt extends at {
     `;
   }
   render() {
-    var _this$_config$title2;
+    var _this$_config9, _this$_config$title2;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
-      e = kt(this.hass, t, gt);
+      e = kt(this.hass, t, ft, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.lamp_entity);
     if (e.empty) {
       const e = Object.values(t).filter(t => {
         var _this$hass2;
@@ -1520,8 +1544,8 @@ let Tt = (_Class = class Tt extends at {
           max: o
         };
       }(this._sparkPoints, 300, 54, 4),
-      f = yt(St(this.hass, t.dehumidifier_decision)),
-      g = [{
+      g = yt(St(this.hass, t.dehumidifier_decision)),
+      f = [{
         key: "dah",
         label: "ΔAH",
         value: e.terms.dah,
@@ -1547,9 +1571,12 @@ let Tt = (_Class = class Tt extends at {
       <ha-card>
         <div class="header">
           <div class="title">${s}</div>
-          ${e.stage ? I`<div class="stage">${e.stage}</div>` : B}
+          ${e.stage ? I`<div class="stage" title=${e.stageConflict ? `legacy helper says: ${e.stageConflict}` : ""}>${e.stage}${e.stageConflict ? " ⚠︎" : ""}</div>` : B}
           <div class="phase-chip ${e.phase}">${e.phase}</div>
         </div>
+        ${e.stageConflict ? I`<div class="stage-conflict" style="font-size:0.78rem;opacity:0.8;margin:-4px 0 4px;color:var(--warning-color,#ffb000)">
+              ⚠︎ legacy helper disagrees: ${e.stageConflict}
+            </div>` : B}
 
         <div class="gauge-row">
           <div class="gauge">
@@ -1577,17 +1604,17 @@ let Tt = (_Class = class Tt extends at {
         </div>
 
         <div class="chip-row">
-          <span class="chip ${null === f.on ? "" : f.on ? "on" : "off"}">
-            💧 dehum ${f.label}
+          <span class="chip ${null === g.on ? "" : g.on ? "on" : "off"}">
+            💧 dehum ${g.label}
           </span>
           ${null !== e.dryRun ? I`<span class="chip ${e.dryRun ? "dryrun" : "off"}">${e.dryRun ? "DRY RUN" : "live"}</span>` : B}
           ${null !== e.adaptation ? I`<span class="chip ${e.adaptation ? "on" : "off"}">adaptation ${e.adaptation ? "on" : "off"}</span>` : B}
           ${m ? I`<span class="chip">${m}</span>` : B}
         </div>
-        ${f.reason ? I`<p class="dehum-reason">reason: ${f.reason}</p>` : B}
+        ${g.reason ? I`<p class="dehum-reason">reason: ${g.reason}</p>` : B}
 
         <div class="terms">
-          ${g.map(t => I`
+          ${f.map(t => I`
               <div class="term ${t.active ? "active" : ""}">
                 <div class="term-name">
                   <span>${t.label}</span>
