@@ -136,6 +136,14 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_STAGE_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain=["input_select", "select"])
             ),
+            vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
+            vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
+            vol.Optional(CONF_WAVEMAKER_ENTITY): EntitySelector(
+                EntitySelectorConfig(domain="switch")
+            ),
+            vol.Optional(CONF_WAVEMAKER_MODE): SelectSelector(
+                SelectSelectorConfig(options=[{"value": m, "label": m} for m in WAVEMAKER_MODES])
+            ),
             vol.Required(CONF_DRY_RUN, default=True): BooleanSelector(),
         }
         return self.async_show_form(
