@@ -10,6 +10,14 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
+    SelectSelector,
+    SelectSelectorConfig,
+    TimeSelector,
+    TimeSelectorConfig,
+)
 from .const import (
     CONF_DRY_RUN,
     CONF_DEHUM_ENTITY,
@@ -37,24 +45,79 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# All source-entity fields use PLAIN str validators. EntitySelector markers
-# in a custom integration's flow schema are not JSON-serializable by
-# voluptuous-serialize (HA 2026.8) and 500 the whole dialog — this exact
-# bug shipped in v0.5.6 ("Config flow could not be loaded: 500"). The
-# strings.json field descriptions document the expected entity type, and
-# the coordinator validates the referenced entity exists at runtime.
-# Regressed against by tests/test_flow_serialization.py.
-ENTITY_SCHEMA_KEYS = {
-    vol.Required(CONF_FAN_ENTITY): str,
-    vol.Required(CONF_TENT_TEMP_ENTITY): str,
-    vol.Required(CONF_TENT_RH_ENTITY): str,
+# Source-entity fields with FILTERED ENTITY PICKERS.
+#
+# Invariant that prevents the v0.5.6 500 ("Object of type Required is not
+# JSON serializable"): the KEYS of this map are PLAIN STRINGS and the VALUES
+# are Selector objects. Steps must wrap them as
+#     vol.Optional(key_string, default=current): ENTITY_SELECTORS[key_string]
+# — NEVER vol.Optional(some_marker): HA's flow serializer (helpers/
+# config_validation.py custom_serializer) handles selector.Selector via
+# .serialize(), but a marker nested inside a marker serializes the inner
+# marker as the field NAME -> 500. Regressed against by
+# tests/test_flow_serialization.py (double-wrap + JSON round-trip).
+ENTITY_SELECTORS = {
+    CONF_FAN_ENTITY: EntitySelector(EntitySelectorConfig(domain="fan")),
+    CONF_TENT_TEMP_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain="sensor", device_class="temperature")
+    ),
+    CONF_TENT_RH_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain="sensor", device_class="humidity")
+    ),
     # Everything below degrades gracefully when omitted — the flow tells the
     # user what stops working (labels), the logic never breaks.
-    vol.Optional(CONF_DEHUM_ENTITY): str,
-    vol.Optional(CONF_HUM_ENTITY): str,
-    vol.Optional(CONF_LUNG_TEMP_ENTITY): str,
-    vol.Optional(CONF_LUNG_RH_ENTITY): str,
+    CONF_DEHUM_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain=["switch", "humidifier"])
+    ),
+    CONF_HUM_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain=["humidifier", "switch", "valve"])
+    ),
+    CONF_LUNG_TEMP_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain="sensor", device_class="temperature")
+    ),
+    CONF_LUNG_RH_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain="sensor", device_class="humidity")
+    ),
+    CONF_VPD_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor")),
+    CONF_LAMP_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
+    ),
+    CONF_CAMERA_ENTITY: EntitySelector(EntitySelectorConfig(domain="camera")),
+    CONF_WAVEMAKER_ENTITY: EntitySelector(EntitySelectorConfig(domain="switch")),
 }
+
+REQUIRED_ENTITY_KEYS = (CONF_FAN_ENTITY, CONF_TENT_TEMP_ENTITY, CONF_TENT_RH_ENTITY)
+
+OPTIONAL_ENTITY_KEYS = tuple(
+    k for k in ENTITY_SELECTORS if k not in REQUIRED_ENTITY_KEYS
+)
+
+
+def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
+    """Marker-keyed schema for source entities, prefilled from stored data.
+
+    `entry_or_data` is any mapping-like with .get() (entry.data, entry.options
+    merged, or a plain dict). Keys are vol.Optional over PLAIN STRINGS; values
+    are the shared Selector objects — see ENTITY_SELECTORS for the invariant.
+    Optional fields are pure Selectors — HA's frontend omits cleared
+    fields instead of sending "" (vol.Any("", selector) would itself be
+    unserializable). API callers must do the same.
+    """
+    schema: dict = {}
+    for key in REQUIRED_ENTITY_KEYS:
+        schema[vol.Required(key, default=entry_or_data.get(key))] = (
+            ENTITY_SELECTORS[key]
+        )
+    for key in OPTIONAL_ENTITY_KEYS:
+        current = entry_or_data.get(key) or None
+        if current is None:
+            # No default: HA renders an empty picker and validates nothing
+            # for this key unless the user picks an entity. A default=""
+            # would itself fail EntitySelector validation.
+            schema[vol.Optional(key)] = ENTITY_SELECTORS[key]
+        else:
+            schema[vol.Optional(key, default=current)] = ENTITY_SELECTORS[key]
+    return schema
 
 
 class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -106,19 +169,16 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 return await self.async_step_extras()
 
-        # Plain str/bool validators only — see the note on ENTITY_SCHEMA_KEYS:
-        # selector objects (EntitySelector/TimeSelector/SelectSelector) in a
-        # custom integration's schema 500 the dialog via voluptuous-serialize.
         schema = {
             vol.Optional(CONF_NAME, default=""): str,
-            **ENTITY_SCHEMA_KEYS,
-            vol.Optional(CONF_VPD_ENTITY): str,
-            vol.Optional(CONF_LAMP_ENTITY): str,
-            vol.Optional(CONF_CAMERA_ENTITY): str,
-            vol.Optional(CONF_LIGHTS_ON_TIME): str,
-            vol.Optional(CONF_LIGHTS_OFF_TIME): str,
-            vol.Optional(CONF_WAVEMAKER_ENTITY): str,
-            vol.Optional(CONF_WAVEMAKER_MODE): str,
+            **_entity_schema(self._data),
+            vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
+            vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
+            vol.Optional(CONF_WAVEMAKER_MODE): SelectSelector(
+                SelectSelectorConfig(
+                    options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
+                )
+            ),
             vol.Required(CONF_DRY_RUN, default=True): bool,
         }
         return self.async_show_form(
@@ -137,9 +197,15 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         schema = {
-            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): str,
-            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): str,
-            vol.Required("stage", default="Flowering"): str,
+            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): EntitySelector(
+                EntitySelectorConfig(domain="automation")
+            ),
+            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): EntitySelector(
+                EntitySelectorConfig(domain="automation")
+            ),
+            vol.Required("stage", default="Flowering"): SelectSelector(
+                SelectSelectorConfig(options=[{"value": s, "label": s} for s in STAGES])
+            ),
         }
         return self.async_show_form(step_id="extras", data_schema=vol.Schema(schema))
 
@@ -160,29 +226,12 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_abort(reason="reconfigure_successful")
 
-        # All fields are plain str validators: EntitySelector markers in a
-        # custom integration's flow schema are not JSON-serializable by
-        # voluptuous-serialize (HA 2026.8) and 500 the Reconfigure dialog
-        # (the exact bug from the v0.5.6 release). Descriptions in
-        # strings.json explain the expected entity type per field.
-        # ENTITY_SCHEMA_KEYS values are plain `str`; its KEYS are vol markers.
-        # Use marker.schema (the plain string) — NEVER nest a marker inside
-        # another marker: voluptuous-serialize then emits the inner Required
-        # object as the field name and HA's JSON encoder 500s the dialog.
-        schema = {
-            vol.Optional(
-                k.schema,
-                default=entry.options.get(k.schema) or entry.data.get(k.schema, ""),
-            ): str
-            for k in ENTITY_SCHEMA_KEYS
-        }
-        from .const import CONF_CAMERA_ENTITY as _CAM, CONF_LAMP_ENTITY as _LAMP
-        schema[vol.Optional(
-            _CAM, default=entry.options.get(_CAM) or entry.data.get(_CAM, "")
-        )] = str
-        schema[vol.Optional(
-            _LAMP, default=entry.options.get(_LAMP) or entry.data.get(_LAMP, "")
-        )] = str
+        # Filtered pickers, prefilled from options-then-data. The
+        # ENTITY_SELECTORS invariant (plain-string marker keys, Selector
+        # values, no double-wrapping) is what keeps this dialog from 500ing —
+        # see the comment there and tests/test_flow_serialization.py.
+        merged = {**entry.data, **entry.options}
+        schema = _entity_schema(merged)
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )
@@ -227,28 +276,11 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
             CONF_VPD_GAIN,
         )
 
-        # Source entities are configurable here too, so everything lives in
-        # one dialog. Rendered as PLAIN TEXT inputs: EntitySelector markers in
-        # a custom integration's flow schema are not JSON-serializable by
-        # voluptuous-serialize in HA 2026.8 and 500 the whole dialog. The
-        # strings.json descriptions name the expected entity type per field.
-        entity_fields = {}
-        for k in (
-            CONF_FAN_ENTITY,
-            CONF_TENT_TEMP_ENTITY,
-            CONF_TENT_RH_ENTITY,
-            CONF_DEHUM_ENTITY,
-            CONF_LUNG_TEMP_ENTITY,
-            CONF_LUNG_RH_ENTITY,
-            CONF_VPD_ENTITY,
-            CONF_LAMP_ENTITY,
-            CONF_CAMERA_ENTITY,
-        ):
-            current_val = (
-                self.config_entry.options.get(k)
-                or self.config_entry.data.get(k)
-            )
-            entity_fields[vol.Optional(k, default=current_val)] = str
+        # Source entities live here too, with FILTERED PICKERS (options-first
+        # defaults). Same invariant as everywhere: plain-string keys, Selector
+        # values — see ENTITY_SELECTORS / tests/test_flow_serialization.py.
+        merged = {**self.config_entry.data, **self.config_entry.options}
+        entity_fields = _entity_schema(merged)
         schema = vol.Schema(
             {
                 **entity_fields,

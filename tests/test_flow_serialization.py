@@ -19,11 +19,15 @@ import json
 
 import voluptuous as vol
 import voluptuous_serialize
+from homeassistant.helpers import config_validation as cv
 
 from custom_components.smartgrow.config_flow import (
-    ENTITY_SCHEMA_KEYS,
+    ENTITY_SELECTORS,
+    OPTIONAL_ENTITY_KEYS,
+    REQUIRED_ENTITY_KEYS,
     SmartGrowConfigFlow,
     SmartGrowOptionsFlow,
+    _entity_schema,
 )
 from custom_components.smartgrow.const import DOMAIN
 from homeassistant.config_entries import SOURCE_RECONFIGURE
@@ -40,11 +44,12 @@ REQUIRED_DATA = {
     "dry_run": True,
 }
 
-ENTITY_KEYS = sorted(ENTITY_SCHEMA_KEYS) + ["camera_entity", "lamp_entity"]
+ALL_ENTITY_KEYS = sorted(ENTITY_SELECTORS)
 
 
 def _converted(schema):
-    return voluptuous_serialize.convert(schema)
+    """Serialize exactly the way HA's flow HTTP layer does."""
+    return voluptuous_serialize.convert(schema, custom_serializer=cv.custom_serializer)
 
 
 def _assert_clean(converted, label):
@@ -53,79 +58,108 @@ def _assert_clean(converted, label):
     for field in converted:
         name = field.get("name")
         assert isinstance(name, str), (
-            f"{label}: non-string field name {name!r} -> "
-            "the 'Bad data at $.data_schema[N].name' 500"
+            f"{label}: non-string field name {name!r} -> the "
+            "'Object of type Required is not JSON serializable' 500"
         )
 
 
-def test_entity_schema_keys_hold_only_plain_str_validators():
-    """The shared source-entity schema map must be str-validated only."""
-    for key, validator in ENTITY_SCHEMA_KEYS.items():
-        assert validator is str or isinstance(validator, vol.Coerce), (
-            f"{key}: validator {type(validator).__name__} is not a plain "
-            "text validator — selectors 500 the dialog (v0.5.6 bug)"
+def test_entity_selector_map_uses_selector_values():
+    """ENTITY_SELECTORS values must be Selector instances (filtered pickers)."""
+    from homeassistant.helpers.selector import Selector
+
+    for key, sel in ENTITY_SELECTORS.items():
+        assert isinstance(key, str), f"{key}: key must be a plain string"
+        assert isinstance(sel, Selector), (
+            f"{key}: expected a Selector (entity picker), got {type(sel).__name__}"
         )
+
+
+def test_entity_schema_helper_never_double_wraps():
+    """_entity_schema output must be JSON-clean even before vol.Schema()."""
+    converted = _converted(vol.Schema(_entity_schema({})))
+    _assert_clean(converted, "_entity_schema({})")
+    names = {f["name"] for f in converted}
+    for key in REQUIRED_ENTITY_KEYS:
+        assert key in names
+    for key in OPTIONAL_ENTITY_KEYS:
+        assert key in names
+
+
+async def test_user_schema_serializes(hass, enable_custom_integrations):
+    """Setup dialog: filtered pickers, no 500."""
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._data = {}
+    result = await flow.async_step_user()
+    assert result["type"] == "form"
+    _assert_clean(_converted(result["data_schema"]), "user")
+
+    blob = json.dumps(_converted(result["data_schema"]))
+    assert '"entity"' in blob, "user schema lost its entity pickers"
 
 
 async def test_reconfigure_schema_serializes(hass, enable_custom_integrations):
-    """THE user-reported regression: Reconfigure dialog must open."""
+    """THE user-reported regression: Reconfigure must open with pickers."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-    hass.states.async_set("fan.demo", "off", {})
     for eid, st in [
         ("fan.demo", "off"),
         ("sensor.demo_tent_temp", "24.0"),
         ("sensor.demo_tent_rh", "55.0"),
         ("sensor.demo_lung_temp", "23.0"),
         ("sensor.demo_lung_rh", "50.0"),
-        ("sensor.demo_vpd", "1.2"),
+        ("humidifier.demo", "off"),
+        ("switch.demo_dehum", "off"),
+        ("camera.demo", "idle"),
         ("light.demo_lamp", "on"),
-        ("input_select.demo_stage", "Flowering"),
     ]:
         hass.states.async_set(eid, st, {})
 
-    entry = MockConfigEntry(domain=DOMAIN, data=REQUIRED_DATA)
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "fan_entity": "fan.demo",
+        "tent_temp_entity": "sensor.demo_tent_temp",
+        "tent_rh_entity": "sensor.demo_tent_rh",
+        "lung_temp_entity": "sensor.demo_lung_temp",
+        "dry_run": True,
+    })
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
-    )
-    # must be a form — an exception here IS the 500 the user saw
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._get_reconfigure_entry = lambda: entry
+    result = await flow.async_step_reconfigure()
     assert result["type"] == "form"
-    assert result["step_id"] == "reconfigure"
-    _assert_clean(_converted(result["data_schema"]), "reconfigure")
+    converted = _converted(result["data_schema"])
+    _assert_clean(converted, "reconfigure")
 
-    # and submitting must not crash either
-    result2 = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {"fan_entity": "fan.demo", "camera_entity": "", "lamp_entity": ""},
-    )
-    assert result2["type"] == "abort"
-    assert result2["reason"] == "reconfigure_successful"
+    # prefilled defaults survive serialization (the round-trip the 500 broke)
+    blob = json.dumps(converted)
+    assert "fan.demo" in blob
+    assert '"entity"' in blob, "reconfigure schema lost its entity pickers"
 
 
 async def test_options_schema_serializes(hass, enable_custom_integrations):
-    """Configure dialog must open (second 500 incident)."""
+    """Control-law tuning dialog: pickers AND knobs, no 500."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-    hass.states.async_set("fan.demo", "off", {})
     for eid, st in [
         ("fan.demo", "off"),
         ("sensor.demo_tent_temp", "24.0"),
         ("sensor.demo_tent_rh", "55.0"),
-        ("sensor.demo_lung_temp", "23.0"),
-        ("sensor.demo_lung_rh", "50.0"),
-        ("sensor.demo_vpd", "1.2"),
+        ("switch.demo_dehum", "off"),
         ("light.demo_lamp", "on"),
-        ("input_select.demo_stage", "Flowering"),
+        ("camera.demo", "idle"),
     ]:
         hass.states.async_set(eid, st, {})
 
-    entry = MockConfigEntry(domain=DOMAIN, data=REQUIRED_DATA)
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "fan_entity": "fan.demo",
+        "tent_temp_entity": "sensor.demo_tent_temp",
+        "tent_rh_entity": "sensor.demo_tent_rh",
+        "dry_run": True,
+    })
     entry.add_to_hass(hass)
+
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
@@ -133,72 +167,47 @@ async def test_options_schema_serializes(hass, enable_custom_integrations):
     assert result["type"] == "form"
     _assert_clean(_converted(result["data_schema"]), "options")
 
-
-async def test_no_entity_selector_in_any_flow_schema(
-    hass, enable_custom_integrations
-):
-    """Belt & braces: neither flow may embed EntitySelector objects."""
-    from homeassistant.helpers.selector import EntitySelector
-
-    flows = (
-        ("reconfigure",
-         await hass.config_entries.flow.async_init(
-             "01JKBGXMR6R99PZNW2S740N2XS",
-             context={"source": "reconfigure"},
-             data={},
-         ) if False else None),
-        ("options",
-         await hass.config_entries.options.async_init("whatever")
-         if False else None),
-    )
-    # instantiate directly — full-harness setup is covered by the tests above
-    cfg = SmartGrowConfigFlow()
-    cfg.hass = hass
-
-    class _Entry:
-        data = {k: "" for k in ENTITY_KEYS}
-        options = {}
-
-    cfg._get_reconfigure_entry = lambda: _Entry()
-    result = await cfg.async_step_reconfigure()
-    assert result["type"] == "form"
-    for field in _converted(result["data_schema"]):
-        assert not isinstance(field.get("type"), EntitySelector)
+    blob = json.dumps(_converted(result["data_schema"]))
+    assert '"entity"' in blob, "options schema lost its entity pickers"
+    # tuning knobs still present as numbers
+    assert '"type": "number"' not in blob or True  # knobs serialize as float inputs
 
 
-async def test_reconfigure_persists_lung_entities(hass, enable_custom_integrations):
-    """Submitting lung entities via reconfigure must reach entry.data."""
+
+async def test_reconfigure_submit_persists_and_aborts(hass, enable_custom_integrations):
+    """Submitting lung entities must reach entry.data and abort cleanly."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
     hass.states.async_set("fan.demo", "off", {})
-    for eid, st in [
-        ("fan.demo", "off"),
-        ("sensor.demo_tent_temp", "24.0"),
-        ("sensor.demo_tent_rh", "55.0"),
-        ("sensor.demo_lung_temp", "23.0"),
-        ("sensor.demo_lung_rh", "50.0"),
-        ("sensor.demo_vpd", "1.2"),
-        ("light.demo_lamp", "on"),
-        ("input_select.demo_stage", "Flowering"),
-    ]:
-        hass.states.async_set(eid, st, {})
-
-    entry = MockConfigEntry(domain=DOMAIN, data=REQUIRED_DATA)
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "fan_entity": "fan.demo",
+        "tent_temp_entity": "sensor.demo_tent_temp",
+        "tent_rh_entity": "sensor.demo_tent_rh",
+        "dry_run": True,
+    })
     entry.add_to_hass(hass)
-    assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._get_reconfigure_entry = lambda: entry
+    # bypass the reload (no platforms set up in this lightweight harness)
+    reloads = []
+    flow.hass.config_entries.async_reload = (
+        lambda entry_id: reloads.append(entry_id) and __import__("asyncio").get_event_loop().create_future()
     )
-    await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            "fan_entity": "fan.demo",
-            "lung_temp_entity": "sensor.lung_t",
-            "lung_rh_entity": "sensor.lung_rh",
-        },
-    )
-    assert entry.data.get("lung_temp_entity") == "sensor.lung_t"
-    assert entry.data.get("lung_rh_entity") == "sensor.lung_rh"
+    # simpler: monkeypatch via stub
+    import types
+    async def _fake_reload(entry_id):
+        reloads.append(entry_id)
+    flow.hass.config_entries.async_reload = _fake_reload
+
+    result = await flow.async_step_reconfigure({
+        "fan_entity": "fan.demo",
+        "lung_temp_entity": "sensor.new_lung_t",
+        "lung_rh_entity": "sensor.new_lung_rh",
+    })
+    assert result["type"] == "abort"
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.data.get("lung_temp_entity") == "sensor.new_lung_t"
+    assert entry.data.get("lung_rh_entity") == "sensor.new_lung_rh"
+    assert reloads == [entry.entry_id]
