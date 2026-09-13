@@ -339,6 +339,17 @@ export function applySourceEntities(
       out[kind] = fromIntegration;
     }
   }
+  // Integration-owned entities can also carry the device label in their id
+  // (sensor.growbox_1_smartgrow_phase). If the prefix-derived id does not
+  // exist, follow the one that does.
+  if (out.phase && !hass?.states?.[out.phase]) {
+    for (const eid of Object.keys(hass?.states ?? {})) {
+      if (/^sensor\..*_smartgrow_phase$/.test(eid)) {
+        out.phase = eid;
+        break;
+      }
+    }
+  }
   return out;
 }
 

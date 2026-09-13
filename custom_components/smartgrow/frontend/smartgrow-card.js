@@ -1104,37 +1104,21 @@ function At(t, e) {
   for (const [t, s] of Object.entries(e !== null && e !== void 0 ? e : {})) !(t in n) && s && (n[t] = s);
   return n;
 }
-function kt(t, e, s, i) {
-  const n = {
-      ...s
-    },
-    r = function (t, e) {
-      if (!(t !== null && t !== void 0 && t.states)) return {};
-      const s = e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
-        i = [`sensor.${s}_sources`, `sensor.${s}_configured_sources`];
-      for (const e of Object.keys(t.states)) (e.endsWith("_smartgrow_configured_sources") || e.endsWith("_smartgrow_sources")) && i.push(e);
-      for (const e of i) {
-        var _s$attributes;
-        const s = t.states[e];
-        if (!s) continue;
-        const i = (_s$attributes = s.attributes) !== null && _s$attributes !== void 0 ? _s$attributes : {},
-          n = {};
-        for (const [t, e] of Object.entries(i)) t.endsWith("_entity") && "string" == typeof e && e.length > 0 && (n[t] = e);
-        if (Object.keys(n).length > 0) return n;
-      }
-      return {};
-    }(t, e),
-    a = ["vpd", "camera", "lamp"];
-  for (const t of a) {
-    const e = i === null || i === void 0 ? void 0 : i[t];
-    if (e && e.length > 0) {
-      n[t] = e;
-      continue;
-    }
-    const s = r[`${t}_entity`];
-    s && (n[t] = s);
+function kt(t, e) {
+  if (!(t !== null && t !== void 0 && t.states)) return {};
+  const s = e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
+    i = [`sensor.${s}_sources`, `sensor.${s}_configured_sources`];
+  for (const e of Object.keys(t.states)) (e.endsWith("_smartgrow_configured_sources") || e.endsWith("_smartgrow_sources")) && i.push(e);
+  for (const e of i) {
+    var _s$attributes;
+    const s = t.states[e];
+    if (!s) continue;
+    const i = (_s$attributes = s.attributes) !== null && _s$attributes !== void 0 ? _s$attributes : {},
+      n = {};
+    for (const [t, e] of Object.entries(i)) t.endsWith("_entity") && "string" == typeof e && e.length > 0 && (n[t] = e);
+    if ("number" == typeof i.vpd_computed && (n.vpd_computed = i.vpd_computed), Object.keys(n).length > 0) return n;
   }
-  return n;
+  return {};
 }
 function St(t, e) {
   var _s$attributes2;
@@ -1216,12 +1200,12 @@ function Et(t, e, s) {
   let f = null;
   const g = St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "");
   if (g.missing || (f = _t(g.state)), null === f) {
-    var _e$fan_target, _t$states3, _t$states4, _t$states5, _i$attributes;
-    const s = ((_e$fan_target = e.fan_target) !== null && _e$fan_target !== void 0 ? _e$fan_target : "").replace(/^sensor\./, "").replace(/_fan_target$/, ""),
-      i = (_t$states3 = t === null || t === void 0 || (_t$states4 = t.states) === null || _t$states4 === void 0 ? void 0 : _t$states4[`sensor.${s}_configured_sources`]) !== null && _t$states3 !== void 0 ? _t$states3 : t === null || t === void 0 || (_t$states5 = t.states) === null || _t$states5 === void 0 ? void 0 : _t$states5[`sensor.${s}_sources`],
-      n = i === null || i === void 0 || (_i$attributes = i.attributes) === null || _i$attributes === void 0 ? void 0 : _i$attributes.vpd_computed;
-    if ("number" == typeof n) f = n;else if ("string" == typeof n) {
-      const t = Number.parseFloat(n);
+    const s = kt(t, e.fan_target ? function (t, _t$fan_target) {
+        return ((_t$fan_target = t.fan_target) !== null && _t$fan_target !== void 0 ? _t$fan_target : "").replace(/^sensor\./, "").replace(/_fan_target$/, "");
+      }(e) : ""),
+      i = s.vpd_computed;
+    if ("number" == typeof i) f = i;else if ("string" == typeof i) {
+      const t = Number.parseFloat(i);
       Number.isFinite(t) && (f = t);
     }
   }
@@ -1268,9 +1252,9 @@ function Ct(t) {
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
 function Pt(t, e) {
-  var _e$attrs, _t$states6;
+  var _e$attrs, _t$states3;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states6 = t.states) !== null && _t$states6 !== void 0 && _t$states6[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
@@ -1474,7 +1458,30 @@ let Nt = (_Class = class Nt extends at {
       s && s !== t && (Rt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
     }
     const i = (_Rt$_prefixOverride = Rt._prefixOverride) !== null && _Rt$_prefixOverride !== void 0 ? _Rt$_prefixOverride : t;
-    return Rt._prefixOverride = null, kt(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
+    return Rt._prefixOverride = null, function (t, e, s, i, _t$states4) {
+      const n = {
+          ...s
+        },
+        r = kt(t, e),
+        a = ["vpd", "camera", "lamp"];
+      for (const t of a) {
+        const e = i === null || i === void 0 ? void 0 : i[t];
+        if (e && e.length > 0) {
+          n[t] = e;
+          continue;
+        }
+        const s = r[`${t}_entity`];
+        "string" == typeof s && s && (n[t] = s);
+      }
+      if (n.phase && !(t !== null && t !== void 0 && (_t$states4 = t.states) !== null && _t$states4 !== void 0 && _t$states4[n.phase])) for (const e of Object.keys((_t$states5 = t === null || t === void 0 ? void 0 : t.states) !== null && _t$states5 !== void 0 ? _t$states5 : {})) {
+        var _t$states5;
+        if (/^sensor\..*_smartgrow_phase$/.test(e)) {
+          n.phase = e;
+          break;
+        }
+      }
+      return n;
+    }(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
   }
   async _maybeLoadSparkline() {
     var _this$hass$states;
