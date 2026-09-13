@@ -112,12 +112,15 @@ def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
     for key in OPTIONAL_ENTITY_KEYS:
         current = entry_or_data.get(key) or None
         if current is None:
-            # No default: HA renders an empty picker and validates nothing
-            # for this key unless the user picks an entity. A default=""
-            # would itself fail EntitySelector validation.
             schema[vol.Optional(key)] = ENTITY_SELECTORS[key]
         else:
-            schema[vol.Optional(key, default=current)] = ENTITY_SELECTORS[key]
+            # suggested_value (NOT default=): renders prefilled but is never
+            # materialized into user_input by validation when the frontend
+            # omits the key (cleared picker). A vol default would re-inject
+            # the old value server-side, making "cleared" undetectable.
+            schema[
+                vol.Optional(key, description={"suggested_value": current})
+            ] = ENTITY_SELECTORS[key]
     return schema
 
 
