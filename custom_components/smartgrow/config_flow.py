@@ -19,6 +19,7 @@ from homeassistant.helpers.selector import (
     TimeSelectorConfig,
 )
 from .const import (
+    CONF_CLEAR_OPTIONAL_SOURCES,
     CONF_DRY_RUN,
     CONF_DEHUM_ENTITY,
     CONF_HUM_ENTITY,
@@ -222,6 +223,21 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()  # provided by ConfigFlow
         if user_input is not None:
             new_data = {**entry.data, **user_input}
+            if user_input.get(CONF_CLEAR_OPTIONAL_SOURCES):
+                # Selector fields can't submit "" (EntitySelector rejects it and
+                # the browser omits cleared keys) — this flag is the explicit
+                # "unset the optional external sources" affordance.
+                for key in (
+                    CONF_VPD_ENTITY,
+                    CONF_LAMP_ENTITY,
+                    CONF_CAMERA_ENTITY,
+                    CONF_HUM_ENTITY,
+                    CONF_DEHUM_ENTITY,
+                    CONF_LUNG_TEMP_ENTITY,
+                    CONF_LUNG_RH_ENTITY,
+                ):
+                    new_data.pop(key, None)
+            new_data.pop(CONF_CLEAR_OPTIONAL_SOURCES, None)
             self.hass.config_entries.async_update_entry(entry, data=new_data)
             await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_abort(reason="reconfigure_successful")
@@ -231,7 +247,14 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # values, no double-wrapping) is what keeps this dialog from 500ing —
         # see the comment there and tests/test_flow_serialization.py.
         merged = {**entry.data, **entry.options}
-        schema = _entity_schema(merged)
+        schema = {
+            **_entity_schema(merged),
+            vol.Required(
+                CONF_CLEAR_OPTIONAL_SOURCES,
+                default=False,
+                description={"suggested_value": False},
+            ): bool,
+        }
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )

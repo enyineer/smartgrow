@@ -211,3 +211,53 @@ async def test_reconfigure_submit_persists_and_aborts(hass, enable_custom_integr
     assert entry.data.get("lung_temp_entity") == "sensor.new_lung_t"
     assert entry.data.get("lung_rh_entity") == "sensor.new_lung_rh"
     assert reloads == [entry.entry_id]
+
+
+async def test_reconfigure_clear_optional_sources(hass, enable_custom_integrations):
+    """The clear flag must remove optional external sources from entry.data."""
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    for eid, st in [
+        ("fan.demo", "off"),
+        ("sensor.demo_tent_temp", "24.0"),
+        ("sensor.demo_tent_rh", "55.0"),
+        ("sensor.demo_lung_temp", "23.0"),
+        ("sensor.demo_lung_rh", "50.0"),
+        ("switch.demo_dehum", "off"),
+    ]:
+        hass.states.async_set(eid, st, {})
+
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "fan_entity": "fan.demo",
+        "tent_temp_entity": "sensor.demo_tent_temp",
+        "tent_rh_entity": "sensor.demo_tent_rh",
+        "lung_temp_entity": "sensor.demo_lung_temp",
+        "lung_rh_entity": "sensor.demo_lung_rh",
+        "vpd_entity": "sensor.demo_vpd",
+        "camera_entity": "camera.demo",
+        "dry_run": True,
+    })
+    entry.add_to_hass(hass)
+
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._get_reconfigure_entry = lambda: entry
+    import types
+    async def _fake_reload(entry_id):
+        pass
+    hass.config_entries.async_reload = _fake_reload
+
+    result = await flow.async_step_reconfigure({
+        "fan_entity": "fan.demo",
+        "tent_temp_entity": "sensor.demo_tent_temp",
+        "tent_rh_entity": "sensor.demo_tent_rh",
+        "clear_optional_sources": True,
+    })
+    assert result["type"] == "abort"
+    assert result["reason"] == "reconfigure_successful"
+    # required sources kept, optional externals cleared, flag not stored
+    assert entry.data.get("fan_entity") == "fan.demo"
+    assert "vpd_entity" not in entry.data
+    assert "camera_entity" not in entry.data
+    assert "lung_temp_entity" not in entry.data
+    assert "clear_optional_sources" not in entry.data
