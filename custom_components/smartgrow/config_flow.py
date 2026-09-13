@@ -245,8 +245,26 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
             CONF_VPD_GAIN,
         )
 
+        # Source entities are configurable here too, so everything lives in
+        # one dialog (the dedicated reconfigure flow was removed).
+        entity_fields = {}
+        for k, sel in ENTITY_SCHEMA_KEYS.items():
+            entity_fields[vol.Optional(
+                k, default=self.config_entry.data.get(k)
+            )] = sel
+        for extra_key, sel in (
+            (CONF_VPD_ENTITY, EntitySelector(EntitySelectorConfig(domain="sensor"))),
+            (CONF_LAMP_ENTITY, EntitySelector(EntitySelectorConfig(
+                domain=["light", "switch", "input_boolean"]))),
+            (CONF_CAMERA_ENTITY, EntitySelector(EntitySelectorConfig(domain="camera"))),
+        ):
+            entity_fields[vol.Optional(
+                extra_key, default=self.config_entry.data.get(extra_key)
+            )] = sel
+        schema = vol.Schema({**entity_fields, **{}}) if False else None
         schema = vol.Schema(
             {
+                **entity_fields,
                 vol.Required(
                     CONF_FAN_FLOOR_DAY, default=current[CONF_FAN_FLOOR_DAY]
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
