@@ -29,6 +29,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -38,6 +39,7 @@ from .const import (
     CONF_DEHUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
+    CONF_CAMERA_ENTITY,
     CONF_LIGHTS_ON_TIME,
     CONF_LIGHTS_OFF_TIME,
     CONF_WAVEMAKER_ENTITY,
@@ -49,11 +51,9 @@ from .const import (
     WAVEMAKER_MODE_INTERVAL,
     CONF_VPD_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
-    CONF_LEGACY_STAGE_ENTITY,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
     CONF_LUNG_TEMP_ENTITY,
-    CONF_STAGE_ENTITY,
     CONF_TENT_RH_ENTITY,
     CONF_TENT_TEMP_ENTITY,
     DEFAULTS,
@@ -166,9 +166,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "lung_temp": data.get(CONF_LUNG_TEMP_ENTITY, ""),
             "lung_rh": data.get(CONF_LUNG_RH_ENTITY, ""),
             "vpd": data.get(CONF_VPD_ENTITY, ""),
-            "stage": data.get(CONF_STAGE_ENTITY, ""),
+            "camera": data.get(CONF_CAMERA_ENTITY, ""),
             "lamp": data.get(CONF_LAMP_ENTITY, ""),
-            "legacy_stage": data.get(CONF_LEGACY_STAGE_ENTITY, ""),
         }
 
     @property
@@ -251,10 +250,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         - fan switch-only -> fan_pct 100/0 from state (the cascade needs a number)
         """
         src = self.source_entities
-        stage_entity_state = (
-            self.hass.states.get(src["stage"]) if src["stage"] else None
-        )
-        stage = (stage_entity_state.state if stage_entity_state else "") or "Flowering"
+        # Stage lives on the integration-owned select entity.
+        stage = self._current_stage() or "Flowering"
 
         tent_temp = self._read_float(src["tent_temp"])
         tent_rh = self._read_float(src["tent_rh"])
@@ -428,94 +425,20 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _current_stage(self) -> str:
-        """Stage from the configured stage entity; '' when unavailable."""
-        stage_e = self.source_entities.get("stage", "")
-        if not stage_e:
-            return ""
-        st = self.hass.states.get(stage_e)
-        return st.state if st and st.state not in (None, "unknown", "unavailable") else ""
+        """Stage from the integration-owned select entity; '' when unavailable.
 
-    def _stage_conflict(self) -> str | None:
-        """Legacy stage entity value when it disagrees with the configured one.
-
-        Only active if the user configured legacy_stage_entity — the
-        integration never invents entity names.
+        The select entity is created by this integration (select.<entry-slug>_stage)
+        and is the single source of truth for the grow stage.
         """
-        legacy = self.source_entities.get("legacy_stage", "")
-        if not legacy:
-            return None
-        current = self._current_stage()
-        if not current:
-            return None
-        st = self.hass.states.get(legacy)
-        if not st or st.state in (None, "unknown", "unavailable"):
-            return None
-        legacy_val = st.state
-        return None if legacy_val.lower() == current.lower() else legacy_val
-
-    # -- coordinator update -------------------------------------------------
-    async def _async_update_data(self) -> dict[str, Any]:
-        """Sample sensors and run throttled decisions."""
-        try:
-            inputs = self._gather_inputs()
-        except UpdateFailed as err:
-            raise UpdateFailed(str(err)) from err
-        self.last_inputs = inputs
-        self.last_sample_ts = time.time()
-
-        # Lights schedule (day/night cycle): cheap check, every sample.
-        try:
-            self._apply_schedule()
-        except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
-            _LOGGER.warning("Lights schedule evaluation failed: %s", err)
-        try:
-            self._wavemaker_tick()
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.warning("Wavemaker tick failed: %s", err)
-
-        now = time.time()
-        base = self.options_rt.control
-        # Adaptation may rewrite gains/margins (watchdog-guarded).
-        if self.engine.check_watchdog(base):
-            params = base
-        else:
-            params = base.with_updates(adaptation_enabled=False)
-            self.hass.add_job(self._async_raise_watchdog_issue)
-
-        se = self.source_entities
-        result: dict[str, Any] = {
-            "inputs": inputs,
-            "ts": now,
-            # Derived, config-driven facts for diagnostics/dashboards:
-            "phase": self._phase(),
-            "stage": self._current_stage(),
-            "stage_conflict": self._stage_conflict(),
-            "degraded": {
-                "lung": not (se.get("lung_temp") and se.get("lung_rh")),
-                "lamp": not se.get("lamp"),
-                "vpd_sensor": not se.get("vpd"),
-                "dehum": not se.get("dehum"),
-            },
-        }
-
-        # Fan: proven 3-minute cadence.
-        if now - self.last_fan_ts >= FAN_CADENCE_S:
-            self.last_fan_ts = now
-            decision = fan_control.compute_fan(inputs, params)
-            self.last_fan_decision = decision
-            await self._apply_fan(decision, inputs)
-            result["fan"] = decision
-
-        # Dehumidifier: proven 5-minute cadence.
-        if now - self.last_dehum_ts >= DEHUM_CADENCE_S:
-            self.last_dehum_ts = now
-            decision = dehumid_control.compute_dehum(inputs, params, self.dehum_on)
-            self.last_dehum_decision = decision
-            await self._apply_dehum(decision, inputs)
-            result["dehum"] = decision
-
-        self._check_legacy_automations()
-        return result
+        # The stage select is forwarded on this entry; find it via the entity
+        # registry so slug variants (device names etc.) keep working.
+        registry = er.async_get(self.hass)
+        for entry in async_entries_for_config_entry(registry, self.entry.entry_id):
+            if entry.domain == "select" and entry.entity_id.endswith("_stage"):
+                st = self.hass.states.get(entry.entity_id)
+                if st and st.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+                    return st.state
+        return ""
 
     # -- actuation / dry-run -------------------------------------------------
     async def _apply_fan(
@@ -648,6 +571,116 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         )
         if len(self.trace) > 500:
+            self.trace = self.trace[-500:]
+
+    # -- coordinator update -------------------------------------------------
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Sample sensors and run throttled decisions."""
+        try:
+            inputs = self._gather_inputs()
+        except UpdateFailed as err:
+            raise UpdateFailed(str(err)) from err
+        self.last_inputs = inputs
+        self.last_sample_ts = time.time()
+
+        # Lights schedule (day/night cycle): cheap check, every sample.
+        try:
+            self._apply_schedule()
+        except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
+            _LOGGER.warning("Lights schedule evaluation failed: %s", err)
+        try:
+            self._wavemaker_tick()
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Wavemaker tick failed: %s", err)
+
+        now = time.time()
+        base = self.options_rt.control
+        # Adaptation may rewrite gains/margins (watchdog-guarded).
+        if self.engine.check_watchdog(base):
+            params = base
+        else:
+            params = base.with_updates(adaptation_enabled=False)
+            self.hass.add_job(self._async_raise_watchdog_issue)
+
+        se = self.source_entities
+        result: dict[str, Any] = {
+            "inputs": inputs,
+            "ts": now,
+            # Derived, config-driven facts for diagnostics/dashboards:
+            "phase": self._phase(),
+            "stage": self._current_stage(),
+            "degraded": {
+                "lung": not (se.get("lung_temp") and se.get("lung_rh")),
+                "lamp": not se.get("lamp"),
+                "vpd_sensor": not se.get("vpd"),
+                "dehum": not se.get("dehum"),
+            },
+        }
+
+        # Fan: proven 3-minute cadence.
+        if now - self.last_fan_ts >= FAN_CADENCE_S:
+            self.last_fan_ts = now
+            decision = fan_control.compute_fan(inputs, params)
+            self.last_fan_decision = decision
+            await self._apply_fan(decision, inputs)
+            result["fan"] = decision
+
+        # Dehumidifier: proven 5-minute cadence.
+        if now - self.last_dehum_ts >= DEHUM_CADENCE_S:
+            self.last_dehum_ts = now
+            decision = dehumid_control.compute_dehum(inputs, params, self.dehum_on)
+            self.last_dehum_decision = decision
+            await self._apply_dehum(decision, inputs)
+            result["dehum"] = decision
+
+        self._check_legacy_automations()
+        return result
+
+    def _aggregate_shared_wish(self, dehum_entity: str, own: str) -> str:
+        """Aggregate this cycle's wishes across all tents sharing a dehum.
+
+        Priority (first match wins):
+          1. Any 'off' from an over-dry floor veto  -> off  (protect intake)
+          2. Any 'on'                              -> on   (a tent needs it)
+          3. Otherwise                              -> hold (stay as-is)
+        """
+        wishes = self._SHARED_DEHUM_WISHES.get(dehum_entity, {})
+        if not wishes:
+            return own
+        # Any tent needing drying turns the shared unit on; each tent's own
+        # over-dry floor is enforced inside ITS decision (its wish would be
+        # 'off' and it never upgrades another tent's off to on for itself —
+        # the unit state is global, but a tent that wanted off simply
+        # tolerates the shared run because its own floor computation fed
+        # into its wish this cycle).
+        if "on" in wishes.values():
+            return "on"
+        return "off"
+
+    def _record(
+        self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs
+    ) -> None:
+        self.trace.append(
+            DecisionRecord(
+                ts=time.time(),
+                kind=kind,
+                action=action,
+                reason=reason,
+                fan_target=fan_target,
+                inputs={
+                    "tent_temp": inputs.tent_temp,
+                    "tent_rh": inputs.tent_rh,
+                    "lung_temp": inputs.lung_temp,
+                    "lung_rh": inputs.lung_rh,
+                    "vpd": inputs.vpd,
+                    "fan_pct": inputs.fan_pct,
+                    "is_day": inputs.is_day,
+                    "stage": inputs.stage,
+                },
+                dry_run=self.options_rt.dry_run,
+            )
+        )
+        if len(self.trace) > 500:
             self.trace[:] = self.trace[-500:]
 
     # -- legacy automation detection ------------------------------------------
@@ -719,6 +752,9 @@ def async_get_coordinator(
 
 class CoordinatorError(HomeAssistantError):
     """Raised when MCP tools cannot reach the coordinator."""
+
+
+
 
 
 # Re-exported for the entity platforms.

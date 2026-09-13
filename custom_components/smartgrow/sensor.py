@@ -348,6 +348,5 @@ class PhaseSensor(SmartGrowEntity, SensorEntity):
         data = self.coordinator.data or {}
         return {
             "stage": data.get("stage", ""),
-            "stage_conflict": data.get("stage_conflict"),
             "source": "configured lamp_entity",
         }

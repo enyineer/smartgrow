@@ -25,12 +25,11 @@ from .const import (
     CONF_DEHUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
-    CONF_LEGACY_STAGE_ENTITY,
+    CONF_CAMERA_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
     CONF_LUNG_TEMP_ENTITY,
-    CONF_STAGE_ENTITY,
     CONF_TENT_RH_ENTITY,
     CONF_TENT_TEMP_ENTITY,
     CONF_VPD_ENTITY,
@@ -130,11 +129,8 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_LAMP_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
             ),
-            vol.Optional(CONF_LEGACY_STAGE_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain="input_select")
-            ),
-            vol.Optional(CONF_STAGE_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain=["input_select", "select"])
+            vol.Optional(CONF_CAMERA_ENTITY, description="Camera (optional)"): EntitySelector(
+                EntitySelectorConfig(domain="camera")
             ),
             vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
             vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
