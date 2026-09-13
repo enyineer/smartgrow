@@ -214,8 +214,9 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
         # Live VPD actually used by the control law (linked sensor if configured,
         # otherwise computed from tent temp/RH). The card displays this when no
         # vpd_entity is linked.
-        inputs = getattr(self.coordinator, "data", None)
-        vpd = getattr(inputs, "vpd", None) if inputs else None
+        data = getattr(self.coordinator, "data", None) or {}
+        inputs = data.get("inputs") if isinstance(data, dict) else None
+        vpd = getattr(inputs, "vpd", None)
         attrs["vpd_computed"] = round(vpd, 3) if isinstance(vpd, (int, float)) else None
         return attrs
 
