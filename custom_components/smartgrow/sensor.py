@@ -42,6 +42,7 @@ async def async_setup_entry(
         DryRunSensor(coordinator, entry),
         Cycles24hSensor(coordinator, entry),
         StaleSensor(coordinator, entry),
+        PhaseSensor(coordinator, entry),
     ]
     async_add_entities(entities)
 
@@ -320,3 +321,33 @@ class StaleSensor(SmartGrowEntity, SensorEntity):
     def native_value(self) -> int | None:
         age = self.coordinator.stale_seconds()
         return int(age) if age is not None else None
+
+
+class PhaseSensor(SmartGrowEntity, SensorEntity):
+    """Day/night phase, derived from the user-configured lamp entity.
+
+    'unknown' when no lamp is configured or its state is unavailable —
+    the integration never guesses from the clock.
+    """
+
+    _attr_name = "SmartGrow phase"
+    _attr_icon = "mdi:weather-sunny"
+
+    def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry)
+        self.coordinator = coordinator
+        self.entry = entry
+        self._attr_unique_id = _uid(entry, "phase")
+
+    @property
+    def native_value(self) -> str:
+        return str(self.coordinator.data.get("phase", "unknown"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        data = self.coordinator.data or {}
+        return {
+            "stage": data.get("stage", ""),
+            "stage_conflict": data.get("stage_conflict"),
+            "source": "configured lamp_entity",
+        }

@@ -36,7 +36,10 @@ from .adaptation import AdaptationEngine
 from .const import (
     CONF_DEHUM_ENTITY,
     CONF_FAN_ENTITY,
+    CONF_LAMP_ENTITY,
+    CONF_VPD_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
+    CONF_LEGACY_STAGE_ENTITY,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
     CONF_LUNG_TEMP_ENTITY,
@@ -146,12 +149,15 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data = {**self.entry.data}
         return {
             "fan": data[CONF_FAN_ENTITY],
-            "dehum": data[CONF_DEHUM_ENTITY],
+            "dehum": data.get(CONF_DEHUM_ENTITY, ""),
             "tent_temp": data[CONF_TENT_TEMP_ENTITY],
             "tent_rh": data[CONF_TENT_RH_ENTITY],
-            "lung_temp": data[CONF_LUNG_TEMP_ENTITY],
-            "lung_rh": data[CONF_LUNG_RH_ENTITY],
+            "lung_temp": data.get(CONF_LUNG_TEMP_ENTITY, ""),
+            "lung_rh": data.get(CONF_LUNG_RH_ENTITY, ""),
+            "vpd": data.get(CONF_VPD_ENTITY, ""),
             "stage": data.get(CONF_STAGE_ENTITY, ""),
+            "lamp": data.get(CONF_LAMP_ENTITY, ""),
+            "legacy_stage": data.get(CONF_LEGACY_STAGE_ENTITY, ""),
         }
 
     @property
@@ -168,6 +174,16 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     # -- sampling ------------------------------------------------------------
+    def _read_float_optional(self, entity_id: str) -> float | None:
+        """Like _read_float but returns None when missing/unavailable."""
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return None
+        try:
+            return float(state.state)
+        except ValueError:
+            return None
+
     def _read_float(self, entity_id: str) -> float:
         state = self.hass.states.get(entity_id)
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
@@ -178,8 +194,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"{entity_id} not numeric: {state.state}") from err
 
     def _read_fan_pct(self, entity_id: str) -> float:
-        """Read fan percentage: from the percentage attribute (fan domain),
-        falling back to the numeric state (e.g. a template sensor)."""
+        """Read fan output as a percentage.
+
+        Resolution order: percentage attribute (fan domain) -> numeric state
+        (template sensor) -> on/off state (plain switch fan: 100/0). The
+        on/off fallback makes switch-only builds work — the cascade treats
+        them as a single-step fan.
+        """
         state = self.hass.states.get(entity_id)
         if state is None or state.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             raise UpdateFailed(f"{entity_id} unavailable")
@@ -193,8 +214,12 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 ) from err
         try:
             return float(state.state)
-        except ValueError as err:
-            raise UpdateFailed(f"{entity_id} not numeric: {state.state}") from err
+        except ValueError:
+            if state.state == STATE_ON:
+                return 100.0
+            if state.state == STATE_OFF:
+                return 0.0
+            raise UpdateFailed(f"{entity_id} not numeric: {state.state}") from None
 
     def _read_bool(self, entity_id: str, on_states: set[str] | None = None) -> bool:
         state = self.hass.states.get(entity_id)
@@ -205,17 +230,43 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return state.state == STATE_ON
 
     def _gather_inputs(self) -> SensorInputs:
+        """Snapshot with graceful degradation — every optional source falls back.
+
+        - no lung sensors -> lung := tent (ΔAH term collapses to 0; the VPD-need
+          term still drives the fan, and the dehum floor guards tent RH)
+        - no lamp -> is_day = True with phase exposed as 'unknown': the band
+          table then uses the conservative DAY values (the proven, safer side —
+          day floors are higher, so the fan never under-ventilates at night)
+        - fan switch-only -> fan_pct 100/0 from state (the cascade needs a number)
+        """
         src = self.source_entities
         stage_entity_state = (
             self.hass.states.get(src["stage"]) if src["stage"] else None
         )
         stage = (stage_entity_state.state if stage_entity_state else "") or "Flowering"
-        is_day = self._read_bool(src["dehum"]) is not None and self._lamp_is_on()
+
+        tent_temp = self._read_float(src["tent_temp"])
+        tent_rh = self._read_float(src["tent_rh"])
+
+        lung_temp = (
+            self._read_float_optional(src["lung_temp"])
+            if src.get("lung_temp")
+            else None
+        )
+        lung_rh = (
+            self._read_float_optional(src["lung_rh"])
+            if src.get("lung_rh")
+            else None
+        )
+
+        has_lamp = bool(src.get("lamp"))
+        is_day = self._lamp_is_on() if has_lamp else True
+
         return SensorInputs(
-            tent_temp=self._read_float(src["tent_temp"]),
-            tent_rh=self._read_float(src["tent_rh"]),
-            lung_temp=self._read_float(src["lung_temp"]),
-            lung_rh=self._read_float(src["lung_rh"]),
+            tent_temp=tent_temp,
+            tent_rh=tent_rh,
+            lung_temp=lung_temp if lung_temp is not None else tent_temp,
+            lung_rh=lung_rh if lung_rh is not None else tent_rh,
             vpd=self._read_vpd(),
             fan_pct=self._read_fan_pct(src["fan"]),
             is_day=is_day,
@@ -238,13 +289,58 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _lamp_is_on(self) -> bool:
-        """Day/night from the lamp entity when configured, else 12/12 clock."""
-        data = self.entry.data
-        lamp = data.get("lamp_entity")
-        if lamp:
-            return self._read_bool(lamp)
-        hour = time.localtime().tm_hour
-        return 6 <= hour < 18
+        """Lamp state; conservative day=True when no lamp configured/unavailable.
+
+        The band table's day floors are higher, so with unknown phase the fan
+        errs toward more ventilation — never silently under-ventilates.
+        """
+        lamp = self.source_entities.get("lamp", "")
+        if not lamp:
+            return True
+        st = self.hass.states.get(lamp)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return True
+        return st.state == STATE_ON
+
+    def _phase(self) -> str:
+        """'day'/'night' from the configured lamp; 'unknown' otherwise.
+
+        No clock guessing: without a usable lamp reading the phase is simply
+        unknown — dashboards must not invent facts.
+        """
+        lamp = self.source_entities.get("lamp", "")
+        if not lamp:
+            return "unknown"
+        st = self.hass.states.get(lamp)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return "unknown"
+        return "day" if st.state == STATE_ON else "night"
+
+    def _current_stage(self) -> str:
+        """Stage from the configured stage entity; '' when unavailable."""
+        stage_e = self.source_entities.get("stage", "")
+        if not stage_e:
+            return ""
+        st = self.hass.states.get(stage_e)
+        return st.state if st and st.state not in (None, "unknown", "unavailable") else ""
+
+    def _stage_conflict(self) -> str | None:
+        """Legacy stage entity value when it disagrees with the configured one.
+
+        Only active if the user configured legacy_stage_entity — the
+        integration never invents entity names.
+        """
+        legacy = self.source_entities.get("legacy_stage", "")
+        if not legacy:
+            return None
+        current = self._current_stage()
+        if not current:
+            return None
+        st = self.hass.states.get(legacy)
+        if not st or st.state in (None, "unknown", "unavailable"):
+            return None
+        legacy_val = st.state
+        return None if legacy_val.lower() == current.lower() else legacy_val
 
     # -- coordinator update -------------------------------------------------
     async def _async_update_data(self) -> dict[str, Any]:
@@ -265,7 +361,21 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             params = base.with_updates(adaptation_enabled=False)
             self.hass.add_job(self._async_raise_watchdog_issue)
 
-        result: dict[str, Any] = {"inputs": inputs, "ts": now}
+        se = self.source_entities
+        result: dict[str, Any] = {
+            "inputs": inputs,
+            "ts": now,
+            # Derived, config-driven facts for diagnostics/dashboards:
+            "phase": self._phase(),
+            "stage": self._current_stage(),
+            "stage_conflict": self._stage_conflict(),
+            "degraded": {
+                "lung": not (se.get("lung_temp") and se.get("lung_rh")),
+                "lamp": not se.get("lamp"),
+                "vpd_sensor": not se.get("vpd"),
+                "dehum": not se.get("dehum"),
+            },
+        }
 
         # Fan: proven 3-minute cadence.
         if now - self.last_fan_ts >= FAN_CADENCE_S:
@@ -301,16 +411,24 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "fan", "dry_run", decision.active_term, decision.fan_target, inputs
             )
         else:
-            await self.hass.services.async_call(
-                "fan",
-                "turn_on" if decision.fan_target > 0 else "turn_off",
-                (
-                    {ATTR_ENTITY_ID: fan_entity, "percentage": decision.fan_target}
-                    if decision.fan_target > 0
-                    else {ATTR_ENTITY_ID: fan_entity}
-                ),
-                blocking=True,
-            )
+            st = self.hass.states.get(fan_entity)
+            supports_pct = bool(st and st.attributes.get("percentage") is not None)
+            if decision.fan_target > 0:
+                payload = (
+                    {"entity_id": fan_entity, "percentage": decision.fan_target}
+                    if supports_pct
+                    else {"entity_id": fan_entity}
+                )
+                await self.hass.services.async_call(
+                    "fan", "turn_on", payload, blocking=True
+                )
+            else:
+                await self.hass.services.async_call(
+                    "fan",
+                    "turn_off",
+                    {"entity_id": fan_entity},
+                    blocking=True,
+                )
             self._record(
                 "fan", "command", decision.active_term, decision.fan_target, inputs
             )
@@ -318,7 +436,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _apply_dehum(
         self, decision: dehumid_control.DehumDecision, inputs: SensorInputs
     ) -> None:
-        dehum_entity = self.entry.data[CONF_DEHUM_ENTITY]
+        dehum_entity = self.entry.data.get(CONF_DEHUM_ENTITY, "")
+        if not dehum_entity:
+            # Fan-only build: decision still computed and recorded, no actuation.
+            self._record("dehum", "unconfigured", decision.reason, -1, inputs)
+            return
 
         # -- shared-dehumidifier arbitration -----------------------------
         # Multiple tents may reference the same dehumidifier. Each

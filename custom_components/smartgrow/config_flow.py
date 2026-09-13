@@ -23,6 +23,7 @@ from .const import (
     CONF_DEHUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
+    CONF_LEGACY_STAGE_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
@@ -40,21 +41,26 @@ _LOGGER = logging.getLogger(__name__)
 
 ENTITY_SCHEMA_KEYS = {
     vol.Required(CONF_FAN_ENTITY): EntitySelector(EntitySelectorConfig(domain="fan")),
-    vol.Required(CONF_DEHUM_ENTITY): EntitySelector(
-        EntitySelectorConfig(domain=["switch", "humidifier"])
-    ),
     vol.Required(CONF_TENT_TEMP_ENTITY): EntitySelector(
         EntitySelectorConfig(domain="sensor", device_class="temperature")
     ),
     vol.Required(CONF_TENT_RH_ENTITY): EntitySelector(
         EntitySelectorConfig(domain="sensor", device_class="humidity")
     ),
-    vol.Required(CONF_LUNG_TEMP_ENTITY): EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="temperature")
-    ),
-    vol.Required(CONF_LUNG_RH_ENTITY): EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="humidity")
-    ),
+    # Everything below degrades gracefully when omitted — the flow tells the
+    # user what stops working (labels), the logic never breaks.
+    vol.Optional(
+        CONF_DEHUM_ENTITY,
+        description="Dehumidifier (optional — omit for fan-only control)",
+    ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
+    vol.Optional(
+        CONF_LUNG_TEMP_ENTITY,
+        description="Lung-room temperature (optional — falls back to tent values)",
+    ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
+    vol.Optional(
+        CONF_LUNG_RH_ENTITY,
+        description="Lung-room humidity (optional — falls back to tent values)",
+    ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="humidity")),
 }
 
 
@@ -114,7 +120,10 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 EntitySelectorConfig(domain="sensor")
             ),
             vol.Optional(CONF_LAMP_ENTITY): EntitySelector(
-                EntitySelectorConfig(domain="light")
+                EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
+            ),
+            vol.Optional(CONF_LEGACY_STAGE_ENTITY): EntitySelector(
+                EntitySelectorConfig(domain="input_select")
             ),
             vol.Optional(CONF_STAGE_ENTITY): EntitySelector(
                 EntitySelectorConfig(domain=["input_select", "select"])
