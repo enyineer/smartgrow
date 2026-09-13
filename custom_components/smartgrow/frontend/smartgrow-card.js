@@ -1104,7 +1104,31 @@ function At(t, e) {
   for (const [t, s] of Object.entries(e !== null && e !== void 0 ? e : {})) !(t in n) && s && (n[t] = s);
   return n;
 }
-function St(t, e) {
+function St(t, e, s, i) {
+  const n = {
+      ...s
+    },
+    r = function (t, e, _t$states, _i$attributes) {
+      const s = `sensor.${e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, "")}_sources`,
+        i = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 ? void 0 : _t$states[s],
+        n = (_i$attributes = i === null || i === void 0 ? void 0 : i.attributes) !== null && _i$attributes !== void 0 ? _i$attributes : {},
+        r = {};
+      for (const [t, e] of Object.entries(n)) t.endsWith("_entity") && "string" == typeof e && e.length > 0 && (r[t] = e);
+      return r;
+    }(t, e),
+    a = ["vpd", "camera", "lamp"];
+  for (const t of a) {
+    const e = i === null || i === void 0 ? void 0 : i[t];
+    if (e && e.length > 0) {
+      n[t] = e;
+      continue;
+    }
+    const s = r[`${t}_entity`];
+    s && (n[t] = s);
+  }
+  return n;
+}
+function kt(t, e) {
   var _s$attributes;
   if (!e || !t || !t.states) return {
     entityId: e,
@@ -1126,15 +1150,15 @@ function St(t, e) {
     unavailable: i
   };
 }
-function kt(t, e, s) {
-  var _e$vpd, _a$attrs, _St$attrs$stage_confl, _St;
-  const i = St(t, e.fan_target),
-    n = St(t, e.dah),
-    r = St(t, e.stage),
-    a = St(t, e.dehumidifier_decision),
-    o = function (t, e, _t$states) {
+function Et(t, e, s) {
+  var _e$vpd, _a$attrs, _kt$attrs$stage_confl, _kt;
+  const i = kt(t, e.fan_target),
+    n = kt(t, e.dah),
+    r = kt(t, e.stage),
+    a = kt(t, e.dehumidifier_decision),
+    o = function (t, e, _t$states2) {
       if (!e.phase) return "unknown";
-      const s = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 || (_t$states = _t$states[e.phase]) === null || _t$states === void 0 ? void 0 : _t$states.state;
+      const s = t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 || (_t$states2 = _t$states2[e.phase]) === null || _t$states2 === void 0 ? void 0 : _t$states2.state;
       return "day" === s || "night" === s ? s : "unknown";
     }(t, e),
     c = function (t, e) {
@@ -1177,31 +1201,31 @@ function kt(t, e, s) {
     }(i.missing ? a : i),
     h = Object.values(e).filter(t => !!t),
     p = h.some(e => {
-      var _t$states2;
-      return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
+      var _t$states3;
+      return void 0 !== (t === null || t === void 0 || (_t$states3 = t.states) === null || _t$states3 === void 0 ? void 0 : _t$states3[e]);
     }),
-    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state),
-    f = _t(St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
-    g = St(t, e.dry_run),
-    m = St(t, e.adaptation),
-    _ = St(t, e.oscillation_warning),
-    v = St(t, e.legacy_automation_warning),
+    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(kt(t, e.fan_vpd_term).state),
+    f = _t(kt(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
+    g = kt(t, e.dry_run),
+    m = kt(t, e.adaptation),
+    _ = kt(t, e.oscillation_warning),
+    v = kt(t, e.legacy_automation_warning),
     $ = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
     y = $.fan_pct,
-    b = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
+    b = (_kt$attrs$stage_confl = (_kt = kt(t, e.stage)) === null || _kt === void 0 || (_kt = _kt.attrs) === null || _kt === void 0 ? void 0 : _kt.stage_conflict) !== null && _kt$attrs$stage_confl !== void 0 ? _kt$attrs$stage_confl : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
     phase: o,
     fanTarget: _t(i.state),
-    fanActual: Ct(t, i),
+    fanActual: Pt(t, i),
     terms: {
-      dah: _t(St(t, e.fan_dah_term).state),
-      vpd: _t(St(t, e.fan_vpd_term).state),
-      need: _t(St(t, e.fan_need_term).state),
-      temp: _t(St(t, e.fan_temp_term).state)
+      dah: _t(kt(t, e.fan_dah_term).state),
+      vpd: _t(kt(t, e.fan_vpd_term).state),
+      need: _t(kt(t, e.fan_need_term).state),
+      temp: _t(kt(t, e.fan_temp_term).state)
     },
-    activeTerm: Et(St(t, e.active_fan_term)),
+    activeTerm: Ct(kt(t, e.active_fan_term)),
     dah: _t(n.state),
     vpd: f,
     bandLow: l.low,
@@ -1213,21 +1237,21 @@ function kt(t, e, s) {
     adaptation: vt(m.state),
     oscillationWarning: vt(_.state),
     legacyWarning: vt(v.state),
-    cycles24h: _t(St(t, e.cycles_24h).state),
+    cycles24h: _t(kt(t, e.cycles_24h).state),
     stageConflict: b,
     empty: !p || !u && !p
   };
 }
-function Et(t) {
+function Ct(t) {
   if (!t || t.missing || t.unavailable) return null;
   const e = String(t.state).trim(),
     s = e.toLowerCase();
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
-function Ct(t, e) {
-  var _e$attrs, _t$states3;
+function Pt(t, e) {
+  var _e$attrs, _t$states4;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states4 = t.states) !== null && _t$states4 !== void 0 && _t$states4[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
@@ -1235,9 +1259,9 @@ function Ct(t, e) {
   }
   return null;
 }
-const Pt = new Map();
-const Ot = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
-let Ut = class extends at {
+const Ot = new Map();
+const Ut = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
+let Tt = class extends at {
   setConfig(t) {
     this._config = t;
   }
@@ -1341,8 +1365,8 @@ let Ut = class extends at {
           @change=${this._titleChanged}
         />
 
-        <div style=${r}>Override individual entities (empty = derive from prefix):</div>
-        ${Ot.map(t => {
+        <div style=${r}>Override individual entities (empty = derive from prefix / integration config):</div>
+        ${Ut.map(t => {
       var _this$_config$entitie2, _this$_config3, _e$t;
       return I`
             <label for=${"sg-ent-" + t} style=${r}>${t}</label>
@@ -1356,16 +1380,38 @@ let Ut = class extends at {
             />
           `;
     })}
+        ${["vpd", "camera", "lamp"].map(t => {
+      var _this$_config$entitie3, _this$_config4, _this$_config5, _e$t2;
+      return I`
+          <label for=${"sg-ent-" + t} style=${r}>${t} (external — from integration config)</label>
+          <input
+            id=${"sg-ent-" + t}
+            type="text"
+            style=${n}
+            .value=${(_this$_config$entitie3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 || (_this$_config4 = _this$_config4.entities) === null || _this$_config4 === void 0 ? void 0 : _this$_config4[t]) !== null && _this$_config$entitie3 !== void 0 ? _this$_config$entitie3 : (_this$_config5 = this._config) !== null && _this$_config5 !== void 0 && _this$_config5.camera_entity && "camera" === t ? this._config.camera_entity : ""}
+            placeholder=${(_e$t2 = e[t]) !== null && _e$t2 !== void 0 ? _e$t2 : "auto from integration sources"}
+            @change=${e => {
+        if (this._entityChanged(t, e), "camera" === t) {
+          const t = e.target.value.trim();
+          this._apply({
+            camera_entity: t || void 0
+          });
+        }
+      }}
+          />
+        `;
+    })}
       </div>
     `;
   }
 };
+var Rt;
 t([ht({
   attribute: !1
-})], Ut.prototype, "hass", void 0), t([pt()], Ut.prototype, "_config", void 0), Ut = t([ct("smartgrow-card-editor")], Ut), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Ut);
-const Tt = "0.1.0",
-  Rt = "smartgrow-card";
-let Ht = (_Class = class Ht extends at {
+})], Tt.prototype, "hass", void 0), t([pt()], Tt.prototype, "_config", void 0), Tt = t([ct("smartgrow-card-editor")], Tt), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Tt);
+const Ht = "0.1.0",
+  Mt = "smartgrow-card";
+let Nt = (_Class = class Nt extends at {
   constructor() {
     super(...arguments), this._sparkPoints = [];
   }
@@ -1374,7 +1420,7 @@ let Ht = (_Class = class Ht extends at {
   }
   static getStubConfig(t) {
     return {
-      type: `custom:${Rt}`
+      type: `custom:${Mt}`
     };
   }
   setConfig(t) {
@@ -1392,13 +1438,13 @@ let Ht = (_Class = class Ht extends at {
     super.willUpdate(t), this._config && this.hass && this._maybeLoadSparkline();
   }
   _ids() {
-    var _this$_config$prefix3, _this$_config4, _this$_config5, _this$hass;
-    const t = (_this$_config$prefix3 = (_this$_config4 = this._config) === null || _this$_config4 === void 0 ? void 0 : _this$_config4.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft,
-      e = At(t, (_this$_config5 = this._config) === null || _this$_config5 === void 0 ? void 0 : _this$_config5.entities),
-      s = e.fan_target;
+    var _this$_config$prefix3, _this$_config6, _this$_config7, _this$hass, _Rt$_prefixOverride, _this$_config9;
+    const t = (_this$_config$prefix3 = (_this$_config6 = this._config) === null || _this$_config6 === void 0 ? void 0 : _this$_config6.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft;
+    let e = At(t, (_this$_config7 = this._config) === null || _this$_config7 === void 0 ? void 0 : _this$_config7.entities);
+    const s = e.fan_target;
     if (s && !((_this$hass = this.hass) !== null && _this$hass !== void 0 && (_this$hass = _this$hass.states) !== null && _this$hass !== void 0 && _this$hass[s])) {
-      var _this$_config6;
-      const e = function (t) {
+      var _this$_config8;
+      const s = function (t) {
         if (!(t !== null && t !== void 0 && t.states)) return null;
         for (const e of Object.keys(t.states)) {
           const t = e.match(/^sensor\.(.+)_fan_target$/);
@@ -1406,9 +1452,10 @@ let Ht = (_Class = class Ht extends at {
         }
         return null;
       }(this.hass);
-      if (e && e !== t) return At(e, (_this$_config6 = this._config) === null || _this$_config6 === void 0 ? void 0 : _this$_config6.entities);
+      s && s !== t && (Rt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
     }
-    return e;
+    const i = (_Rt$_prefixOverride = Rt._prefixOverride) !== null && _Rt$_prefixOverride !== void 0 ? _Rt$_prefixOverride : t;
+    return Rt._prefixOverride = null, St(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
   }
   async _maybeLoadSparkline() {
     var _this$hass$states;
@@ -1418,13 +1465,13 @@ let Ht = (_Class = class Ht extends at {
       try {
         const e = await async function (t, e, s, i = Date.now()) {
           const n = `${e}@${s}`,
-            r = Pt.get(n);
+            r = Ot.get(n);
           if (r && i - r.at < 3e5) return r.data;
           const a = new Date(i - 3600 * s * 1e3),
             o = new Date(i);
           try {
             const s = await t.callApi("GET", "history/period", `filter_entity_id=${encodeURIComponent(e)}`, `start=${encodeURIComponent(a.toISOString())}`, `end=${encodeURIComponent(o.toISOString())}`, "minimal_response", "no_attributes");
-            return Pt.set(n, {
+            return Ot.set(n, {
               at: i,
               data: s
             }), s;
@@ -1454,12 +1501,12 @@ let Ht = (_Class = class Ht extends at {
     }
   }
   _renderSetupHint(t) {
-    var _this$_config7, _this$_config$prefix4, _this$_config8;
-    return !1 === ((_this$_config7 = this._config) === null || _this$_config7 === void 0 ? void 0 : _this$_config7.show_setup_hint) ? B : I`
+    var _this$_config0, _this$_config$prefix4, _this$_config1;
+    return !1 === ((_this$_config0 = this._config) === null || _this$_config0 === void 0 ? void 0 : _this$_config0.show_setup_hint) ? B : I`
       <div class="setup-hint">
         <div>🌱 SmartGrow entities not found.</div>
         <div>
-          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ft}</code>
+          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config1 = this._config) === null || _this$_config1 === void 0 ? void 0 : _this$_config1.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ft}</code>
           (${t.slice(0, 3).join(", ")}…).
         </div>
         <div>
@@ -1470,10 +1517,10 @@ let Ht = (_Class = class Ht extends at {
     `;
   }
   render() {
-    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config9, _this$hass$auth$acces, _this$hass3;
+    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _this$hass$auth$acces, _this$hass3;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
-      e = kt(this.hass, t, gt);
+      e = Et(this.hass, t, gt);
     if (e.empty) {
       const e = Object.values(t).filter(t => {
         var _this$hass2;
@@ -1514,8 +1561,8 @@ let Ht = (_Class = class Ht extends at {
           max: o
         };
       }(this._sparkPoints, 300, 54, 4),
-      f = yt(St(this.hass, t.dehumidifier_decision)),
-      g = yt(St(this.hass, t.humidifier_decision)),
+      f = yt(kt(this.hass, t.dehumidifier_decision)),
+      g = yt(kt(this.hass, t.humidifier_decision)),
       m = [{
         key: "dah",
         label: "ΔAH",
@@ -1537,7 +1584,7 @@ let Ht = (_Class = class Ht extends at {
         value: e.terms.temp,
         active: "temp" === e.activeTerm
       }],
-      _ = (_ref4 = (_this$_config$camera_ = (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.camera_entity) !== null && _this$_config$camera_ !== void 0 ? _this$_config$camera_ : t.camera) !== null && _ref4 !== void 0 ? _ref4 : null,
+      _ = (_ref4 = (_this$_config$camera_ = (_this$_config10 = this._config) === null || _this$_config10 === void 0 ? void 0 : _this$_config10.camera_entity) !== null && _this$_config$camera_ !== void 0 ? _this$_config$camera_ : t.camera) !== null && _ref4 !== void 0 ? _ref4 : null,
       v = _ ? `/api/camera_proxy_stream/${_}?token=${(_this$hass$auth$acces = (_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.auth) === null || _this$hass3 === void 0 ? void 0 : _this$hass3.accessToken) !== null && _this$hass$auth$acces !== void 0 ? _this$hass$auth$acces : ""}` : null,
       $ = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
     return I`
@@ -1616,13 +1663,13 @@ let Ht = (_Class = class Ht extends at {
       </ha-card>
     `;
   }
-}, _Class.styles = ut, _Class);
+}, Rt = _Class, _Class.styles = ut, _Class._prefixOverride = null, _Class);
 t([ht({
   attribute: !1
-})], Ht.prototype, "hass", void 0), t([pt()], Ht.prototype, "_config", void 0), t([pt()], Ht.prototype, "_sparkPoints", void 0), Ht = t([ct("smartgrow-card")], Ht), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Ht), window.customCards = window.customCards || [], window.customCards.push({
+})], Nt.prototype, "hass", void 0), t([pt()], Nt.prototype, "_config", void 0), t([pt()], Nt.prototype, "_sparkPoints", void 0), Nt = Rt = t([ct("smartgrow-card")], Nt), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Nt), window.customCards = window.customCards || [], window.customCards.push({
   type: "smartgrow-card",
   name: "SmartGrow Card",
   description: "Grow-tent overview for the SmartGrow integration: fan gauge, VPD band, ΔAH sparkline, dehumidifier chip.",
   documentationURL: "https://github.com/niggo/smartgrow-card"
 });
-export { Rt as CARD_NAME, Tt as CARD_VERSION, Ht as SmartGrowCard, Ut as SmartGrowCardEditor };
+export { Mt as CARD_NAME, Ht as CARD_VERSION, Nt as SmartGrowCard, Tt as SmartGrowCardEditor };

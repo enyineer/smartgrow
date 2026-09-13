@@ -44,6 +44,7 @@ async def async_setup_entry(
         Cycles24hSensor(coordinator, entry),
         StaleSensor(coordinator, entry),
         PhaseSensor(coordinator, entry),
+        SourcesSensor(coordinator, entry),
     ]
     async_add_entities(entities)
 
@@ -168,6 +169,48 @@ class ActiveTermSensor(_TermSensor):
     def native_value(self) -> str | None:
         d = self._decision()
         return d.active_term if d else None
+
+
+class SourcesSensor(SmartGrowEntity, SensorEntity):
+    """Machine-readable map of the configured SOURCE entities.
+
+    The card (and agents) read this to discover externally-configured inputs
+    (VPD sensor, camera, lamp, lung room...) — they are not part of the
+    integration's own smartgrow_* family and therefore cannot be derived
+    from the entity prefix.
+    """
+
+    _attr_name = "SmartGrow configured sources"
+    _attr_icon = "mdi:format-list-bulleted"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = None
+    _attr_native_unit_of_measurement = None
+
+    def __init__(self, coordinator, entry) -> None:
+        super().__init__(coordinator, entry)
+        self.coordinator = coordinator
+        self.entry = entry
+        self._attr_unique_id = _uid(entry, "sources")
+
+    @property
+    def native_value(self) -> str:
+        return "configured"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        keys = (
+            "fan_entity",
+            "tent_temp_entity",
+            "tent_rh_entity",
+            "lung_temp_entity",
+            "lung_rh_entity",
+            "vpd_entity",
+            "dehum_entity",
+            "hum_entity",
+            "lamp_entity",
+            "camera_entity",
+        )
+        return {k: self.coordinator._source(k) or None for k in keys}
 
 
 class DAhSensor(_TermSensor):
