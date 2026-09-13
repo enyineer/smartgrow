@@ -48,3 +48,28 @@ def test_unset_times_fall_back_to_defaults():
 def test_explicit_times_win_over_defaults():
     c = make_coord("20:00", "04:00")
     assert c._schedule_times() == (time(20, 0), time(4, 0))
+
+def test_apply_schedule_uses_real_clock():
+    """Regression: dtime.now() raised 'datetime.time has no attribute now' —
+    the schedule crashed on every tick and never actuated."""
+    c = make_coord("06:00", "22:00")
+    calls = []
+    c.source_entities = {"lamp": "light.demo_lamp"}
+    import types
+    c.hass = types.SimpleNamespace(
+        states=types.SimpleNamespace(get=lambda eid: types.SimpleNamespace(state="on")),
+        async_create_task=lambda t: calls.append(t),
+        services=types.SimpleNamespace(
+            async_call=lambda domain, service, data: calls.append((domain, service, data))
+        ),
+    )
+    c.options_rt = types.SimpleNamespace(dry_run=True)
+    c._LOGGER = None  # module logger
+    # patch _apply_lamp? No — call it through _apply_schedule with dry-run so no
+    # service call happens; only require NO exception and the intent path taken.
+    import logging
+    logging.disable(logging.CRITICAL)
+    try:
+        c._apply_schedule()
+    finally:
+        logging.disable(logging.NOTSET)

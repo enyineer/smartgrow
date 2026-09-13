@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass
-from datetime import time as dtime, timedelta
+from datetime import datetime as dt_datetime, time as dtime, timedelta
 from typing import Any, TypedDict
 
 from homeassistant.config_entries import ConfigEntry
@@ -391,7 +391,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         on, off = self._schedule_times()
         if on is None or off is None:
             return
-        wants_day = self._schedule_wants_day(dtime.now())
+        wants_day = self._schedule_wants_day(dt_datetime.now().time())
         if wants_day is None:
             return
         lamp = self.source_entities.get("lamp", "")
@@ -422,7 +422,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         is_on = st.state == STATE_ON
 
         if mode == WAVEMAKER_MODE_WITH_LIGHTS:
-            wants = self._schedule_wants_day(dtime.now())
+            wants = self._schedule_wants_day(dt_datetime.now().time())
             if wants is not None and wants != is_on:
                 self._async_switch(entity, wants)
             return
