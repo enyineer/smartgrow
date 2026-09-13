@@ -225,6 +225,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()  # provided by ConfigFlow
         if user_input is not None:
+            _LOGGER.debug("reconfigure user_input keys: %s", sorted(user_input))
             new_data = {**entry.data, **user_input}
             # Optional source selectors cannot submit "" (EntitySelector rejects
             # it and the frontend omits cleared keys). Every optional source IS
