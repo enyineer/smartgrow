@@ -667,9 +667,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Humidifier (optional): mirror cascade, only when configured.
         if self._source(CONF_HUM_ENTITY):
-            from .logic.humid_control import compute_hum
+            from .logic.humid_control import compute_humid
 
-            decision = compute_hum(inputs, params, self.hum_on)
+            decision = compute_humid(inputs, params, self.hum_on)
             self.last_hum_decision = decision
             await self._apply_hum(decision, inputs)
             result["hum"] = decision
