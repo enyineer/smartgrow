@@ -173,16 +173,16 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> SmartGrowOptionsFlow:
-        """Return the options flow handler."""
-        return SmartGrowOptionsFlow(config_entry)
+        """Return the options flow handler (HA sets .config_entry itself)."""
+        return SmartGrowOptionsFlow()
 
 
 class SmartGrowOptionsFlow(config_entries.OptionsFlow):
     """Options: floors, gains, thresholds, band overrides, adaptation."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Store the entry being configured."""
-        self.config_entry = config_entry
+    # NOTE: do NOT assign self.config_entry here — in HA ≥ 2025.3 it is a
+    # read-only property set automatically by the flow manager. Assigning it
+    # raises AttributeError -> HTTP 500 when the Configure dialog opens.
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
