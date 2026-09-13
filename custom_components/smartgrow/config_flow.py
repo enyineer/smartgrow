@@ -188,7 +188,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             new_data = {**entry.data, **user_input}
             self.hass.config_entries.async_update_entry(entry, data=new_data)
             await self.hass.config_entries.async_reload(entry.entry_id)
-            return self.async_create_entry(title="", data=new_data)
+            return self.async_abort(reason="reconfigure_successful")
 
         schema = {
             vol.Optional(k, default=entry.data.get(k, "")): v
