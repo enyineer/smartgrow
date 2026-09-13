@@ -1,4 +1,4 @@
-var _Symbol$metadata, _u$litPropertyMetadat, _u$reactiveElementVer, _w$litHtmlVersions, _rt$litElementHydrate, _rt$litElementVersion, _Class;
+var _Symbol$metadata, _u$litPropertyMetadat, _u$reactiveElementVer, _x$litHtmlVersions, _rt$litElementHydrate, _rt$litElementVersion, _Class;
 function t(t, e, s, i) {
   var n,
     r = arguments.length,
@@ -331,9 +331,9 @@ b.elementStyles = [], b.shadowRootOptions = {
 }, b[_("elementProperties")] = new Map(), b[_("finalized")] = new Map(), m !== null && m !== void 0 && m({
   ReactiveElement: b
 }), ((_u$reactiveElementVer = u.reactiveElementVersions) !== null && _u$reactiveElementVer !== void 0 ? _u$reactiveElementVer : u.reactiveElementVersions = []).push("2.1.2");
-const w = globalThis,
-  x = t => t,
-  A = w.trustedTypes,
+const x = globalThis,
+  w = t => t,
+  A = x.trustedTypes,
   k = A ? A.createPolicy("lit-html", {
     createHTML: t => t
   }) : void 0,
@@ -554,8 +554,8 @@ class Y {
   _$AR(t = this._$AA.nextSibling, e) {
     for ((_this$_$AP = this._$AP) === null || _this$_$AP === void 0 ? void 0 : _this$_$AP.call(this, !1, !0, e); t !== this._$AB;) {
       var _this$_$AP;
-      const e = x(t).nextSibling;
-      x(t).remove(), t = e;
+      const e = w(t).nextSibling;
+      w(t).remove(), t = e;
     }
   }
   setConnected(t) {
@@ -631,8 +631,8 @@ class it {
     K(this, t);
   }
 }
-const nt = w.litHtmlPolyfillSupport;
-nt !== null && nt !== void 0 && nt(J, Y), ((_w$litHtmlVersions = w.litHtmlVersions) !== null && _w$litHtmlVersions !== void 0 ? _w$litHtmlVersions : w.litHtmlVersions = []).push("3.3.3");
+const nt = x.litHtmlPolyfillSupport;
+nt !== null && nt !== void 0 && nt(J, Y), ((_x$litHtmlVersions = x.litHtmlVersions) !== null && _x$litHtmlVersions !== void 0 ? _x$litHtmlVersions : x.litHtmlVersions = []).push("3.3.3");
 const rt = globalThis;
 class at extends b {
   constructor() {
@@ -994,6 +994,25 @@ const ut = ((t, ...e) => {
     font-style: italic;
   }
 
+  .camera-open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    margin: 8px 0;
+    border: 1px solid var(--divider-color, #444);
+    border-radius: 8px;
+    background: var(--card-background-color, #1c1c1c);
+    color: var(--primary-text-color, #eee);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .camera-open:hover {
+    filter: brightness(1.15);
+  }
+
   @media (max-width: 450px) {
     .terms {
       grid-template-columns: repeat(2, 1fr);
@@ -1044,7 +1063,7 @@ function yt(t) {
   };
 }
 const bt = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dehumidifier_cycles_24h", "dry_run", "cycles_24h", "stage", "adaptation", "oscillation_warning", "legacy_automation_warning", "dah"];
-function wt(t) {
+function xt(t) {
   const e = t.replace(/^(sensor|binary_sensor|switch|number|select|update)\./, "");
   for (const t of bt) if (e.endsWith("_" + t)) {
     const s = e.slice(0, e.length - t.length - 1);
@@ -1052,7 +1071,7 @@ function wt(t) {
   }
   return null;
 }
-function xt(t) {
+function wt(t) {
   var _e$entities, _e$devices;
   if (!t) return [];
   const e = t,
@@ -1060,7 +1079,7 @@ function xt(t) {
     i = (_e$devices = e.devices) !== null && _e$devices !== void 0 ? _e$devices : {},
     n = new Map(),
     r = (t, e) => {
-      const s = wt(t);
+      const s = xt(t);
       if (!s) return;
       const i = e === null || e === void 0 ? void 0 : e.device_id;
       i && !n.has(i) && n.set(i, s);
@@ -1072,7 +1091,7 @@ function xt(t) {
   if (0 === n.size && t.states) {
     const e = new Set();
     for (const s of Object.keys(t.states)) {
-      const t = wt(s);
+      const t = xt(s);
       t && e.add(t);
     }
     return Array.from(e).sort().map(t => ({
@@ -1215,7 +1234,7 @@ function Et(t, e, s) {
     $ = St(t, e.legacy_automation_warning),
     y = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
     b = y.fan_pct,
-    w = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
+    x = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
@@ -1241,7 +1260,7 @@ function Et(t, e, s) {
     oscillationWarning: vt(v.state),
     legacyWarning: vt($.state),
     cycles24h: _t(St(t, e.cycles_24h).state),
-    stageConflict: w,
+    stageConflict: x,
     empty: !p || !u && !p
   };
 }
@@ -1292,7 +1311,7 @@ let Rt = class extends at {
       device_id: void 0,
       prefix: void 0
     });
-    const s = xt(this.hass).find(t => t.device_id === e);
+    const s = wt(this.hass).find(t => t.device_id === e);
     this._apply({
       device_id: e,
       prefix: s ? s.prefix : void 0
@@ -1328,7 +1347,7 @@ let Rt = class extends at {
     if (!this._config) return B;
     const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : ft,
       e = At(t, this._config.entities),
-      s = xt(this.hass),
+      s = wt(this.hass),
       i = (_ref3 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
         var _this$_config$prefix2, _this$_config2;
         return t.prefix === ((_this$_config$prefix2 = (_this$_config2 = this._config) === null || _this$_config2 === void 0 ? void 0 : _this$_config2.prefix) !== null && _this$_config$prefix2 !== void 0 ? _this$_config$prefix2 : "");
@@ -1483,6 +1502,16 @@ let Nt = (_Class = class Nt extends at {
       return n;
     }(this.hass, i, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
   }
+  _openCamera(t) {
+    const e = new CustomEvent("hass-more-info", {
+      bubbles: !0,
+      composed: !0,
+      detail: {
+        entityId: t
+      }
+    });
+    this.dispatchEvent(e);
+  }
   async _maybeLoadSparkline() {
     var _this$hass$states;
     const t = this._ids().dah;
@@ -1543,7 +1572,7 @@ let Nt = (_Class = class Nt extends at {
     `;
   }
   render() {
-    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _this$hass3, _v$attributes;
+    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
       e = Et(this.hass, t, gt);
@@ -1611,10 +1640,7 @@ let Nt = (_Class = class Nt extends at {
         active: "temp" === e.activeTerm
       }],
       _ = (_ref4 = (_this$_config$camera_ = (_this$_config10 = this._config) === null || _this$_config10 === void 0 ? void 0 : _this$_config10.camera_entity) !== null && _this$_config$camera_ !== void 0 ? _this$_config$camera_ : t.camera) !== null && _ref4 !== void 0 ? _ref4 : null,
-      v = _ ? (_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.states) === null || _this$hass3 === void 0 ? void 0 : _this$hass3[_] : void 0,
-      $ = (_v$attributes = v === null || v === void 0 ? void 0 : v.attributes) !== null && _v$attributes !== void 0 ? _v$attributes : {},
-      y = _ ? "string" == typeof $.entity_picture && $.entity_picture ? $.entity_picture : "string" == typeof $.access_token && $.access_token ? `/api/camera_proxy/${_}?token=${$.access_token}` : null : null,
-      b = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
+      v = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
     return I`
       <ha-card>
         <div class="header">
@@ -1657,11 +1683,18 @@ let Nt = (_Class = class Nt extends at {
           </span>
           ${null !== e.dryRun ? I`<span class="chip ${e.dryRun ? "dryrun" : "off"}">${e.dryRun ? "DRY RUN" : "live"}</span>` : B}
           ${null !== e.adaptation ? I`<span class="chip ${e.adaptation ? "on" : "off"}">adaptation ${e.adaptation ? "on" : "off"}</span>` : B}
-          ${b ? I`<span class="chip">${b}</span>` : B}
+          ${v ? I`<span class="chip">${v}</span>` : B}
         </div>
         ${null !== g.on ? I`<span class="chip ${g.on ? "on" : "off"}">💦 hum ${g.label}</span>${g.reason ? I`<span class="chip-note"> ${g.reason}</span>` : B}` : B}
         ${f.reason ? I`<p class="dehum-reason">reason: ${f.reason}</p>` : B}
-        ${_ ? I`<img class="camera-thumb" src=${y} alt="tent camera" loading="lazy" />` : B}
+        ${_ ? I`<button
+              class="camera-open"
+              title="Open live camera stream"
+              @click=${() => this._openCamera(_)}
+            >
+              <ha-icon icon="mdi:cctv"></ha-icon>
+              <span>Live camera</span>
+            </button>` : B}
 
         <div class="terms">
           ${m.map(t => I`

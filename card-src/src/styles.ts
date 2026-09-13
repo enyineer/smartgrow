@@ -254,6 +254,25 @@ export const cardStyles = css`
     font-style: italic;
   }
 
+  .camera-open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    margin: 8px 0;
+    border: 1px solid var(--divider-color, #444);
+    border-radius: 8px;
+    background: var(--card-background-color, #1c1c1c);
+    color: var(--primary-text-color, #eee);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .camera-open:hover {
+    filter: brightness(1.15);
+  }
+
   @media (max-width: 450px) {
     .terms {
       grid-template-columns: repeat(2, 1fr);

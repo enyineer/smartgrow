@@ -100,6 +100,15 @@ export class SmartGrowCard extends LitElement {
     return applySourceEntities(this.hass, prefix, ids, this._config?.entities);
   }
 
+  private _openCamera(entityId: string): void {
+    const ev = new CustomEvent("hass-more-info", {
+      bubbles: true,
+      composed: true,
+      detail: { entityId },
+    });
+    this.dispatchEvent(ev);
+  }
+
   private async _maybeLoadSparkline(): Promise<void> {
     const ids = this._ids();
     const entityId = ids.dah;
@@ -178,20 +187,10 @@ export class SmartGrowCard extends LitElement {
     const cameraEntity =
       this._config?.camera_entity ??
       (ids.camera ?? null);
-    // HA's camera_proxy_stream validates the ?token= against the CAMERA's
-    // rotating access_token attribute — NOT the user's auth token. An <img>
-    // cannot send an Authorization header, so the user token yields 403 and a
-    // broken image (field-reported 2026-09-13). entity_picture already carries
-    // the correct signed URL; fall back to building it from the attribute.
-    const camState = cameraEntity ? this.hass?.states?.[cameraEntity] : undefined;
-    const camAttrs = (camState?.attributes ?? {}) as Record<string, unknown>;
-    const cameraSrc: string | null = cameraEntity
-      ? typeof camAttrs.entity_picture === "string" && camAttrs.entity_picture
-        ? camAttrs.entity_picture
-        : typeof camAttrs.access_token === "string" && camAttrs.access_token
-          ? `/api/camera_proxy/${cameraEntity}?token=${camAttrs.access_token}`
-          : null
-      : null;
+    // No inline stream: <img>/multipart streams in the companion webview have
+    // proven fragile (auth-token 403s, broken-image states). Instead render a
+    // button that opens the HA-native more-info dialog for the camera — HA
+    // renders the live stream there with correct auth, always.
     const cycleTxt = s.cycles24h !== null ? `${s.cycles24h} cyc/24h` : "";
 
     return html`
@@ -255,7 +254,14 @@ export class SmartGrowCard extends LitElement {
           : nothing}
         ${dehum.reason ? html`<p class="dehum-reason">reason: ${dehum.reason}</p>` : nothing}
         ${cameraEntity
-          ? html`<img class="camera-thumb" src=${cameraSrc} alt="tent camera" loading="lazy" />`
+          ? html`<button
+              class="camera-open"
+              title="Open live camera stream"
+              @click=${() => this._openCamera(cameraEntity!)}
+            >
+              <ha-icon icon="mdi:cctv"></ha-icon>
+              <span>Live camera</span>
+            </button>`
           : nothing}
 
         <div class="terms">
