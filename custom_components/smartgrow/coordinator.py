@@ -329,6 +329,10 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return "unknown"
         return "day" if st.state == STATE_ON else "night"
 
+    def schedule_options_reload(self) -> None:
+        """Re-run schedule evaluation soon (time entities changed their value)."""
+        self.hass.add_job(self._apply_schedule)
+
     # -- lights schedule (day/night cycle) --------------------------------
     def _schedule_times(self) -> tuple[dtime | None, dtime | None]:
         """Configured on/off times as datetime.time.
