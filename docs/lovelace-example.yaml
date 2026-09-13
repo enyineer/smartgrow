@@ -14,7 +14,7 @@
 # ---------------------------------------------------------------------------
 # MANUAL CUSTOM CARD VARIANT
 # If you installed the companion SmartGrow Card (HACS → custom repository →
-# https://github.com/niggo/smartgrow-card, category "Lovelace"), a single card
+# the card is bundled with this integration — no extra install needed), a single card
 # replaces the Overview + Control-trace sections below:
 #
 #   - type: custom:smartgrow-card

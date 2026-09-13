@@ -98,7 +98,7 @@ SmartGrow **ships its own dashboard card**. Once the integration is set up, the 
 
 The card renders the whole tent in one glanceable view: fan target (vs actual), VPD vs band bar, 24 h ΔAH sparkline, dehumidifier chip with its reason, the active-term breakdown, and dry-run/adaptation/warning indicators.
 
-> Historical note: the card previously lived in a separate repo (`enyineer/smartgrow-card`, archived). It is now bundled here so card and integration always share the same version.
+> Historical note: the card is bundled here so card and integration always share the same version.
 
 A YAML-only dashboard without custom cards is in [docs/lovelace-example.yaml](docs/lovelace-example.yaml).
 
