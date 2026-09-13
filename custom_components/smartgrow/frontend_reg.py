@@ -23,12 +23,14 @@ import json
 import pathlib
 
 _BASE_URL = "/smartgrow/smartgrow-card.js"
-# Versioned URL: every release changes the query, so browsers/webviews can
-# never serve a stale cached bundle after an update.
+# Versioned PATH (not just query): companion-app webviews have been observed
+# serving heuristically cached bytes for the same path regardless of query.
+# A fresh path per release guarantees a fresh fetch.
 _VERSION = json.loads(
     (pathlib.Path(__file__).parent / "manifest.json").read_text()
 )["version"]
-_URL = f"{_BASE_URL}?v={_VERSION}"
+_VERSIONED_PATH = f"/smartgrow/v{_VERSION}/smartgrow-card.js"
+_URL = _VERSIONED_PATH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +81,10 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         return
 
     await hass.http.async_register_static_paths(
-        [StaticPathConfig(_BASE_URL, str(card_path), cache_headers=False)]
+        [
+            StaticPathConfig(_BASE_URL, str(card_path), cache_headers=False),
+            StaticPathConfig(_VERSIONED_PATH, str(card_path), cache_headers=False),
+        ]
     )
     # Belt: extra_js (works once loaded, also outside dashboards)
     add_extra_js_url(hass, _URL)
