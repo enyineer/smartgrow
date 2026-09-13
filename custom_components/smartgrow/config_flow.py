@@ -246,22 +246,25 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
         )
 
         # Source entities are configurable here too, so everything lives in
-        # one dialog (the dedicated reconfigure flow was removed).
+        # one dialog. Rendered as PLAIN TEXT inputs: EntitySelector markers in
+        # a custom integration's flow schema are not JSON-serializable by
+        # voluptuous-serialize in HA 2026.8 and 500 the whole dialog. The
+        # strings.json descriptions name the expected entity type per field.
         entity_fields = {}
-        for k, sel in ENTITY_SCHEMA_KEYS.items():
-            entity_fields[vol.Optional(
-                k, default=self.config_entry.data.get(k)
-            )] = sel
-        for extra_key, sel in (
-            (CONF_VPD_ENTITY, EntitySelector(EntitySelectorConfig(domain="sensor"))),
-            (CONF_LAMP_ENTITY, EntitySelector(EntitySelectorConfig(
-                domain=["light", "switch", "input_boolean"]))),
-            (CONF_CAMERA_ENTITY, EntitySelector(EntitySelectorConfig(domain="camera"))),
+        for k in (
+            CONF_FAN_ENTITY,
+            CONF_TENT_TEMP_ENTITY,
+            CONF_TENT_RH_ENTITY,
+            CONF_DEHUM_ENTITY,
+            CONF_LUNG_TEMP_ENTITY,
+            CONF_LUNG_RH_ENTITY,
+            CONF_VPD_ENTITY,
+            CONF_LAMP_ENTITY,
+            CONF_CAMERA_ENTITY,
         ):
             entity_fields[vol.Optional(
-                extra_key, default=self.config_entry.data.get(extra_key)
-            )] = sel
-        schema = vol.Schema({**entity_fields, **{}}) if False else None
+                k, default=self.config_entry.data.get(k)
+            )] = str
         schema = vol.Schema(
             {
                 **entity_fields,
