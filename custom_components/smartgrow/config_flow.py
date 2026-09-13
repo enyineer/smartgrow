@@ -194,9 +194,12 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(k, default=entry.data.get(k, "")): v
             for k, v in ENTITY_SCHEMA_KEYS.items()
         }
-        from .const import CONF_CAMERA_ENTITY as _CAM
+        from .const import CONF_CAMERA_ENTITY as _CAM, CONF_LAMP_ENTITY as _LAMP
         schema[vol.Optional(_CAM, default=entry.data.get("camera_entity", ""))] = EntitySelector(
             EntitySelectorConfig(domain="camera")
+        )
+        schema[vol.Optional(_LAMP, default=entry.data.get("lamp_entity", ""))] = EntitySelector(
+            EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
         )
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors

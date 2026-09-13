@@ -1,14 +1,18 @@
 {
   "domain": "smartgrow",
   "name": "SmartGrow",
-  "codeowners": ["@enyineer"],
+  "codeowners": [
+    "@enyineer"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/enyineer/smartgrow",
   "integration_type": "hub",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/enyineer/smartgrow/issues",
-  "loggers": ["custom_components.smartgrow"],
+  "loggers": [
+    "custom_components.smartgrow"
+  ],
   "requirements": [],
-  "version": "0.5.2"
+  "version": "0.5.4"
 }
