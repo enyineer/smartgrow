@@ -155,6 +155,9 @@ class ActiveTermSensor(_TermSensor):
 
     _attr_name = "SmartGrow active fan term"
     _attr_icon = "mdi:debug-step-over"
+    # String sensor: must not inherit the numeric state_class/unit.
+    _attr_state_class = None
+    _attr_native_unit_of_measurement = None
 
     def __init__(self, coordinator, entry) -> None:
         super().__init__(coordinator, entry)

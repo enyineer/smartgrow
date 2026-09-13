@@ -59,19 +59,15 @@ ENTITY_SCHEMA_KEYS = {
     # user what stops working (labels), the logic never breaks.
     vol.Optional(
         CONF_DEHUM_ENTITY,
-        description="Dehumidifier (optional — omit for fan-only control)",
     ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
     vol.Optional(
         CONF_HUM_ENTITY,
-        description="Humidifier (optional — for early stages with high RH targets)",
     ): EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
     vol.Optional(
         CONF_LUNG_TEMP_ENTITY,
-        description="Lung-room temperature (optional — falls back to tent values)",
     ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
     vol.Optional(
         CONF_LUNG_RH_ENTITY,
-        description="Lung-room humidity (optional — falls back to tent values)",
     ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="humidity")),
 }
 
