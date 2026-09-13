@@ -343,8 +343,8 @@ const w = globalThis,
   P = `<${C}>`,
   O = document,
   U = () => O.createComment(""),
-  T = t => null === t || "object" != typeof t && "function" != typeof t,
-  R = Array.isArray,
+  R = t => null === t || "object" != typeof t && "function" != typeof t,
+  T = Array.isArray,
   H = "[ \t\n\f\r]",
   M = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,
   N = /-->/g,
@@ -363,7 +363,7 @@ const w = globalThis,
   V = new WeakMap(),
   G = O.createTreeWalker(O, 129);
 function q(t, e) {
-  if (!R(t) || !t.hasOwnProperty("raw")) throw Error("invalid template strings array");
+  if (!T(t) || !t.hasOwnProperty("raw")) throw Error("invalid template strings array");
   return void 0 !== k ? k.createHTML(e) : e;
 }
 const Z = (t, e) => {
@@ -451,7 +451,7 @@ function K(t, e, s = t, i) {
   var _s$_$Co, _n, _n2, _n2$_$AO, _s$_$Co2;
   if (e === W) return e;
   let n = void 0 !== i ? (_s$_$Co = s._$Co) === null || _s$_$Co === void 0 ? void 0 : _s$_$Co[i] : s._$Cl;
-  const r = T(e) ? void 0 : e._$litDirective$;
+  const r = R(e) ? void 0 : e._$litDirective$;
   return ((_n = n) === null || _n === void 0 ? void 0 : _n.constructor) !== r && ((_n2 = n) !== null && _n2 !== void 0 && (_n2$_$AO = _n2._$AO) !== null && _n2$_$AO !== void 0 && _n2$_$AO.call(_n2, !1), void 0 === r ? n = void 0 : (n = new r(t), n._$AT(t, s, i)), void 0 !== i ? ((_s$_$Co2 = s._$Co) !== null && _s$_$Co2 !== void 0 ? _s$_$Co2 : s._$Co = [])[i] = n : s._$Cl = n), void 0 !== n && (e = K(t, n._$AS(t, e.values), n, i)), e;
 }
 class X {
@@ -515,7 +515,7 @@ class Y {
     return this._$AB;
   }
   _$AI(t, e = this) {
-    t = K(this, t, e), T(t) ? t === B || null == t || "" === t ? (this._$AH !== B && this._$AR(), this._$AH = B) : t !== this._$AH && t !== W && this._(t) : void 0 !== t._$litType$ ? this.$(t) : void 0 !== t.nodeType ? this.T(t) : (t => R(t) || "function" == typeof (t === null || t === void 0 ? void 0 : t[Symbol.iterator]))(t) ? this.k(t) : this._(t);
+    t = K(this, t, e), R(t) ? t === B || null == t || "" === t ? (this._$AH !== B && this._$AR(), this._$AH = B) : t !== this._$AH && t !== W && this._(t) : void 0 !== t._$litType$ ? this.$(t) : void 0 !== t.nodeType ? this.T(t) : (t => T(t) || "function" == typeof (t === null || t === void 0 ? void 0 : t[Symbol.iterator]))(t) ? this.k(t) : this._(t);
   }
   O(t) {
     return this._$AA.parentNode.insertBefore(t, this._$AB);
@@ -524,7 +524,7 @@ class Y {
     this._$AH !== t && (this._$AR(), this._$AH = this.O(t));
   }
   _(t) {
-    this._$AH !== B && T(this._$AH) ? this._$AA.nextSibling.data = t : this.T(O.createTextNode(t)), this._$AH = t;
+    this._$AH !== B && R(this._$AH) ? this._$AA.nextSibling.data = t : this.T(O.createTextNode(t)), this._$AH = t;
   }
   $(t) {
     var _this$_$AH;
@@ -544,7 +544,7 @@ class Y {
     return void 0 === e && V.set(t.strings, e = new J(t)), e;
   }
   k(t) {
-    R(this._$AH) || (this._$AH = [], this._$AR());
+    T(this._$AH) || (this._$AH = [], this._$AR());
     const e = this._$AH;
     let s,
       i = 0;
@@ -576,10 +576,10 @@ class Q {
   _$AI(t, e = this, s, i) {
     const n = this.strings;
     let r = !1;
-    if (void 0 === n) t = K(this, t, e, 0), r = !T(t) || t !== this._$AH && t !== W, r && (this._$AH = t);else {
+    if (void 0 === n) t = K(this, t, e, 0), r = !R(t) || t !== this._$AH && t !== W, r && (this._$AH = t);else {
       const i = t;
       let a, o;
-      for (t = n[0], a = 0; a < n.length - 1; a++) o = K(this, i[s + a], e, a), o === W && (o = this._$AH[a]), r || (r = !T(o) || o !== this._$AH[a]), o === B ? t = B : t !== B && (t += (o !== null && o !== void 0 ? o : "") + n[a + 1]), this._$AH[a] = o;
+      for (t = n[0], a = 0; a < n.length - 1; a++) o = K(this, i[s + a], e, a), o === W && (o = this._$AH[a]), r || (r = !R(o) || o !== this._$AH[a]), o === B ? t = B : t !== B && (t += (o !== null && o !== void 0 ? o : "") + n[a + 1]), this._$AH[a] = o;
     }
     r && !i && this.j(t);
   }
@@ -1264,7 +1264,7 @@ function Pt(t, e) {
 }
 const Ot = new Map();
 const Ut = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
-let Tt = class extends at {
+let Rt = class extends at {
   setConfig(t) {
     this._config = t;
   }
@@ -1408,10 +1408,10 @@ let Tt = class extends at {
     `;
   }
 };
-var Rt;
+var Tt;
 t([ht({
   attribute: !1
-})], Tt.prototype, "hass", void 0), t([pt()], Tt.prototype, "_config", void 0), Tt = t([ct("smartgrow-card-editor")], Tt), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Tt);
+})], Rt.prototype, "hass", void 0), t([pt()], Rt.prototype, "_config", void 0), Rt = t([ct("smartgrow-card-editor")], Rt), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Rt);
 const Ht = "0.1.0",
   Mt = "smartgrow-card";
 let Nt = (_Class = class Nt extends at {
@@ -1441,7 +1441,7 @@ let Nt = (_Class = class Nt extends at {
     super.willUpdate(t), this._config && this.hass && this._maybeLoadSparkline();
   }
   _ids() {
-    var _this$_config$prefix3, _this$_config6, _this$_config7, _this$hass, _Rt$_prefixOverride, _this$_config9;
+    var _this$_config$prefix3, _this$_config6, _this$_config7, _this$hass, _Tt$_prefixOverride, _this$_config9;
     const t = (_this$_config$prefix3 = (_this$_config6 = this._config) === null || _this$_config6 === void 0 ? void 0 : _this$_config6.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft;
     let e = At(t, (_this$_config7 = this._config) === null || _this$_config7 === void 0 ? void 0 : _this$_config7.entities);
     const s = e.fan_target;
@@ -1455,10 +1455,10 @@ let Nt = (_Class = class Nt extends at {
         }
         return null;
       }(this.hass);
-      s && s !== t && (Rt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
+      s && s !== t && (Tt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
     }
-    const i = (_Rt$_prefixOverride = Rt._prefixOverride) !== null && _Rt$_prefixOverride !== void 0 ? _Rt$_prefixOverride : t;
-    return Rt._prefixOverride = null, function (t, e, s, i, _t$states4) {
+    const i = (_Tt$_prefixOverride = Tt._prefixOverride) !== null && _Tt$_prefixOverride !== void 0 ? _Tt$_prefixOverride : t;
+    return Tt._prefixOverride = null, function (t, e, s, i, _t$states4) {
       const n = {
           ...s
         },
@@ -1543,7 +1543,7 @@ let Nt = (_Class = class Nt extends at {
     `;
   }
   render() {
-    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _this$hass$auth$acces, _this$hass3;
+    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _this$hass3, _v$attributes;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
       e = Et(this.hass, t, gt);
@@ -1611,8 +1611,10 @@ let Nt = (_Class = class Nt extends at {
         active: "temp" === e.activeTerm
       }],
       _ = (_ref4 = (_this$_config$camera_ = (_this$_config10 = this._config) === null || _this$_config10 === void 0 ? void 0 : _this$_config10.camera_entity) !== null && _this$_config$camera_ !== void 0 ? _this$_config$camera_ : t.camera) !== null && _ref4 !== void 0 ? _ref4 : null,
-      v = _ ? `/api/camera_proxy_stream/${_}?token=${(_this$hass$auth$acces = (_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.auth) === null || _this$hass3 === void 0 ? void 0 : _this$hass3.accessToken) !== null && _this$hass$auth$acces !== void 0 ? _this$hass$auth$acces : ""}` : null,
-      $ = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
+      v = _ ? (_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.states) === null || _this$hass3 === void 0 ? void 0 : _this$hass3[_] : void 0,
+      $ = (_v$attributes = v === null || v === void 0 ? void 0 : v.attributes) !== null && _v$attributes !== void 0 ? _v$attributes : {},
+      y = _ ? "string" == typeof $.entity_picture && $.entity_picture ? $.entity_picture : "string" == typeof $.access_token && $.access_token ? `/api/camera_proxy/${_}?token=${$.access_token}` : null : null,
+      b = null !== e.cycles24h ? `${e.cycles24h} cyc/24h` : "";
     return I`
       <ha-card>
         <div class="header">
@@ -1635,7 +1637,7 @@ let Nt = (_Class = class Nt extends at {
               <div class="band-ok" style="left:${h}%; width:${p - h}%"></div>
               ${null !== d ? I`<div class="band-marker ${"ok" === c ? "" : c}" style="left:${d}%"></div>` : B}
             </div>
-            <div class="band-labels"><span>drier</span><span>${"unknown" === c ? "VPD unknown" : "low" === c ? "below band" : "high" === c ? "above band" : "in band"}</span><span>humid</span></div>
+            <div class="band-labels"><span>humid</span><span>${"unknown" === c ? "VPD unknown" : "low" === c ? "too humid — below band" : "high" === c ? "too dry — above band" : "in band"}</span><span>too dry</span></div>
           </div>
         </div>
 
@@ -1655,11 +1657,11 @@ let Nt = (_Class = class Nt extends at {
           </span>
           ${null !== e.dryRun ? I`<span class="chip ${e.dryRun ? "dryrun" : "off"}">${e.dryRun ? "DRY RUN" : "live"}</span>` : B}
           ${null !== e.adaptation ? I`<span class="chip ${e.adaptation ? "on" : "off"}">adaptation ${e.adaptation ? "on" : "off"}</span>` : B}
-          ${$ ? I`<span class="chip">${$}</span>` : B}
+          ${b ? I`<span class="chip">${b}</span>` : B}
         </div>
         ${null !== g.on ? I`<span class="chip ${g.on ? "on" : "off"}">💦 hum ${g.label}</span>${g.reason ? I`<span class="chip-note"> ${g.reason}</span>` : B}` : B}
         ${f.reason ? I`<p class="dehum-reason">reason: ${f.reason}</p>` : B}
-        ${_ ? I`<img class="camera-thumb" src=${v} alt="tent camera" loading="lazy" />` : B}
+        ${_ ? I`<img class="camera-thumb" src=${y} alt="tent camera" loading="lazy" />` : B}
 
         <div class="terms">
           ${m.map(t => I`
@@ -1689,13 +1691,13 @@ let Nt = (_Class = class Nt extends at {
       </ha-card>
     `;
   }
-}, Rt = _Class, _Class.styles = ut, _Class._prefixOverride = null, _Class);
+}, Tt = _Class, _Class.styles = ut, _Class._prefixOverride = null, _Class);
 t([ht({
   attribute: !1
-})], Nt.prototype, "hass", void 0), t([pt()], Nt.prototype, "_config", void 0), t([pt()], Nt.prototype, "_sparkPoints", void 0), Nt = Rt = t([ct("smartgrow-card")], Nt), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Nt), window.customCards = window.customCards || [], window.customCards.push({
+})], Nt.prototype, "hass", void 0), t([pt()], Nt.prototype, "_config", void 0), t([pt()], Nt.prototype, "_sparkPoints", void 0), Nt = Tt = t([ct("smartgrow-card")], Nt), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Nt), window.customCards = window.customCards || [], window.customCards.push({
   type: "smartgrow-card",
   name: "SmartGrow Card",
   description: "Grow-tent overview for the SmartGrow integration: fan gauge, VPD band, ΔAH sparkline, dehumidifier chip.",
   documentationURL: "https://github.com/niggo/smartgrow-card"
 });
-export { Mt as CARD_NAME, Ht as CARD_VERSION, Nt as SmartGrowCard, Tt as SmartGrowCardEditor };
+export { Mt as CARD_NAME, Ht as CARD_VERSION, Nt as SmartGrowCard, Rt as SmartGrowCardEditor };

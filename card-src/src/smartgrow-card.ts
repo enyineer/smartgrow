@@ -178,8 +178,19 @@ export class SmartGrowCard extends LitElement {
     const cameraEntity =
       this._config?.camera_entity ??
       (ids.camera ?? null);
-    const cameraSrc = cameraEntity
-      ? `/api/camera_proxy_stream/${cameraEntity}?token=${(this.hass as unknown as { auth?: { accessToken?: string } })?.auth?.accessToken ?? ""}`
+    // HA's camera_proxy_stream validates the ?token= against the CAMERA's
+    // rotating access_token attribute — NOT the user's auth token. An <img>
+    // cannot send an Authorization header, so the user token yields 403 and a
+    // broken image (field-reported 2026-09-13). entity_picture already carries
+    // the correct signed URL; fall back to building it from the attribute.
+    const camState = cameraEntity ? this.hass?.states?.[cameraEntity] : undefined;
+    const camAttrs = (camState?.attributes ?? {}) as Record<string, unknown>;
+    const cameraSrc: string | null = cameraEntity
+      ? typeof camAttrs.entity_picture === "string" && camAttrs.entity_picture
+        ? camAttrs.entity_picture
+        : typeof camAttrs.access_token === "string" && camAttrs.access_token
+          ? `/api/camera_proxy/${cameraEntity}?token=${camAttrs.access_token}`
+          : null
       : null;
     const cycleTxt = s.cycles24h !== null ? `${s.cycles24h} cyc/24h` : "";
 
@@ -211,7 +222,7 @@ export class SmartGrowCard extends LitElement {
                 ? html`<div class="band-marker ${vpdKey === "ok" ? "" : vpdKey}" style="left:${markerLeft}%"></div>`
                 : nothing}
             </div>
-            <div class="band-labels"><span>drier</span><span>${vpdKey === "unknown" ? "VPD unknown" : vpdKey === "low" ? "below band" : vpdKey === "high" ? "above band" : "in band"}</span><span>humid</span></div>
+            <div class="band-labels"><span>humid</span><span>${vpdKey === "unknown" ? "VPD unknown" : vpdKey === "low" ? "too humid — below band" : vpdKey === "high" ? "too dry — above band" : "in band"}</span><span>too dry</span></div>
           </div>
         </div>
 
