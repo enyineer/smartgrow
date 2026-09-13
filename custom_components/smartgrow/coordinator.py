@@ -43,6 +43,8 @@ from .const import (
     CONF_CAMERA_ENTITY,
     CONF_LIGHTS_ON_TIME,
     CONF_LIGHTS_OFF_TIME,
+    DEFAULT_LIGHTS_ON,
+    DEFAULT_LIGHTS_OFF,
     CONF_WAVEMAKER_ENTITY,
     CONF_WAVEMAKER_MODE,
     CONF_WAVEMAKER_RUN_S,
@@ -329,7 +331,12 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     # -- lights schedule (day/night cycle) --------------------------------
     def _schedule_times(self) -> tuple[dtime | None, dtime | None]:
-        """Configured on/off times as datetime.time (None if unset)."""
+        """Configured on/off times as datetime.time.
+
+        Falls back to DEFAULT_LIGHTS_ON/OFF when the entry does not store
+        explicit times — the time entities render those same defaults, so the
+        schedule the user sees is the schedule that runs.
+        """
         def parse(v: Any) -> dtime | None:
             if not v:
                 return None
@@ -338,8 +345,12 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return dtime(int(hh), int(mm))
             except (ValueError, AttributeError):
                 return None
-        on = parse(self.entry.data.get(CONF_LIGHTS_ON_TIME))
-        off = parse(self.entry.data.get(CONF_LIGHTS_OFF_TIME))
+        on = parse(self.entry.data.get(CONF_LIGHTS_ON_TIME)) or parse(
+            DEFAULT_LIGHTS_ON
+        )
+        off = parse(self.entry.data.get(CONF_LIGHTS_OFF_TIME)) or parse(
+            DEFAULT_LIGHTS_OFF
+        )
         return on, off
 
     def _schedule_wants_day(self, now: dtime) -> bool | None:

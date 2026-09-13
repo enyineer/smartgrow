@@ -36,6 +36,15 @@ def test_boundaries():
     assert c._schedule_wants_day(time(22, 0)) is False # off-time exclusive
 
 
-def test_no_schedule():
+def test_unset_times_fall_back_to_defaults():
+    """Unset times fall back to DEFAULT_LIGHTS_* (06:00/22:00) so the schedule
+    the user sees on the time entities is the schedule that runs."""
     c = make_coord("", "")
-    assert c._schedule_wants_day(time(12, 0)) is None
+    assert c._schedule_times() == (time(6, 0), time(22, 0))
+    assert c._schedule_wants_day(time(12, 0)) is True
+    assert c._schedule_wants_day(time(23, 0)) is False
+
+
+def test_explicit_times_win_over_defaults():
+    c = make_coord("20:00", "04:00")
+    assert c._schedule_times() == (time(20, 0), time(4, 0))
