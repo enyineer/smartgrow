@@ -1,0 +1,21 @@
+clear_source:
+  name: Clear source
+  description: >-
+    Remove an optional source-entity key from the entry (e.g. stop using a
+    linked VPD sensor and compute it from tent temperature/humidity).
+  fields:
+    key:
+      name: Key
+      description: The source key to clear (e.g. vpd_entity).
+      required: true
+      example: vpd_entity
+      selector:
+        select:
+          options:
+            - vpd_entity
+            - lamp_entity
+            - camera_entity
+            - hum_entity
+            - dehum_entity
+            - lung_temp_entity
+            - lung_rh_entity
