@@ -210,7 +210,14 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
             "lamp_entity",
             "camera_entity",
         )
-        return {k: self.coordinator._source(k) or None for k in keys}
+        attrs = {k: self.coordinator._source(k) or None for k in keys}
+        # Live VPD actually used by the control law (linked sensor if configured,
+        # otherwise computed from tent temp/RH). The card displays this when no
+        # vpd_entity is linked.
+        inputs = getattr(self.coordinator, "data", None)
+        vpd = getattr(inputs, "vpd", None) if inputs else None
+        attrs["vpd_computed"] = round(vpd, 3) if isinstance(vpd, (int, float)) else None
+        return attrs
 
 
 class DAhSensor(_TermSensor):

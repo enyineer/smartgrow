@@ -1212,15 +1212,26 @@ function Et(t, e, s) {
       var _t$states2;
       return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
     }),
-    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state),
-    f = _t(St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "").state),
-    g = St(t, e.dry_run),
-    m = St(t, e.adaptation),
-    _ = St(t, e.oscillation_warning),
-    v = St(t, e.legacy_automation_warning),
-    $ = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
-    y = $.fan_pct,
-    b = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
+    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state);
+  let f = null;
+  const g = St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "");
+  if (g.missing || (f = _t(g.state)), null === f) {
+    var _e$fan_target, _t$states3, _t$states4, _t$states5, _i$attributes;
+    const s = ((_e$fan_target = e.fan_target) !== null && _e$fan_target !== void 0 ? _e$fan_target : "").replace(/^sensor\./, "").replace(/_fan_target$/, ""),
+      i = (_t$states3 = t === null || t === void 0 || (_t$states4 = t.states) === null || _t$states4 === void 0 ? void 0 : _t$states4[`sensor.${s}_configured_sources`]) !== null && _t$states3 !== void 0 ? _t$states3 : t === null || t === void 0 || (_t$states5 = t.states) === null || _t$states5 === void 0 ? void 0 : _t$states5[`sensor.${s}_sources`],
+      n = i === null || i === void 0 || (_i$attributes = i.attributes) === null || _i$attributes === void 0 ? void 0 : _i$attributes.vpd_computed;
+    if ("number" == typeof n) f = n;else if ("string" == typeof n) {
+      const t = Number.parseFloat(n);
+      Number.isFinite(t) && (f = t);
+    }
+  }
+  const m = St(t, e.dry_run),
+    _ = St(t, e.adaptation),
+    v = St(t, e.oscillation_warning),
+    $ = St(t, e.legacy_automation_warning),
+    y = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
+    b = y.fan_pct,
+    w = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
@@ -1239,14 +1250,14 @@ function Et(t, e, s) {
     bandLow: l.low,
     bandHigh: l.high,
     dehumAction: a && !a.missing ? String(a.state) : null,
-    dehumReason: "string" == typeof $.reason ? $.reason : null,
-    dehumFanPct: "number" == typeof y ? y : null,
-    dryRun: vt(g.state),
-    adaptation: vt(m.state),
-    oscillationWarning: vt(_.state),
-    legacyWarning: vt(v.state),
+    dehumReason: "string" == typeof y.reason ? y.reason : null,
+    dehumFanPct: "number" == typeof b ? b : null,
+    dryRun: vt(m.state),
+    adaptation: vt(_.state),
+    oscillationWarning: vt(v.state),
+    legacyWarning: vt($.state),
     cycles24h: _t(St(t, e.cycles_24h).state),
-    stageConflict: b,
+    stageConflict: w,
     empty: !p || !u && !p
   };
 }
@@ -1257,9 +1268,9 @@ function Ct(t) {
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
 function Pt(t, e) {
-  var _e$attrs, _t$states3;
+  var _e$attrs, _t$states6;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
-  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
+  if ("string" == typeof s && t !== null && t !== void 0 && (_t$states6 = t.states) !== null && _t$states6 !== void 0 && _t$states6[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
       i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
