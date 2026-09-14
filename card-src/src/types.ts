@@ -15,6 +15,10 @@ export type SmartGrowCardConfig = {
   lamp_entity?: string;
   /** Camera entity for the live tent view. */
   camera_entity?: string;
+  /** Dehumidifier power sensor (ground truth "actually running?" check). */
+  dehum_power_entity?: string;
+  /** Watts above which the dehum counts as running (default 15). */
+  dehum_power_on_w?: number;
 };
 
 export type SmartGrowEntities = {

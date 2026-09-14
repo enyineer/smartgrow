@@ -50,6 +50,37 @@ export const cardStyles = css`
     background: color-mix(in srgb, var(--info-color, #2196f3) 20%, transparent);
     color: var(--info-color, #2196f3);
   }
+  .header-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge-dry {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--sgc-warn) 25%, transparent);
+    color: var(--sgc-warn);
+  }
+  .alert-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--sgc-error);
+    color: #fff;
+  }
+  .camera-icon {
+    background: none;
+    border: none;
+    color: var(--sgc-secondary);
+    cursor: pointer;
+    padding: 2px;
+    display: inline-flex;
+  }
 
   .gauge-row {
     display: flex;
@@ -142,6 +173,63 @@ export const cardStyles = css`
     font-style: italic;
   }
 
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .tile {
+    background: color-mix(in srgb, var(--sgc-divider) 40%, transparent);
+    border-radius: 10px;
+    padding: 8px 10px;
+    min-width: 0;
+  }
+  .tile .tile-name {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sgc-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tile .tile-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 2px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tile .tile-sub {
+    font-size: 0.72rem;
+    color: var(--sgc-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tile .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background: var(--sgc-divider);
+  }
+  .tile .dot.on {
+    background: var(--sgc-state-on);
+  }
+  .tile .dot.off {
+    background: var(--sgc-secondary);
+  }
+  .tile .dot.warn {
+    background: var(--sgc-error);
+  }
+  .tile.unavailable .tile-value {
+    color: var(--sgc-secondary);
+    font-weight: 400;
+  }
+
   .chip-row {
     display: flex;
     flex-wrap: wrap;
@@ -179,6 +267,27 @@ export const cardStyles = css`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .alert-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+  }
+  .alert-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border-left: 3px solid var(--sgc-error);
+    background: color-mix(in srgb, var(--sgc-error) 10%, transparent);
+  }
+  .alert-row.info {
+    border-left-color: var(--info-color, #2196f3);
+    background: color-mix(in srgb, var(--info-color, #2196f3) 10%, transparent);
   }
 
   .terms {
@@ -271,6 +380,52 @@ export const cardStyles = css`
   }
   .camera-open:hover {
     filter: brightness(1.15);
+  }
+
+  .drawer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--sgc-divider);
+    color: var(--sgc-secondary);
+    font-size: 0.8rem;
+    padding: 8px 0 2px;
+    cursor: pointer;
+  }
+  .drawer {
+    padding-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .drawer .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.8rem;
+  }
+  .drawer .row .k {
+    color: var(--sgc-secondary);
+    flex-shrink: 0;
+  }
+  .drawer .row .v {
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .drawer .section {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--sgc-secondary);
+    border-bottom: 1px solid var(--sgc-divider);
+    padding-bottom: 2px;
+    margin-top: 4px;
   }
 
   @media (max-width: 450px) {

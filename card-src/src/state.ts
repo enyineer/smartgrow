@@ -32,6 +32,22 @@ export interface ParsedState {
   stageConflict: string | null;
   /** true if no resolved entity exists at all → setup hint */
   empty: boolean;
+  /** Effective dehum window from the decision sensor attrs (adaptation-aware). */
+  dehumBand: { low: number | null; high: number | null; depth: number | null };
+  lightsOn: string | null;
+  lightsOff: string | null;
+  wavemaker: {
+    entity: string | null;
+    mode: string | null;
+    runS: number | null;
+    everyMin: number | null;
+    isOn: boolean | null;
+    lastChangedMs: number | null;
+  };
+  lampOn: boolean | null;
+  masterOn: boolean | null;
+  lampEntity: string | null;
+  masterEntity: string | null;
 }
 
 const NUMERIC_STATE_RE = /^-?\d+(\.\d+)?$/;
@@ -304,6 +320,15 @@ export function sourceEntityMap(
     if (typeof attrs.vpd_computed === "number") {
       out.vpd_computed = attrs.vpd_computed;
     }
+    // Wavemaker + schedule config for the card status/countdown sections.
+    for (const k of ["wavemaker_mode", "lights_on_time", "lights_off_time"] as const) {
+      const v = attrs[k];
+      if (typeof v === "string" && v.length > 0) out[k] = v;
+    }
+    for (const k of ["wavemaker_run_s", "wavemaker_every_min"] as const) {
+      const v = attrs[k];
+      if (typeof v === "number") out[k] = v;
+    }
     if (Object.keys(out).length > 0) return out;
   }
   return {};
@@ -398,6 +423,8 @@ export function parseSmartGrowState(
     toNumber(dahE.state) !== null ||
     toNumber(getBacking(hass, ids.fan_vpd_term).state) !== null;
 
+  const sourcesCache = sourceEntityMap(hass, ids.fan_target ? sourcesPrefix(ids) : "");
+
   // VPD: linked sensor if the user configured one; otherwise the coordinator's
   // computed value (Magnus over tent temp/RH) published on the sources sensor.
   let vpd: number | null = null;
@@ -408,8 +435,7 @@ export function parseSmartGrowState(
   if (vpd === null) {
     // No linked sensor: use the coordinator's computed VPD from the sources
     // sensor. sourceEntityMap handles the renamed-device-label scan.
-    const sources = sourceEntityMap(hass, ids.fan_target ? sourcesPrefix(ids) : "");
-    const computed = sources["vpd_computed"];
+    const computed = sourcesCache["vpd_computed"];
     if (typeof computed === "number") vpd = computed;
     else if (typeof computed === "string") {
       const n = Number.parseFloat(computed);
@@ -430,6 +456,29 @@ export function parseSmartGrowState(
   // one of them is stale — surface it instead of silently picking one.
   // Stage conflict: the integration computes it from the user-configured
   // legacy entity (optional config field) — the card never reads foreign ids.
+  const masterId =
+    typeof sourcesCache.lamp_switch_entity === "string"
+      ? (sourcesCache.lamp_switch_entity as string)
+      : undefined;
+  const wavemakerId =
+    typeof sourcesCache.wavemaker_entity === "string"
+      ? (sourcesCache.wavemaker_entity as string)
+      : undefined;
+  const lampE = getBacking(hass, ids.lamp);
+  const lampOn = lampE.missing ? null : toBool(lampE.state);
+  const masterB = getBacking(hass, masterId);
+  const masterOn = masterB.missing || masterB.unavailable ? null : toBool(masterB.state);
+  const wmB = getBacking(hass, wavemakerId);
+  const wmOn = wmB.missing || wmB.unavailable ? null : toBool(wmB.state);
+  const wmLastChanged = (() => {
+    if (!wavemakerId) return null;
+    const e = hass?.states?.[wavemakerId];
+    const ts = e ? (e as { last_changed?: string }).last_changed : undefined;
+    if (!ts) return null;
+    const t = Date.parse(ts);
+    return Number.isFinite(t) ? t : null;
+  })();
+
   const stageConflict: string | null =
     (getBacking(hass, ids.stage)?.attrs?.stage_conflict as string | undefined) ?? null;
 
@@ -459,6 +508,40 @@ export function parseSmartGrowState(
     legacyWarning: toBool(legacyE.state),
     cycles24h: toNumber(getBacking(hass, ids.cycles_24h).state),
     stageConflict,
+    dehumBand: {
+      low: typeof dehumAttrs.band_low === "number" ? dehumAttrs.band_low : null,
+      high: typeof dehumAttrs.band_high === "number" ? dehumAttrs.band_high : null,
+      depth: typeof dehumAttrs.band_depth === "number" ? dehumAttrs.band_depth : null,
+    },
+    lightsOn:
+      typeof sourcesCache.lights_on_time === "string"
+        ? (sourcesCache.lights_on_time as string)
+        : null,
+    lightsOff:
+      typeof sourcesCache.lights_off_time === "string"
+        ? (sourcesCache.lights_off_time as string)
+        : null,
+    wavemaker: {
+      entity: wavemakerId ?? null,
+      mode:
+        typeof sourcesCache.wavemaker_mode === "string"
+          ? (sourcesCache.wavemaker_mode as string)
+          : null,
+      runS:
+        typeof sourcesCache.wavemaker_run_s === "number"
+          ? (sourcesCache.wavemaker_run_s as number)
+          : null,
+      everyMin:
+        typeof sourcesCache.wavemaker_every_min === "number"
+          ? (sourcesCache.wavemaker_every_min as number)
+          : null,
+      isOn: wmOn,
+      lastChangedMs: wmLastChanged,
+    },
+    lampOn,
+    masterOn,
+    lampEntity: typeof ids.lamp === "string" ? ids.lamp : null,
+    masterEntity: masterId ?? null,
     empty: !anyPresent || (!anyNumeric && !anyPresent),
   };
 }

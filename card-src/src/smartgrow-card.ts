@@ -20,7 +20,13 @@ import {
   sparklineGeometry,
   historyToPoints,
   clamp,
+  toNumber,
 } from "./state";
+import {
+  nextLightsSwitch,
+  formatCountdown,
+  wavemakerStatus,
+} from "./time";
 import type { SmartGrowCardConfig } from "./types";
 import type { HomeAssistant } from "./types-ha";
 import type { ParsedState } from "./state";
@@ -37,6 +43,8 @@ export class SmartGrowCard extends LitElement {
   @state() private _config?: SmartGrowCardConfig;
 
   @state() private _sparkPoints: Array<{ t: number; v: number }> = [];
+
+  @state() private _drawerOpen = false;
 
   private _sparkLoadedFor?: string;
 
@@ -64,7 +72,7 @@ export class SmartGrowCard extends LitElement {
   }
 
   public getCardSize(): number {
-    return 6;
+    return 7;
   }
 
   static styles = cardStyles;
@@ -143,6 +151,7 @@ export class SmartGrowCard extends LitElement {
     if (!this._config || !this.hass) return html``;
     const ids = this._ids();
     const s = parseSmartGrowState(this.hass, ids, VPD_BAND_RANGE);
+    const now = Date.now();
 
     if (s.empty) {
       const missingIds = (Object.values(ids) as (string | undefined)[]).filter(
@@ -159,22 +168,13 @@ export class SmartGrowCard extends LitElement {
 
     const vpdPos = bandPosition(s.vpd, s.bandLow, s.bandHigh);
     const vpdKey = vpdColorKey(vpdPos);
-    const bandPctLow = clamp(0, 0, 100);
-    const bandPctHigh = clamp(100, 0, 100);
-    const okLeft = 0;
-    const okRight = 100;
-    void bandPctLow;
-    void bandPctHigh;
-    void okLeft;
-    void okRight;
-    const markerLeft = vpdPos === null ? null : clamp(((vpdPos + 0.25) / 1.5) * 100, 0, 100);
+    const markerLeft =
+      vpdPos === null ? null : clamp(((vpdPos + 0.25) / 1.5) * 100, 0, 100);
     const bandLeftPct = clamp(((0 + 0.25) / 1.5) * 100, 0, 100);
     const bandRightPct = clamp(((1 + 0.25) / 1.5) * 100, 0, 100);
 
     const spark = sparklineGeometry(this._sparkPoints, 300, 54, 4);
     const dehum = dehumChip(getBacking(this.hass, ids.dehumidifier_decision));
-    const humE = getBacking(this.hass, ids.humidifier_decision);
-    const hum = dehumChip(humE);
 
     const terms = [
       { key: "dah", label: "ΔAH", value: s.terms.dah, active: s.activeTerm === "dah" },
@@ -186,11 +186,72 @@ export class SmartGrowCard extends LitElement {
     const cameraEntity =
       this._config?.camera_entity ??
       (ids.camera ?? null);
-    // No inline stream: <img>/multipart streams in the companion webview have
-    // proven fragile (auth-token 403s, broken-image states). Instead render a
-    // button that opens the HA-native more-info dialog for the camera — HA
-    // renders the live stream there with correct auth, always.
     const cycleTxt = s.cycles24h !== null ? `${s.cycles24h} cyc/24h` : "";
+
+    // --- New: lights countdown + wavemaker + alerts ---
+    const lightsCountdown = nextLightsSwitch(
+      { on: s.lightsOn, off: s.lightsOff },
+      now
+    );
+    const wm = wavemakerStatus(
+      { mode: s.wavemaker.mode, runS: s.wavemaker.runS, everyMin: s.wavemaker.everyMin },
+      s.wavemaker.isOn,
+      s.wavemaker.lastChangedMs,
+      now,
+      s.phase === "day" ? true : s.phase === "night" ? false : null
+    );
+
+    // Effective band overlay: prefer the decision sensor's adaptation-aware
+    // window; fall back to the stage table when the sensor is missing.
+    const effHigh = s.dehumBand.high ?? s.bandHigh;
+    const reengage =
+      s.dehumBand.low !== null && s.dehumBand.depth !== null
+        ? s.dehumBand.low + s.dehumBand.depth
+        : null;
+
+    const span = 2.0; // -0.25..1.75 render window in band-position units
+    const pct = (pos: number) => clamp(((pos + 0.25) / span) * 100, 0, 100);
+    const bandPosAbs = (v: number) => (v - s.bandLow) / (s.bandHigh - s.bandLow);
+    const okR = bandPosAbs(effHigh);
+    const winL = reengage !== null ? bandPosAbs(reengage) : null;
+    const winR = s.dehumBand.depth !== null ? okR : null;
+
+    // Alert strip: lamp-dark-during-day, VPD out of band, sensor degraded.
+    const alerts: Array<{ text: string; cls: string }> = [];
+    if (s.phase === "day") {
+      const lampLit = s.lampOn === true && (s.masterOn !== false);
+      if (s.lampOn !== null && !lampLit) {
+        alerts.push({
+          text:
+            s.masterOn === false
+              ? "Lamp dark during day — master plug OFF"
+              : "Lamp dark during day — dimmer OFF",
+          cls: "",
+        });
+      }
+    }
+    if (vpdKey === "low") {
+      alerts.push({ text: "VPD below band — too humid", cls: "" });
+    } else if (vpdKey === "high") {
+      alerts.push({ text: "VPD above band — too dry", cls: "" });
+    }
+    const alertCount = alerts.length;
+
+    // Dehum power override (ground-truth verification), card-config only.
+    const powerId = this._config?.dehum_power_entity ?? null;
+    let powerTxt: string | null = null;
+    let powerWarn = false;
+    if (powerId) {
+      const pv = toNumber(this.hass?.states?.[powerId]?.state);
+      if (pv === null) {
+        powerTxt = "power ?";
+      } else if (dehum.on === true && pv <= 2) {
+        powerTxt = "standby — commanded ON";
+        powerWarn = true;
+      } else {
+        powerTxt = `${Math.round(pv)} W`;
+      }
+    }
 
     return html`
       <ha-card>
@@ -200,6 +261,19 @@ export class SmartGrowCard extends LitElement {
             ? html`<div class="stage" title=${s.stageConflict ? `legacy helper says: ${s.stageConflict}` : ""}>${s.stage}${s.stageConflict ? " ⚠︎" : ""}</div>`
             : nothing}
           <div class="phase-chip ${s.phase}">${s.phase}</div>
+          <div class="header-icons">
+            ${s.dryRun === true ? html`<span class="badge-dry">DRY</span>` : nothing}
+            ${alertCount > 0 ? html`<span class="alert-pill">${alertCount}</span>` : nothing}
+            ${cameraEntity
+              ? html`<button
+                  class="camera-icon"
+                  title="Open live camera stream"
+                  @click=${() => this._openCamera(cameraEntity!)}
+                >
+                  <ha-icon icon="mdi:cctv"></ha-icon>
+                </button>`
+              : nothing}
+          </div>
         </div>
         ${s.stageConflict
           ? html`<div class="stage-conflict" style="font-size:0.78rem;opacity:0.8;margin:-4px 0 4px;color:var(--warning-color,#ffb000)">
@@ -216,6 +290,9 @@ export class SmartGrowCard extends LitElement {
             <div class="fan-sub">VPD ${s.vpd !== null ? s.vpd.toFixed(2) : "—"} kPa · band ${s.bandLow.toFixed(1)}–${s.bandHigh.toFixed(1)}</div>
             <div class="band-bar">
               <div class="band-ok" style="left:${bandLeftPct}%; width:${bandRightPct - bandLeftPct}%"></div>
+              ${winL !== null && winR !== null
+                ? html`<div style="position:absolute;top:2px;bottom:2px;background:color-mix(in srgb, var(--sgc-warn) 45%, transparent);border-radius:5px;left:${pct(winL)}%;width:${Math.max(2, pct(winR) - pct(winL))}%"></div>`
+                : nothing}
               ${markerLeft !== null
                 ? html`<div class="band-marker ${vpdKey === "ok" ? "" : vpdKey}" style="left:${markerLeft}%"></div>`
                 : nothing}
@@ -236,10 +313,44 @@ export class SmartGrowCard extends LitElement {
             : html`<div class="spark-empty">no history yet — recording…</div>`}
         </div>
 
+        <div class="status-grid">
+          <div class="tile">
+            <div class="tile-name"><span class="dot ${s.fanTarget !== null && s.fanTarget > 0 ? "on" : ""}"></span>Fan</div>
+            <div class="tile-value">${s.fanTarget !== null ? `${Math.round(s.fanTarget)} %` : "—"}</div>
+            <div class="tile-sub">${s.activeTerm ? `term: ${s.activeTerm}` : "actual " + (s.fanActual !== null ? Math.round(s.fanActual) + " %" : "—")}</div>
+          </div>
+          <div class="tile">
+            <div class="tile-name"><span class="dot ${dehum.on === true ? "on" : dehum.on === false ? "off" : "warn"}"></span>Dehum</div>
+            <div class="tile-value">${dehum.label}</div>
+            <div class="tile-sub">${s.dehumReason ?? cycleTxt ?? ""}</div>
+          </div>
+          <div class="tile">
+            <div class="tile-name"><span class="dot ${s.lampOn === true ? "on" : s.lampOn === false ? "off" : "warn"}"></span>Lamp</div>
+            <div class="tile-value">${s.lampOn === null ? "—" : s.lampOn ? "ON" : "OFF"}</div>
+            <div class="tile-sub">
+              ${lightsCountdown
+                ? `${lightsCountdown.next === "on" ? "on in" : "off in"} ${formatCountdown(lightsCountdown.ms)}`
+                : s.masterOn === false
+                  ? "plug off"
+                  : ""}
+            </div>
+          </div>
+          <div class="tile">
+            <div class="tile-name"><span class="dot ${wm.running === true ? "on" : wm.running === false ? "off" : "warn"}"></span>Wave</div>
+            <div class="tile-value">${wm.visible ? (wm.running === null ? "—" : wm.running ? "ON" : "idle") : "off"}</div>
+            <div class="tile-sub">${wm.label ?? (s.wavemaker.entity ? "" : "not configured")}</div>
+          </div>
+        </div>
+
+        ${alerts.length > 0
+          ? html`<div class="alert-strip">
+              ${alerts.map(
+                (al) => html`<div class="alert-row ${al.cls}">⚠️ ${al.text}</div>`
+              )}
+            </div>`
+          : nothing}
+
         <div class="chip-row">
-          <span class="chip ${dehum.on === null ? "" : dehum.on ? "on" : "off"}">
-            💧 dehum ${dehum.label}
-          </span>
           ${s.dryRun !== null
             ? html`<span class="chip ${s.dryRun ? "dryrun" : "off"}">${s.dryRun ? "DRY RUN" : "live"}</span>`
             : nothing}
@@ -247,21 +358,9 @@ export class SmartGrowCard extends LitElement {
             ? html`<span class="chip ${s.adaptation ? "on" : "off"}">adaptation ${s.adaptation ? "on" : "off"}</span>`
             : nothing}
           ${cycleTxt ? html`<span class="chip">${cycleTxt}</span>` : nothing}
+          ${powerTxt ? html`<span class="chip ${powerWarn ? "warn" : ""}">${powerTxt}</span>` : nothing}
         </div>
-        ${hum.on !== null
-          ? html`<span class="chip ${hum.on ? "on" : "off"}">💦 hum ${hum.label}</span>${hum.reason ? html`<span class="chip-note"> ${hum.reason}</span>` : nothing}`
-          : nothing}
         ${dehum.reason ? html`<p class="dehum-reason">reason: ${dehum.reason}</p>` : nothing}
-        ${cameraEntity
-          ? html`<button
-              class="camera-open"
-              title="Open live camera stream"
-              @click=${() => this._openCamera(cameraEntity!)}
-            >
-              <ha-icon icon="mdi:cctv"></ha-icon>
-              <span>Live camera</span>
-            </button>`
-          : nothing}
 
         <div class="terms">
           ${terms.map(
@@ -282,15 +381,46 @@ export class SmartGrowCard extends LitElement {
           ? html`<div class="fan-sub" style="margin-top:6px">active term: ${s.activeTerm}</div>`
           : nothing}
 
-        ${s.oscillationWarning || s.legacyWarning
-          ? html`
-              <div class="warning-banner">
-                ⚠️
-                ${s.oscillationWarning ? html`<span>dehumidifier oscillation</span>` : nothing}
-                ${s.oscillationWarning && s.legacyWarning ? html`<span>·</span>` : nothing}
-                ${s.legacyWarning ? html`<span>legacy automations still active</span>` : nothing}
-              </div>
-            `
+        <button
+          class="drawer-toggle"
+          @click=${() => { this._drawerOpen = !this._drawerOpen; }}
+        >
+          ${this._drawerOpen ? "Details ▴" : "Details ▾"}
+        </button>
+        ${this._drawerOpen
+          ? html`<div class="drawer">
+              <div class="section">Schedule</div>
+              <div class="row"><span class="k">Lights on</span><span class="v">${s.lightsOn ?? "—"}</span></div>
+              <div class="row"><span class="k">Lights off</span><span class="v">${s.lightsOff ?? "—"}</span></div>
+              ${lightsCountdown
+                ? html`<div class="row"><span class="k">Next switch</span><span class="v">${lightsCountdown.next} in ${formatCountdown(lightsCountdown.ms)}</span></div>`
+                : nothing}
+              <div class="section">Wavemaker</div>
+              <div class="row"><span class="k">Entity</span><span class="v">${s.wavemaker.entity ?? "not configured"}</span></div>
+              <div class="row"><span class="k">Mode</span><span class="v">${s.wavemaker.mode ?? "—"}</span></div>
+              ${s.wavemaker.runS !== null
+                ? html`<div class="row"><span class="k">Run</span><span class="v">${s.wavemaker.runS} s</span></div>`
+                : nothing}
+              ${s.wavemaker.everyMin !== null
+                ? html`<div class="row"><span class="k">Every</span><span class="v">${s.wavemaker.everyMin} min</span></div>`
+                : nothing}
+              <div class="section">Dehumidifier</div>
+              <div class="row"><span class="k">Band</span><span class="v">${s.dehumBand.low !== null ? `${s.dehumBand.low.toFixed(2)} – ${s.dehumBand.high !== null ? s.dehumBand.high.toFixed(2) : "?"} kPa` : "—"}</span></div>
+              ${s.dehumBand.depth !== null && s.dehumBand.low !== null && reengage !== null
+                ? html`<div class="row"><span class="k">Window</span><span class="v">${reengage.toFixed(2)} → ${(s.dehumBand.low + s.dehumBand.depth).toFixed(2)} kPa</span></div>`
+                : nothing}
+              <div class="row"><span class="k">Cycles 24h</span><span class="v">${cycleTxt || "—"}</span></div>
+              <div class="row"><span class="k">Power</span><span class="v">${powerTxt ?? "configure dehum_power_entity"}</span></div>
+              <div class="section">Diagnostics</div>
+              <div class="row"><span class="k">Master plug</span><span class="v">${s.masterOn === null ? "not configured" : s.masterOn ? "on" : "off"}</span></div>
+              <div class="row"><span class="k">Lamp dimmer</span><span class="v">${s.lampOn === null ? "—" : s.lampOn ? "on" : "off"}</span></div>
+              ${s.oscillationWarning
+                ? html`<div class="row"><span class="k">Oscillation</span><span class="v">warning active</span></div>`
+                : nothing}
+              ${s.legacyWarning
+                ? html`<div class="row"><span class="k">Legacy automations</span><span class="v">still active</span></div>`
+                : nothing}
+            </div>`
           : nothing}
       </ha-card>
     `;
