@@ -278,6 +278,17 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
     # read-only property set automatically by the flow manager. Assigning it
     # raises AttributeError -> HTTP 500 when the Configure dialog opens.
 
+    def _notify_service_options(self) -> list[str]:
+        """All notify.* service names (e.g. mobile_app_pixel_11_pro), sorted."""
+        opts: list[str] = []
+        services = getattr(self.hass, "services", None)
+        if services is not None:
+            for domain in services.async_services():
+                if domain == "notify":
+                    opts.extend(services.async_services()[domain].keys())
+        opts.append("persistent_notification")
+        return sorted(set(opts))
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -289,6 +300,8 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
         from .const import (
             CONF_ADAPTATION_AGGRESSIVENESS,
             CONF_ADAPTATION_ENABLED,
+            CONF_ALERT_COOLDOWN_MIN,
+            CONF_ALERT_VPD_TOLERANCE,
             CONF_BAND_LOW_DAY,
             CONF_BAND_LOW_NIGHT,
             CONF_COLD_CLAMP,
@@ -298,6 +311,7 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
             CONF_FAN_FLOOR_DAY,
             CONF_FAN_FLOOR_NIGHT,
             CONF_NEED_GAIN,
+            CONF_NOTIFY_TARGETS,
             CONF_TEMP_GAIN,
             CONF_VPD_GAIN,
         )
@@ -343,6 +357,24 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_BAND_LOW_NIGHT, default=current[CONF_BAND_LOW_NIGHT]
                 ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+                vol.Optional(
+                    CONF_NOTIFY_TARGETS,
+                    default=list(current.get(CONF_NOTIFY_TARGETS) or []),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=self._notify_service_options(),
+                        multiple=True,
+                        custom_value=True,
+                    )
+                ),
+                vol.Required(
+                    CONF_ALERT_VPD_TOLERANCE,
+                    default=current.get(CONF_ALERT_VPD_TOLERANCE, 0.15),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+                vol.Required(
+                    CONF_ALERT_COOLDOWN_MIN,
+                    default=current.get(CONF_ALERT_COOLDOWN_MIN, 60),
+                ): vol.All(vol.Coerce(float), vol.Range(min=5, max=720)),
                 vol.Required(
                     CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]
                 ): bool,

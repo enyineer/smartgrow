@@ -59,8 +59,11 @@ CONF_BAND_LOW_DAY = "band_low_day"
 CONF_BAND_LOW_NIGHT = "band_low_night"
 CONF_ADAPTATION_ENABLED = "adaptation_enabled"
 CONF_ADAPTATION_AGGRESSIVENESS = "adaptation_aggressiveness"
+CONF_NOTIFY_TARGETS = "notify_targets"
+CONF_ALERT_VPD_TOLERANCE = "alert_vpd_tolerance"
+CONF_ALERT_COOLDOWN_MIN = "alert_cooldown_min"
 
-DEFAULTS: dict[str, float | bool] = {
+DEFAULTS: dict = {
     CONF_DRY_RUN: True,
     CONF_FAN_FLOOR_DAY: 28.0,
     CONF_FAN_FLOOR_NIGHT: 20.0,
@@ -75,6 +78,9 @@ DEFAULTS: dict[str, float | bool] = {
     CONF_BAND_LOW_NIGHT: 0.0,
     CONF_ADAPTATION_ENABLED: True,
     CONF_ADAPTATION_AGGRESSIVENESS: 1.0,
+    CONF_NOTIFY_TARGETS: [],
+    CONF_ALERT_VPD_TOLERANCE: 0.15,
+    CONF_ALERT_COOLDOWN_MIN: 60,
 }
 
 STAGES = ("Seedling", "Vegetative", "Flowering")

@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import asyncio
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime as dt_datetime, time as dtime, timedelta
 from typing import Any, TypedDict
 
@@ -95,6 +95,9 @@ class RuntimeOptions:
 
     dry_run: bool = True
     adaptation_enabled: bool = True
+    notify_targets: list[str] = field(default_factory=list)
+    alert_vpd_tolerance: float = 0.15
+    alert_cooldown_min: float = 60.0
     control: ControlParams = ControlParams()
 
     @classmethod
@@ -119,6 +122,9 @@ class RuntimeOptions:
         return cls(
             dry_run=opts["dry_run"],
             adaptation_enabled=opts["adaptation_enabled"],
+            notify_targets=list(opts.get("notify_targets", []) or []),
+            alert_vpd_tolerance=float(opts.get("alert_vpd_tolerance", 0.15)),
+            alert_cooldown_min=float(opts.get("alert_cooldown_min", 60)),
             control=control,
         )
 
@@ -147,6 +153,12 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.entry = entry
         self.options_rt = RuntimeOptions.from_entry(entry)
         self.engine = AdaptationEngine(enabled=self.options_rt.adaptation_enabled)
+        from .alerts import AlertEngine
+
+        self.alerts = AlertEngine(
+            cooldown_s=self.options_rt.alert_cooldown_min * 60.0,
+            vpd_tolerance=self.options_rt.alert_vpd_tolerance,
+        )
         self.trace: list[DecisionRecord] = []
         self.last_fan_ts: float = 0.0
         self.last_dehum_ts: float = 0.0
@@ -653,6 +665,52 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._record("hum", "command", decision.reason, -1, inputs)
 
+    async def _dispatch_alerts(
+        self, now: float, inputs: SensorInputs, params: Any, result: dict[str, Any]
+    ) -> None:
+        """Evaluate out-of-range conditions and notify configured targets."""
+        degraded = result.get("degraded", {})
+        band_low = params.effective_band_low(inputs.stage, inputs.is_day)
+        band_high = params.band_high(inputs.stage, inputs.is_day)
+        alerts = self.alerts.evaluate(
+            now,
+            vpd=inputs.vpd,
+            band_low=band_low,
+            band_high=band_high,
+            is_day=inputs.is_day,
+            lamp_on=self._lamp_is_on(),
+            master_on=self._lamp_switch_is_on(),
+            degraded={
+                "lung": degraded.get("lung", False),
+                "vpd_sensor": degraded.get("vpd_sensor", False),
+            },
+        )
+        if not alerts:
+            return
+        targets = self.options_rt.notify_targets
+        title = "SmartGrow alert"
+        for alert in alerts:
+            message = "[" + alert["kind"] + "] " + alert["message"]
+            _LOGGER.warning("ALERT %s", message)
+            for target in targets:
+                target = target if target.startswith("notify.") else "notify." + target
+                dname, _, sname = target.partition(".")
+                try:
+                    await self.hass.services.async_call(
+                        dname, sname,
+                        {"title": title, "message": message},
+                        blocking=True,
+                    )
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.warning("Alert to %s failed: %s", target, err)
+            # Always surface in HA itself, even with 0 targets configured.
+            await self.hass.services.async_call(
+                "persistent_notification", "create",
+                {"title": title, "message": message,
+                 "notification_id": "smartgrow_" + alert["kind"]},
+                blocking=True,
+            )
+
     def _aggregate_shared_wish(self, dehum_entity: str, own: str) -> str:
         """Aggregate this cycle's wishes across all tents sharing a dehum.
 
@@ -775,6 +833,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result["hum"] = decision
 
         self._check_legacy_automations()
+
+        # Out-of-range alerts -> configured notify targets (+persistent).
+        try:
+            await self._dispatch_alerts(now, inputs, params, result)
+        except Exception as err:  # noqa: BLE001 — alerts must never kill the loop
+            _LOGGER.warning("Alert evaluation failed: %s", err)
+
         return result
 
     def _aggregate_shared_wish(self, dehum_entity: str, own: str) -> str:
