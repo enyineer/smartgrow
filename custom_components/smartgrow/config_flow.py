@@ -43,6 +43,7 @@ from .const import (
     CONF_WAVEMAKER_MODE,
     CONF_WAVEMAKER_RUN_S,
     CONF_WAVEMAKER_EVERY_MIN,
+    WAVEMAKER_MODE_NONE,
     WAVEMAKER_MODES,)
 
 _LOGGER = logging.getLogger(__name__)
@@ -258,6 +259,30 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # see the comment there and tests/test_flow_serialization.py.
         merged = {**entry.data, **entry.options}
         schema = _entity_schema(merged)
+        # Wavemaker program fields — the entity picker alone is not enough;
+        # without mode/run/every here the pump can never run (v0.9.6 gap).
+        schema.update(
+            {
+                vol.Optional(
+                    CONF_WAVEMAKER_MODE,
+                    default=merged.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
+                    )
+                ),
+                vol.Optional(
+                    CONF_WAVEMAKER_RUN_S,
+                    default=merged.get(CONF_WAVEMAKER_RUN_S, 120),
+                    description={"suggested_value": merged.get(CONF_WAVEMAKER_RUN_S, 120)},
+                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=1800)),
+                vol.Optional(
+                    CONF_WAVEMAKER_EVERY_MIN,
+                    default=merged.get(CONF_WAVEMAKER_EVERY_MIN, 180),
+                    description={"suggested_value": merged.get(CONF_WAVEMAKER_EVERY_MIN, 180)},
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
+            }
+        )
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )

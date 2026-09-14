@@ -137,6 +137,14 @@ async def test_reconfigure_schema_serializes(hass, enable_custom_integrations):
     assert "fan.demo" in blob
     assert '"entity"' in blob, "reconfigure schema lost its entity pickers"
 
+    # v0.9.7: the wavemaker program fields must be present in reconfigure
+    # (entity picker alone left the pump unrunnable — mode defaulted to none)
+    names = {f.get("name") for f in converted}
+    assert "wavemaker_mode" in names, "reconfigure lost wavemaker_mode"
+    assert "wavemaker_run_s" in names, "reconfigure lost wavemaker_run_s"
+    assert "wavemaker_every_min" in names, "reconfigure lost wavemaker_every_min"
+    assert "interval" in blob, "wavemaker mode options missing"
+
 
 async def test_options_schema_serializes(hass, enable_custom_integrations):
     """Control-law tuning dialog: pickers AND knobs, no 500."""
