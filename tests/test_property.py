@@ -128,23 +128,22 @@ def test_dead_zone_is_hysteretic(
 ) -> None:
     """No dead-zone violation: a state change requires crossing a margin.
 
-    Inside the dead zone [low-severity, low-margin) with fan below the sat
-    trigger and lung RH comfortable, the dehum never NEWLY switches ON from
-    OFF (that would be churn); a hold-ON is fine (still-needed) only when
-    vpd < low-margin strictly.
+    Under the in-band window law the dead zone is [low, low+depth): an OFF
+    unit stays OFF there (no spurious ON unless saturation assist fires),
+    and an ON unit holds until low+depth. Just below low, an OFF unit
+    switches ON — that single crossing IS the intended window trigger.
     """
     low = P.effective_band_low("Flowering", is_day)
-    margin = P.dehum_vpd_margin
-    severity = P.dehum_severity
-    zone_lo = low - severity
-    zone_hi = low - margin
-    if zone_lo >= zone_hi or not (zone_lo <= vpd < zone_hi):
+    depth = P.dehum_band_depth
+    if not (low <= vpd < low + depth):
         return
     if fan >= P.dehum_sat_trigger:
         return
     inputs = make_inputs(24.0, 60, 22.0, 55.0, vpd, fan, is_day)
     d_off = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
-    assert d_off.action == "no_change"  # OFF state holds: no spurious ON
+    assert d_off.action == "off"  # OFF state holds: no spurious ON
+    d_on = dehumid_control.compute_dehum(inputs, P, dehum_is_on=True)
+    assert d_on.action == "on"  # ON state holds until target depth
 
 
 @given(temperatures, humidity, temperatures, humidity, vpds, fans, st.booleans())

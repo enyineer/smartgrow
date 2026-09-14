@@ -687,9 +687,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         now = time.time()
         base = self.options_rt.control
-        # Adaptation may rewrite gains/margins (watchdog-guarded).
+        # Adaptation may rewrite gains/margins (watchdog-guarded). The engine
+        # applies the widened band-depth target and gain factor; when the
+        # watchdog trips, adaptation is disabled and a repair issue raised.
         if self.engine.check_watchdog(base):
-            params = base
+            params = self.engine.adapted_params(base)
         else:
             params = base.with_updates(adaptation_enabled=False)
             self.hass.add_job(self._async_raise_watchdog_issue)
@@ -722,6 +724,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_dehum_ts = now
             decision = dehumid_control.compute_dehum(inputs, params, self.dehum_on)
             self.last_dehum_decision = decision
+            # Feed the oscillation detector so adaptation can deepen the
+            # band target when the cascade churns (watchdog-guarded).
+            self.engine.record_actuator(self.dehum_on, now)
             await self._apply_dehum(decision, inputs)
             result["dehum"] = decision
 

@@ -34,6 +34,7 @@ async def async_setup_entry(
             NeedGainNumber(coordinator, entry),
             TempGainNumber(coordinator, entry),
             ColdClampNumber(coordinator, entry),
+            DehumBandDepthNumber(coordinator, entry),
             DehumSatTriggerNumber(coordinator, entry),
             DehumDryFloorNumber(coordinator, entry),
         ]
@@ -189,6 +190,26 @@ class ColdClampNumber(DeltaGainNumber):
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(cold_clamp=value)
+        )
+
+
+class DehumBandDepthNumber(DeltaGainNumber):
+    _attr_name = "SmartGrow dehumidifier band depth"
+    _attr_icon = "mdi:arrow-collapse-down"
+    _attr_native_min_value = 0.05
+    _attr_native_max_value = 0.5
+    _attr_native_step = 0.05
+
+    def __init__(self, coordinator, entry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = _uid(entry, "dehum_band_depth")
+
+    def _param(self) -> float:
+        return self.coordinator.options_rt.control.dehum_band_depth
+
+    def _set_param(self, value: float) -> None:
+        self.coordinator.options_rt.control = (
+            self.coordinator.options_rt.control.with_updates(dehum_band_depth=value)
         )
 
 

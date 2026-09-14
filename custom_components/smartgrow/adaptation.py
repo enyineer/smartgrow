@@ -27,7 +27,9 @@ MAX_DRIFT_FRACTION = 0.40
 FLIP_WINDOW_H = 24.0
 FLIP_WARN_THRESHOLD = 6  # flips/24h above which we call it oscillation
 FLIP_CRITICAL_THRESHOLD = 12  # historical bug level (26 flips) territory
-# Auto-widen hysteresis by this much (kPa) per critical detection, capped.
+# Auto-deepen the in-band hysteresis target by this much (kPa) per critical
+# detection, capped. Deepening the OFF target grows the hysteresis window,
+# which damps churn AND moves the average further into the band.
 WIDEN_STEP = 0.02
 WIDEN_MAX = 0.10
 
@@ -177,7 +179,7 @@ class AdaptationEngine:
             self.widen = min(WIDEN_MAX, self.widen + WIDEN_STEP * self.aggressiveness)
             result["widened_margin"] = self.widen
             _LOGGER.warning(
-                "Oscillation detected: %d flips/24h; widened dehum margin to +%.2f kPa",
+                "Oscillation detected: %d flips/24h; deepened dehum band target to +%.2f kPa",
                 flips,
                 self.widen,
             )
@@ -234,7 +236,7 @@ class AdaptationEngine:
                 return adapted != 0
             return abs(adapted) > MAX_DRIFT_FRACTION * abs(default)
 
-        if drifted(self.widen, base.dehum_vpd_margin) or drifted(
+        if drifted(self.widen, base.dehum_band_depth) or drifted(
             self.gain.factor - 1.0, 1.0
         ):
             self.enabled = False
@@ -250,9 +252,9 @@ class AdaptationEngine:
         """Apply adapted values onto ``base`` if adaptation is enabled."""
         if not self.enabled:
             return base
-        margin = base.dehum_vpd_margin + self.widen
+        depth = base.dehum_band_depth + self.widen
         delta_gain = base.delta_gain * self.gain.factor
-        return base.with_updates(dehum_vpd_margin=margin, delta_gain=delta_gain)
+        return base.with_updates(dehum_band_depth=depth, delta_gain=delta_gain)
 
     def force_recalibrate(self, base: ControlParams) -> dict[str, Any]:
         """Reset all adapted state back to safe defaults."""
@@ -292,7 +294,7 @@ class AdaptationEngine:
         """Attribute dict for an adapted value: ``adapted, from_default``."""
         values = {
             "delta_gain": self.gain.factor * default,
-            "dehum_vpd_margin": default + self.widen,
+            "dehum_band_depth": default + self.widen,
         }
         value = values.get(name, default)
         return {

@@ -146,63 +146,95 @@ class TestDehumControl:
         assert d.action == "off"
         assert d.reason == "over_dry_floor"
 
-    def test_off_when_band_reached(self) -> None:
-        inputs = make_inputs(24.0, 55, 22.0, 50, 1.46, 40, **self.DAY)
+    def test_off_when_target_depth_reached(self) -> None:
+        """OFF only at band_low + depth (1.5 + 0.15 = 1.65)."""
+        inputs = make_inputs(24.0, 45, 22.0, 50, 1.65, 40, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=True)
         assert d.action == "off"
-        assert d.reason == "band_reached"
+        assert d.reason == "target_depth_reached"
 
-    def test_hold_while_still_needed(self) -> None:
-        inputs = make_inputs(24.0, 65, 22.0, 55, 1.40, 60, **self.DAY)
+    def test_on_when_below_band(self) -> None:
+        """Below band_low -> ON even if previously off (the window trigger)."""
+        inputs = make_inputs(24.0, 55, 22.0, 50, 1.46, 40, **self.DAY)
+        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
+        assert d.action == "on"
+        assert d.reason == "below_band"
+
+    def test_off_guard_when_idle_below_band_edge(self) -> None:
+        """Idle and above band_low - margin: stay off (no spurious starts)."""
+        inputs = make_inputs(24.0, 55, 22.0, 50, 1.46, 40, **self.DAY)
+        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
+        # 1.46 < 1.5 -> actually ON (below band). Guard check uses vpd >= low:
+        inputs2 = make_inputs(24.0, 55, 22.0, 50, 1.52, 40, **self.DAY)
+        d2 = dehumid_control.compute_dehum(inputs2, P, dehum_is_on=False)
+        assert d2.action == "off"
+        assert d2.reason == "band_edge_guard"
+
+    def test_hold_until_depth(self) -> None:
+        """ON and VPD between low and low+depth: keep running."""
+        inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 60, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=True)
         assert d.action == "on"
-        assert d.reason == "hold_still_needed"
+        assert d.reason == "hold_to_depth"
 
     def test_saturation_assist(self) -> None:
-        inputs = make_inputs(24.0, 65, 22.0, 55, 1.44, 75, **self.DAY)
+        inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 75, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
         assert d.action == "on"
         assert d.reason == "saturation_assist"
 
     def test_saturation_assist_needs_rh_hysteresis(self) -> None:
-        """fan >= 70 but lung RH below floor+3 -> no assist."""
-        inputs = make_inputs(24.0, 65, 22.0, 45.5, 1.44, 75, **self.DAY)
-        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
-        assert d.action == "no_change"
+        """fan >= 70, lung RH below floor+3, dehum already ON -> keep running
+        only until depth; here it holds (vpd < low+depth)."""
+        inputs = make_inputs(24.0, 65, 22.0, 45.5, 1.55, 75, **self.DAY)
+        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=True)
+        assert d.action == "on"  # hold until target depth
+        assert d.reason == "hold_to_depth"
 
     def test_severity_backstop_cold_night(self) -> None:
-        """VPD < low - 0.1 engages even with fan < 70%."""
+        """Deep below the band at night engages even with fan < 70%.
+
+        Under the in-band hysteresis law any vpd < low is 'below_band';
+        the severity backstop remains as defense-in-depth (same action).
+        """
         inputs = make_inputs(18.0, 70, 17.0, 60, 1.15, 40, is_day=False)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
         assert d.action == "on"
-        assert d.reason == "severity_backstop"
+        assert d.reason in ("below_band", "severity_backstop")
 
     def test_dead_zone_no_change(self) -> None:
-        """Between band-reached OFF and the ON triggers: intentional hold."""
-        # vpd 1.42 in (low-0.1, low-0.05): fan 40 < 70, dehum off -> no change
-        inputs = make_inputs(24.0, 63, 22.0, 55, 1.42, 40, **self.DAY)
+        """ON unit between low and low+depth with RH floor veto risk: hold."""
+        # ON, vpd 1.55 in (low, low+depth): holds (below_band). The no_change
+        # dead zone now only exists between OFF-guard edge and sat-assist RH
+        # hysteresis: idle, vpd in [low, low+depth), fan >= 70 but RH too low.
+        inputs = make_inputs(24.0, 65, 22.0, 45.5, 1.55, 75, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
-        assert d.action == "no_change"
-        assert d.reason == "dead_zone"
+        assert d.action == "off"
+        assert d.reason == "band_edge_guard"
 
-    def test_dead_zone_gap_is_real(self) -> None:
-        """Document the dead zone boundaries explicitly."""
-        # At low-0.05 exactly: OFF (band reached)
-        at_margin = make_inputs(24.0, 63, 22.0, 55, 1.45, 40, **self.DAY)
-        assert dehumid_control.compute_dehum(at_margin, P, False).action == "off"
-        # Just below low-0.05 but above low-0.1: no change (dead zone)
-        in_zone = make_inputs(24.0, 63, 22.0, 55, 1.4499, 40, **self.DAY)
-        assert dehumid_control.compute_dehum(in_zone, P, False).action == "no_change"
-        # Below low-0.1: severity ON
-        severe = make_inputs(24.0, 63, 22.0, 55, 1.3999, 40, **self.DAY)
-        assert dehumid_control.compute_dehum(severe, P, False).action == "on"
+    def test_hysteresis_window_is_real(self) -> None:
+        """Document the in-band window boundaries explicitly (low=1.5, d=0.15)."""
+        # Idle at band_low exactly: below_band is strict (<), so off-guard fires
+        at_low = make_inputs(24.0, 63, 22.0, 55, 1.50, 40, **self.DAY)
+        assert dehumid_control.compute_dehum(at_low, P, False).action == "off"
+        # Just below low: ON
+        below = make_inputs(24.0, 63, 22.0, 55, 1.4999, 40, **self.DAY)
+        assert dehumid_control.compute_dehum(below, P, False).action == "on"
+        # ON unit mid-window: keeps running
+        mid = make_inputs(24.0, 63, 22.0, 55, 1.57, 40, **self.DAY)
+        d_mid = dehumid_control.compute_dehum(mid, P, True)
+        assert d_mid.action == "on"
+        assert d_mid.reason == "hold_to_depth"
+        # ON unit at target depth (low+depth): OFF
+        at_depth = make_inputs(24.0, 63, 22.0, 55, 1.65, 40, **self.DAY)
+        assert dehumid_control.compute_dehum(at_depth, P, True).action == "off"
 
     def test_options_reconfigure_triggers(self) -> None:
         """Options reconfigure: lower dry floor AND sat trigger together."""
         p = P.with_updates(
             dehum_sat_trigger=50.0, dehum_dry_floor=50.0, dehum_severity=0.2
         )
-        inputs = make_inputs(24.0, 65, 22.0, 55, 1.44, 55, **self.DAY)
+        inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 55, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, p, dehum_is_on=False)
         assert d.action == "on"
         assert d.reason == "saturation_assist"

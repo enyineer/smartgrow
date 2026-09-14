@@ -161,17 +161,34 @@ class TestFanReplay:
 
 class TestDehumReplay:
     def test_no_on_when_power_stayed_low(self) -> None:
-        """No ON-command where recorded power stayed <50W for >15 min after."""
+        """Backstop ONs only where the unit demonstrably could run.
+
+        The in-band window law legitimately issues ON below band_low even
+        where the OLD-law recorded trace stayed off (that divergence is the
+        intended behavior change). What must still hold: ONs above the band
+        (saturation assist) never appear where the recorded power stayed
+        <50 W — the unit could not have run.
+        """
         power = load_series(DEHUM_POWER)
         violations = []
         for ts, dec, _pw in replay_dehum():
-            if dec.action != "on":
+            if dec.action != "on" or dec.reason != "saturation_assist":
                 continue
             horizon = ts + dt.timedelta(minutes=15)
             window = [p for t, p in power if ts <= t <= horizon]
             if window and max(window) < 50:
                 violations.append((ts.isoformat(), max(window)))
-        assert not violations, f"spurious ON decisions: {violations[:5]}"
+        assert not violations, f"spurious saturation-assist ONs: {violations[:5]}"
+
+    def test_window_law_only_ons_below_band_or_assist(self) -> None:
+        """Every ON under the new law is below-band or saturation assist."""
+        for _ts, dec, _pw in replay_dehum():
+            if dec.action != "on":
+                continue
+            assert dec.reason in ("below_band", "hold_to_depth",
+                                  "saturation_assist", "severity_backstop"), (
+                f"unexpected ON reason {dec.reason}"
+            )
 
     def test_on_matches_power_ramp(self) -> None:
         """ON decisions align with real actuator runs (>200W within ±10 min)."""
@@ -213,7 +230,7 @@ class TestDehumReplay:
         from custom_components.smartgrow.logic.params import ControlParams
 
         p = ControlParams()
-        allowed = {"band_reached", "over_dry_floor"}
+        allowed = {"target_depth_reached", "band_edge_guard", "over_dry_floor"}
         for _ts, si, _fp, pw in aligned_samples():
             dec = dehumid_control.compute_dehum(si, p, pw > 50)
             if dec.action == "off":

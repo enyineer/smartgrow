@@ -302,6 +302,8 @@ class DehumDecisionSensor(SmartGrowEntity, SensorEntity):
         return {
             "reason": d.reason,
             "band_low": d.band_low,
+            "band_depth": getattr(d, "band_depth", None),
+            "band_high": getattr(d, "band_high", None),
             "vpd_margin": d.vpd_margin,
             "fan_pct": d.fan_pct,
             "lung_rh": d.lung_rh,

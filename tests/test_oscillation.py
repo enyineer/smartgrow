@@ -160,7 +160,7 @@ def test_oscillation_detector_counts_flips() -> None:
 def test_watchdog_disables_runaway_adaptation() -> None:
     """Drift > 40% from defaults trips the convergence watchdog."""
     engine = AdaptationEngine()
-    # Widened margin of 0.10 on a 0.05 default = 200% drift -> watchdog.
+    # Widened depth of 0.10 on a 0.15 default = 67% drift -> watchdog.
     engine.widen = 0.10
     base = ControlParams()
     assert engine.check_watchdog(base) is False
@@ -170,10 +170,10 @@ def test_watchdog_disables_runaway_adaptation() -> None:
     # A tripped engine stays tripped (no silent re-enable).
     assert engine.check_watchdog(base) is False
 
-    # Within bounds: widening of 0.01 (20% of the 0.05 default) is accepted.
+    # Within bounds: deepening of 0.01 (~7% of the 0.15 default) is accepted.
     engine2 = AdaptationEngine()
     engine2.widen = 0.01
     assert engine2.enabled is True
-    assert engine2.adapted_params(base).dehum_vpd_margin == pytest.approx(0.06)
+    assert engine2.adapted_params(base).dehum_band_depth == pytest.approx(0.16)
     assert engine2.check_watchdog(base) is True
     assert engine2.enabled is True

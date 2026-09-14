@@ -63,7 +63,8 @@ class ControlParams:
     dehum_sat_trigger: float = 70.0  # fan % that signals saturation assist
     dehum_dry_floor: float = 44.0  # lung RH below this -> over-dry, force OFF
     dehum_hysteresis: float = 3.0  # sat assist needs lung_rh >= floor + hysteresis
-    dehum_vpd_margin: float = 0.05  # anti-churn margin around the band low
+    dehum_vpd_margin: float = 0.05  # hysteresis guard just below the band low
+    dehum_band_depth: float = 0.15  # OFF target depth into the band above low
     dehum_severity: float = 0.1
 
     # Humidifier cascade (mirror of dehum; for seedling/clone stages).

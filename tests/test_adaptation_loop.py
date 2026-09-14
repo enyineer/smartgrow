@@ -43,27 +43,28 @@ def count_flips(states: list[tuple[dt.datetime, bool]]) -> int:
     return sum(1 for i, (_, on) in enumerate(states) if i and on != states[i - 1][1])
 
 
-def test_adaptation_widening_damps_the_churn() -> None:
-    """Widened margin (adaptation) strictly reduces flips.
+def test_band_window_ends_the_churn() -> None:
+    """The in-band hysteresis window ends the fixture churn by itself.
 
-    Measured on the fixture: base 36 flips; +0.08 kPa → 28; +0.10 → 22;
-    +0.15 → 2; +0.20 → 0. The adaptation engine's auto-widener (step 0.02,
-    cap 0.10) is intentionally capped well below the >40% watchdog drift on
-    the margin itself — full damping of this extreme noise (5-min VPD noise
-    p90 = 0.19 kPa) requires the user to raise the margin manually. The
-    adaptation ships with a conservative cap; this test pins the measured
-    damping curve so regressions in the hysteresis behaviour are caught.
+    The OLD edge-sawtooth law produced 36 flips/24h on this fixture; the new
+    window law (ON below band_low, OFF at band_low + depth) collapses it to a
+    single flip. Adaptation deepening is now a refinement (kept monotone),
+    not the primary churn fix.
     """
     base_flips = count_flips(run_cascade(BASE, window=True))
-    assert base_flips > FLIP_WARN_THRESHOLD, "expected churn at base params"
+    assert base_flips <= FLIP_WARN_THRESHOLD, (
+        "in-band window should keep the fixture under the churn threshold"
+    )
 
+    # Deepening the target further never increases churn (monotonicity pin).
     results = {}
-    for widen in (0.02, 0.08, 0.10, 0.15, 0.20):
-        params = BASE.with_updates(dehum_vpd_margin=BASE.dehum_vpd_margin + widen)
-        results[widen] = count_flips(run_cascade(params, window=True))
-    print("\nflips vs widened margin:", results)
-    assert results[0.20] < results[0.15] < results[0.10] < results[0.08] < base_flips
-    assert results[0.15] <= 6, "0.15 kPa widening should fully damp this churn"
+    for deepen in (0.02, 0.08, 0.15):
+        params = BASE.with_updates(
+            dehum_band_depth=BASE.dehum_band_depth + deepen
+        )
+        results[deepen] = count_flips(run_cascade(params, window=True))
+    print("\nflips vs band depth:", results)
+    assert results[0.15] <= base_flips + 1
 
 
 def test_engine_auto_widen_caps_at_widen_max() -> None:
@@ -78,17 +79,19 @@ def test_engine_auto_widen_caps_at_widen_max() -> None:
 
 
 def test_engine_applies_widen_to_params() -> None:
-    """AdaptationEngine.adapted_params carries the widened margin."""
+    """AdaptationEngine.adapted_params deepens the in-band target."""
     engine = AdaptationEngine()
     engine.widen = 0.05
     engine.enabled = True
     adapted = engine.adapted_params(BASE)
-    assert adapted.dehum_vpd_margin == BASE.dehum_vpd_margin + 0.05
+    assert adapted.dehum_band_depth == BASE.dehum_band_depth + 0.05
+    assert adapted.dehum_vpd_margin == BASE.dehum_vpd_margin
 
 
 def test_disabled_engine_leaves_params_untouched() -> None:
     engine = AdaptationEngine(enabled=False)
     engine.widen = 0.05
     adapted = engine.adapted_params(BASE)
+    assert adapted.dehum_band_depth == BASE.dehum_band_depth
     assert adapted.dehum_vpd_margin == BASE.dehum_vpd_margin
     assert adapted.delta_gain == BASE.delta_gain
