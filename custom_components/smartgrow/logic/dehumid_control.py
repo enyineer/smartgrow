@@ -94,11 +94,15 @@ def compute_dehum(
         return DehumDecision(action="on", reason="hold_to_depth", **common)
     if inputs.vpd < low:
         return DehumDecision(action="on", reason="below_band", **common)
-    if inputs.fan_pct >= sat_trigger and inputs.lung_rh >= dry_floor + hysteresis:
-        return DehumDecision(action="on", reason="saturation_assist", **common)
     if not dehum_is_on and inputs.vpd >= low:
         # Idle inside the window without triggers: stay off (hysteresis).
+        # MUST precede saturation_assist: the assist is an OUT-OF-BAND
+        # reinforcement, never an in-window restart. Evaluated after it
+        # (v0.9.0), a boosted fan (>=70%) + moderate lung RH restarted the
+        # unit immediately after each completed pull — defeating the window.
         return DehumDecision(action="off", reason="band_edge_guard", **common)
+    if inputs.fan_pct >= sat_trigger and inputs.lung_rh >= dry_floor + hysteresis:
+        return DehumDecision(action="on", reason="saturation_assist", **common)
     if inputs.vpd < low - severity:
         return DehumDecision(action="on", reason="severity_backstop", **common)
 

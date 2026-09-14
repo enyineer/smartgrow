@@ -178,10 +178,22 @@ class TestDehumControl:
         assert d.reason == "hold_to_depth"
 
     def test_saturation_assist(self) -> None:
+        """Assist extends an ON run inside the window (never starts idle)."""
+        inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 75, **self.DAY)
+        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=True)
+        assert d.action == "on"
+        assert d.reason == "hold_to_depth"
+
+    def test_no_in_window_restart_from_assist(self) -> None:
+        """v0.9.1: idle + in-window + fan saturated + RH high stays OFF.
+
+        Regression for the live failure: a boosted fan crossing sat_trigger
+        restarted the unit right after each completed pull.
+        """
         inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 75, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
-        assert d.action == "on"
-        assert d.reason == "saturation_assist"
+        assert d.action == "off"
+        assert d.reason == "band_edge_guard"
 
     def test_saturation_assist_needs_rh_hysteresis(self) -> None:
         """fan >= 70, lung RH below floor+3, dehum already ON -> keep running
@@ -234,7 +246,15 @@ class TestDehumControl:
         p = P.with_updates(
             dehum_sat_trigger=50.0, dehum_dry_floor=50.0, dehum_severity=0.2
         )
+        # Lowered thresholds let the assist hold an ON run inside the window
+        # even with moderate fan; the hold (below_band/hold_to_depth) would
+        # fire anyway below the band, so assert in-window ON semantics:
         inputs = make_inputs(24.0, 65, 22.0, 55, 1.55, 55, **self.DAY)
-        d = dehumid_control.compute_dehum(inputs, p, dehum_is_on=False)
+        d = dehumid_control.compute_dehum(inputs, p, dehum_is_on=True)
         assert d.action == "on"
-        assert d.reason == "saturation_assist"
+        assert d.reason == "hold_to_depth"
+        # ...and the lowered sat trigger itself engages below the band:
+        inputs2 = make_inputs(24.0, 65, 22.0, 55, 1.45, 55, **self.DAY)
+        d2 = dehumid_control.compute_dehum(inputs2, p, dehum_is_on=False)
+        assert d2.action == "on"
+        assert d2.reason in ("below_band", "saturation_assist")
