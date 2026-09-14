@@ -176,8 +176,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     # -- entity id helpers -------------------------------------------------
     @property
     def source_entities(self) -> dict[str, str]:
-        """Map of role -> source entity_id from the config entry."""
-        data = {**self.entry.data}
+        """Map of role -> source entity_id from the config entry.
+
+        Options override data - exactly like _source() and the tuning-dialog
+        merge. Reading data-only here made the runtime disagree with the
+        sources sensor (phase 'unknown' while sources showed the lamp).
+        """
+        data = {**self.entry.data, **self.entry.options}
         return {
             "fan": data[CONF_FAN_ENTITY],
             "dehum": data.get(CONF_DEHUM_ENTITY, ""),
@@ -522,11 +527,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             last = self._wavemaker_last_toggle or 0.0
             if not is_on:
                 if now - last >= every_min * 60:
-                    self._async_switch(entity, True)
+                    self.hass.async_create_task(self._async_switch(entity, True))
                     self._wavemaker_last_toggle = now
             else:
                 if now - last >= run_s:
-                    self._async_switch(entity, False)
+                    self.hass.async_create_task(self._async_switch(entity, False))
                     self._wavemaker_last_toggle = now
 
     async def _async_switch(self, entity: str, turn_on: bool) -> None:
