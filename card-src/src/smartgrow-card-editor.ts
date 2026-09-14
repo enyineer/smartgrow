@@ -1,5 +1,5 @@
 import { LitElement, html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { property, state } from "lit/decorators.js";
 
 import { DEFAULT_PREFIX, ENTITY_KINDS } from "./const";
 import { resolveEntityIds, listSmartGrowDevices } from "./state";
@@ -15,7 +15,6 @@ const FORM_ENTITY_KEYS = ENTITY_KINDS;
  * shadow context (fields rendered invisible on some Android WebViews —
  * the "can't configure the device" bug). Native inputs render everywhere.
  */
-@customElement("smartgrow-card-editor")
 export class SmartGrowCardEditor extends LitElement {
   // The Lovelace dialog assigns `hass` after creation (loosely typed — we only
   // read registry maps off it, never HA-frontend component APIs).

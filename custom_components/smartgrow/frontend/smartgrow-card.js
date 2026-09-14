@@ -1,4 +1,4 @@
-var _Symbol$metadata, _u$litPropertyMetadat, _u$reactiveElementVer, _x$litHtmlVersions, _rt$litElementHydrate, _rt$litElementVersion, _Class;
+var _Symbol$metadata, _u$litPropertyMetadat, _u$reactiveElementVer, _x$litHtmlVersions, _rt$litElementHydrate, _rt$litElementVersion, _Ht;
 function t(t, e, s, i) {
   var n,
     r = arguments.length,
@@ -677,19 +677,14 @@ const ot = rt.litElementPolyfillSupport;
 ot !== null && ot !== void 0 && ot({
   LitElement: at
 }), ((_rt$litElementVersion = rt.litElementVersions) !== null && _rt$litElementVersion !== void 0 ? _rt$litElementVersion : rt.litElementVersions = []).push("4.2.2");
-const ct = t => (e, s) => {
-    void 0 !== s ? s.addInitializer(() => {
-      customElements.define(t, e);
-    }) : customElements.define(t, e);
-  },
-  lt = {
+const ct = {
     attribute: !0,
     type: String,
     converter: v,
     reflect: !1,
     hasChanged: $
   },
-  dt = (t = lt, e, s) => {
+  lt = (t = ct, e, s) => {
     const {
       kind: i,
       metadata: n
@@ -720,20 +715,20 @@ const ct = t => (e, s) => {
     }
     throw Error("Unsupported decorator location: " + i);
   };
-function ht(t) {
-  return (e, s) => "object" == typeof s ? dt(t, e, s) : ((t, e, s) => {
+function dt(t) {
+  return (e, s) => "object" == typeof s ? lt(t, e, s) : ((t, e, s) => {
     const i = e.hasOwnProperty(s);
     return e.constructor.createProperty(s, t), i ? Object.getOwnPropertyDescriptor(e, s) : void 0;
   })(t, e, s);
 }
-function pt(t) {
-  return ht({
+function ht(t) {
+  return dt({
     ...t,
     state: !0,
     attribute: !1
   });
 }
-const ut = ((t, ...e) => {
+const pt = ((t, ...e) => {
     const s = 1 === t.length ? t[0] : e.reduce((e, s, i) => e + (t => {
       if (!0 === t._$cssResult$) return t.cssText;
       if ("number" == typeof t) return t;
@@ -1019,31 +1014,31 @@ const ut = ((t, ...e) => {
     }
   }
 `,
-  ft = "smartgrow_smartgrow",
-  gt = {
+  ut = "smartgrow_smartgrow",
+  ft = {
     low: 1.3,
     high: 1.6
   },
-  mt = /^-?\d+(\.\d+)?$/;
-function _t(t) {
+  gt = /^-?\d+(\.\d+)?$/;
+function mt(t) {
   if (null == t) return null;
   const e = String(t).trim();
   if (0 === e.length) return null;
   const s = e.toLowerCase();
   if ("unknown" === s || "unavailable" === s || "none" === s || "off" === s || "on" === s) return null;
-  if (!mt.test(e)) return null;
+  if (!gt.test(e)) return null;
   const i = Number(e);
   return Number.isFinite(i) ? i : null;
 }
-function vt(t) {
+function _t(t) {
   if (null == t) return null;
   const e = String(t).trim().toLowerCase();
   return "on" === e || "true" === e || "1" === e || "off" !== e && "false" !== e && "0" !== e && null;
 }
-function $t(t, e, s) {
+function vt(t, e, s) {
   return Math.min(s, Math.max(e, t));
 }
-function yt(t) {
+function $t(t) {
   var _t$attrs;
   if (!t || t.missing) return {
     label: "—",
@@ -1062,16 +1057,16 @@ function yt(t) {
     reason: s
   };
 }
-const bt = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dehumidifier_cycles_24h", "dry_run", "cycles_24h", "stage", "adaptation", "oscillation_warning", "legacy_automation_warning", "dah"];
-function xt(t) {
+const yt = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dehumidifier_cycles_24h", "dry_run", "cycles_24h", "stage", "adaptation", "oscillation_warning", "legacy_automation_warning", "dah"];
+function bt(t) {
   const e = t.replace(/^(sensor|binary_sensor|switch|number|select|update)\./, "");
-  for (const t of bt) if (e.endsWith("_" + t)) {
+  for (const t of yt) if (e.endsWith("_" + t)) {
     const s = e.slice(0, e.length - t.length - 1);
     return s.length > 0 ? s : null;
   }
   return null;
 }
-function wt(t) {
+function xt(t) {
   var _e$entities, _e$devices;
   if (!t) return [];
   const e = t,
@@ -1079,7 +1074,7 @@ function wt(t) {
     i = (_e$devices = e.devices) !== null && _e$devices !== void 0 ? _e$devices : {},
     n = new Map(),
     r = (t, e) => {
-      const s = xt(t);
+      const s = bt(t);
       if (!s) return;
       const i = e === null || e === void 0 ? void 0 : e.device_id;
       i && !n.has(i) && n.set(i, s);
@@ -1091,7 +1086,7 @@ function wt(t) {
   if (0 === n.size && t.states) {
     const e = new Set();
     for (const s of Object.keys(t.states)) {
-      const t = xt(s);
+      const t = bt(s);
       t && e.add(t);
     }
     return Array.from(e).sort().map(t => ({
@@ -1112,7 +1107,7 @@ function wt(t) {
   }
   return a.sort((t, e) => t.label.localeCompare(e.label)), a;
 }
-function At(t, e) {
+function wt(t, e) {
   const s = t.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
     i = [["fan_target", "fan_target", "sensor"], ["fan_dah_term", "fan_dah_term", "sensor"], ["fan_vpd_term", "fan_vpd_term", "sensor"], ["fan_need_term", "fan_need_term", "sensor"], ["fan_temp_term", "fan_temp_term", "sensor"], ["active_fan_term", "active_fan_term", "sensor"], ["dah", "dah", "sensor"], ["ah_tent", "ah_tent", "sensor"], ["ah_lung_room", "ah_lung_room", "sensor"], ["dehumidifier_decision", "dehumidifier_decision", "sensor"], ["humidifier_decision", "humidifier_decision", "sensor"], ["dry_run", "dry_run", "sensor"], ["phase", "phase", "sensor"], ["cycles_24h", "cycles_24h", "sensor"], ["stage", "stage", "select"], ["adaptation", "adaptation", "switch"], ["oscillation_warning", "oscillation_warning", "binary_sensor"], ["legacy_automation_warning", "legacy_automation_warning", "binary_sensor"]],
     n = {};
@@ -1123,7 +1118,7 @@ function At(t, e) {
   for (const [t, s] of Object.entries(e !== null && e !== void 0 ? e : {})) !(t in n) && s && (n[t] = s);
   return n;
 }
-function kt(t, e) {
+function At(t, e) {
   if (!(t !== null && t !== void 0 && t.states)) return {};
   const s = e.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
     i = [`sensor.${s}_sources`, `sensor.${s}_configured_sources`];
@@ -1139,7 +1134,7 @@ function kt(t, e) {
   }
   return {};
 }
-function St(t, e) {
+function kt(t, e) {
   var _s$attributes2;
   if (!e || !t || !t.states) return {
     entityId: e,
@@ -1161,12 +1156,12 @@ function St(t, e) {
     unavailable: i
   };
 }
-function Et(t, e, s) {
-  var _e$vpd, _a$attrs, _St$attrs$stage_confl, _St;
-  const i = St(t, e.fan_target),
-    n = St(t, e.dah),
-    r = St(t, e.stage),
-    a = St(t, e.dehumidifier_decision),
+function St(t, e, s) {
+  var _e$vpd, _a$attrs, _kt$attrs$stage_confl, _kt;
+  const i = kt(t, e.fan_target),
+    n = kt(t, e.dah),
+    r = kt(t, e.stage),
+    a = kt(t, e.dehumidifier_decision),
     o = function (t, e, _t$states) {
       if (!e.phase) return "unknown";
       const s = t === null || t === void 0 || (_t$states = t.states) === null || _t$states === void 0 || (_t$states = _t$states[e.phase]) === null || _t$states === void 0 ? void 0 : _t$states.state;
@@ -1215,11 +1210,11 @@ function Et(t, e, s) {
       var _t$states2;
       return void 0 !== (t === null || t === void 0 || (_t$states2 = t.states) === null || _t$states2 === void 0 ? void 0 : _t$states2[e]);
     }),
-    u = null !== _t(i.state) || null !== _t(n.state) || null !== _t(St(t, e.fan_vpd_term).state);
+    u = null !== mt(i.state) || null !== mt(n.state) || null !== mt(kt(t, e.fan_vpd_term).state);
   let f = null;
-  const g = St(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "");
-  if (g.missing || (f = _t(g.state)), null === f) {
-    const s = kt(t, e.fan_target ? function (t, _t$fan_target) {
+  const g = kt(t, (_e$vpd = e.vpd) !== null && _e$vpd !== void 0 ? _e$vpd : "");
+  if (g.missing || (f = mt(g.state)), null === f) {
+    const s = At(t, e.fan_target ? function (t, _t$fan_target) {
         return ((_t$fan_target = t.fan_target) !== null && _t$fan_target !== void 0 ? _t$fan_target : "").replace(/^sensor\./, "").replace(/_fan_target$/, "");
       }(e) : ""),
       i = s.vpd_computed;
@@ -1228,62 +1223,62 @@ function Et(t, e, s) {
       Number.isFinite(t) && (f = t);
     }
   }
-  const m = St(t, e.dry_run),
-    _ = St(t, e.adaptation),
-    v = St(t, e.oscillation_warning),
-    $ = St(t, e.legacy_automation_warning),
+  const m = kt(t, e.dry_run),
+    _ = kt(t, e.adaptation),
+    v = kt(t, e.oscillation_warning),
+    $ = kt(t, e.legacy_automation_warning),
     y = (_a$attrs = a.attrs) !== null && _a$attrs !== void 0 ? _a$attrs : {},
     b = y.fan_pct,
-    x = (_St$attrs$stage_confl = (_St = St(t, e.stage)) === null || _St === void 0 || (_St = _St.attrs) === null || _St === void 0 ? void 0 : _St.stage_conflict) !== null && _St$attrs$stage_confl !== void 0 ? _St$attrs$stage_confl : null;
+    x = (_kt$attrs$stage_confl = (_kt = kt(t, e.stage)) === null || _kt === void 0 || (_kt = _kt.attrs) === null || _kt === void 0 ? void 0 : _kt.stage_conflict) !== null && _kt$attrs$stage_confl !== void 0 ? _kt$attrs$stage_confl : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
     phase: o,
-    fanTarget: _t(i.state),
-    fanActual: Pt(t, i),
+    fanTarget: mt(i.state),
+    fanActual: Ct(t, i),
     terms: {
-      dah: _t(St(t, e.fan_dah_term).state),
-      vpd: _t(St(t, e.fan_vpd_term).state),
-      need: _t(St(t, e.fan_need_term).state),
-      temp: _t(St(t, e.fan_temp_term).state)
+      dah: mt(kt(t, e.fan_dah_term).state),
+      vpd: mt(kt(t, e.fan_vpd_term).state),
+      need: mt(kt(t, e.fan_need_term).state),
+      temp: mt(kt(t, e.fan_temp_term).state)
     },
-    activeTerm: Ct(St(t, e.active_fan_term)),
-    dah: _t(n.state),
+    activeTerm: Et(kt(t, e.active_fan_term)),
+    dah: mt(n.state),
     vpd: f,
     bandLow: l.low,
     bandHigh: l.high,
     dehumAction: a && !a.missing ? String(a.state) : null,
     dehumReason: "string" == typeof y.reason ? y.reason : null,
     dehumFanPct: "number" == typeof b ? b : null,
-    dryRun: vt(m.state),
-    adaptation: vt(_.state),
-    oscillationWarning: vt(v.state),
-    legacyWarning: vt($.state),
-    cycles24h: _t(St(t, e.cycles_24h).state),
+    dryRun: _t(m.state),
+    adaptation: _t(_.state),
+    oscillationWarning: _t(v.state),
+    legacyWarning: _t($.state),
+    cycles24h: mt(kt(t, e.cycles_24h).state),
     stageConflict: x,
     empty: !p || !u && !p
   };
 }
-function Ct(t) {
+function Et(t) {
   if (!t || t.missing || t.unavailable) return null;
   const e = String(t.state).trim(),
     s = e.toLowerCase();
   return ["dah", "delta", "vpd", "need", "temp", "floor", "min_fan"].some(t => s.includes(t)) ? e : null;
 }
-function Pt(t, e) {
+function Ct(t, e) {
   var _e$attrs, _t$states3;
   const s = e === null || e === void 0 || (_e$attrs = e.attrs) === null || _e$attrs === void 0 ? void 0 : _e$attrs.fan_entity;
   if ("string" == typeof s && t !== null && t !== void 0 && (_t$states3 = t.states) !== null && _t$states3 !== void 0 && _t$states3[s]) {
     var _e$attributes$percent, _e$attributes;
     const e = t.states[s],
-      i = _t(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
+      i = mt(String((_e$attributes$percent = (_e$attributes = e.attributes) === null || _e$attributes === void 0 ? void 0 : _e$attributes.percentage) !== null && _e$attributes$percent !== void 0 ? _e$attributes$percent : ""));
     if (null !== i) return i;
   }
   return null;
 }
-const Ot = new Map();
-const Ut = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
-let Rt = class extends at {
+const Pt = new Map();
+const Ot = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
+class Ut extends at {
   setConfig(t) {
     this._config = t;
   }
@@ -1311,7 +1306,7 @@ let Rt = class extends at {
       device_id: void 0,
       prefix: void 0
     });
-    const s = wt(this.hass).find(t => t.device_id === e);
+    const s = xt(this.hass).find(t => t.device_id === e);
     this._apply({
       device_id: e,
       prefix: s ? s.prefix : void 0
@@ -1345,9 +1340,9 @@ let Rt = class extends at {
   render() {
     var _this$_config$prefix, _ref3, _this$_config$device_, _s$find, _this$_config$title;
     if (!this._config) return B;
-    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : ft,
-      e = At(t, this._config.entities),
-      s = wt(this.hass),
+    const t = (_this$_config$prefix = this._config.prefix) !== null && _this$_config$prefix !== void 0 ? _this$_config$prefix : ut,
+      e = wt(t, this._config.entities),
+      s = xt(this.hass),
       i = (_ref3 = (_this$_config$device_ = this._config.device_id) !== null && _this$_config$device_ !== void 0 ? _this$_config$device_ : (_s$find = s.find(t => {
         var _this$_config$prefix2, _this$_config2;
         return t.prefix === ((_this$_config$prefix2 = (_this$_config2 = this._config) === null || _this$_config2 === void 0 ? void 0 : _this$_config2.prefix) !== null && _this$_config$prefix2 !== void 0 ? _this$_config$prefix2 : "");
@@ -1374,7 +1369,7 @@ let Rt = class extends at {
           type="text"
           style=${n}
           .value=${t}
-          placeholder=${ft}
+          placeholder=${ut}
           @change=${this._prefixChanged}
         />
 
@@ -1388,7 +1383,7 @@ let Rt = class extends at {
         />
 
         <div style=${r}>Override individual entities (empty = derive from prefix / integration config):</div>
-        ${Ut.map(t => {
+        ${Ot.map(t => {
       var _this$_config$entitie2, _this$_config3, _e$t;
       return I`
             <label for=${"sg-ent-" + t} style=${r}>${t}</label>
@@ -1426,14 +1421,13 @@ let Rt = class extends at {
       </div>
     `;
   }
-};
-var Tt;
-t([ht({
+}
+t([dt({
   attribute: !1
-})], Rt.prototype, "hass", void 0), t([pt()], Rt.prototype, "_config", void 0), Rt = t([ct("smartgrow-card-editor")], Rt), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Rt);
-const Ht = "0.1.0",
-  Mt = "smartgrow-card";
-let Nt = (_Class = class Nt extends at {
+})], Ut.prototype, "hass", void 0), t([ht()], Ut.prototype, "_config", void 0), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Ut);
+const Rt = "0.1.0",
+  Tt = "smartgrow-card";
+class Ht extends at {
   constructor() {
     super(...arguments), this._sparkPoints = [];
   }
@@ -1442,13 +1436,13 @@ let Nt = (_Class = class Nt extends at {
   }
   static getStubConfig(t) {
     return {
-      type: `custom:${Mt}`
+      type: `custom:${Tt}`
     };
   }
   setConfig(t) {
     if (!t || "object" != typeof t) throw new Error("Invalid configuration");
     this._config = {
-      prefix: ft,
+      prefix: ut,
       show_setup_hint: !0,
       ...t
     }, this._sparkLoadedFor = void 0, this._sparkPoints = [];
@@ -1460,9 +1454,9 @@ let Nt = (_Class = class Nt extends at {
     super.willUpdate(t), this._config && this.hass && this._maybeLoadSparkline();
   }
   _ids() {
-    var _this$_config$prefix3, _this$_config6, _this$_config7, _this$hass, _Tt$_prefixOverride, _this$_config9;
-    const t = (_this$_config$prefix3 = (_this$_config6 = this._config) === null || _this$_config6 === void 0 ? void 0 : _this$_config6.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ft;
-    let e = At(t, (_this$_config7 = this._config) === null || _this$_config7 === void 0 ? void 0 : _this$_config7.entities);
+    var _this$_config$prefix3, _this$_config6, _this$_config7, _this$hass, _Ht$_prefixOverride, _this$_config9;
+    const t = (_this$_config$prefix3 = (_this$_config6 = this._config) === null || _this$_config6 === void 0 ? void 0 : _this$_config6.prefix) !== null && _this$_config$prefix3 !== void 0 ? _this$_config$prefix3 : ut;
+    let e = wt(t, (_this$_config7 = this._config) === null || _this$_config7 === void 0 ? void 0 : _this$_config7.entities);
     const s = e.fan_target;
     if (s && !((_this$hass = this.hass) !== null && _this$hass !== void 0 && (_this$hass = _this$hass.states) !== null && _this$hass !== void 0 && _this$hass[s])) {
       var _this$_config8;
@@ -1474,14 +1468,14 @@ let Nt = (_Class = class Nt extends at {
         }
         return null;
       }(this.hass);
-      s && s !== t && (Tt._prefixOverride = s, e = At(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
+      s && s !== t && (Ht._prefixOverride = s, e = wt(s, (_this$_config8 = this._config) === null || _this$_config8 === void 0 ? void 0 : _this$_config8.entities));
     }
-    const i = (_Tt$_prefixOverride = Tt._prefixOverride) !== null && _Tt$_prefixOverride !== void 0 ? _Tt$_prefixOverride : t;
-    return Tt._prefixOverride = null, function (t, e, s, i, _t$states4) {
+    const i = (_Ht$_prefixOverride = Ht._prefixOverride) !== null && _Ht$_prefixOverride !== void 0 ? _Ht$_prefixOverride : t;
+    return Ht._prefixOverride = null, function (t, e, s, i, _t$states4) {
       const n = {
           ...s
         },
-        r = kt(t, e),
+        r = At(t, e),
         a = ["vpd", "camera", "lamp"];
       for (const t of a) {
         const e = i === null || i === void 0 ? void 0 : i[t];
@@ -1520,13 +1514,13 @@ let Nt = (_Class = class Nt extends at {
       try {
         const e = await async function (t, e, s, i = Date.now()) {
           const n = `${e}@${s}`,
-            r = Ot.get(n);
+            r = Pt.get(n);
           if (r && i - r.at < 3e5) return r.data;
           const a = new Date(i - 3600 * s * 1e3),
             o = new Date(i);
           try {
             const s = await t.callApi("GET", "history/period", `filter_entity_id=${encodeURIComponent(e)}`, `start=${encodeURIComponent(a.toISOString())}`, `end=${encodeURIComponent(o.toISOString())}`, "minimal_response", "no_attributes");
-            return Ot.set(n, {
+            return Pt.set(n, {
               at: i,
               data: s
             }), s;
@@ -1540,7 +1534,7 @@ let Nt = (_Class = class Nt extends at {
           if (!Array.isArray(s)) return [];
           const i = [];
           for (const t of s) if (Array.isArray(t)) for (const e of t) {
-            const t = _t(e === null || e === void 0 ? void 0 : e.state);
+            const t = mt(e === null || e === void 0 ? void 0 : e.state);
             if (null === t || !(e !== null && e !== void 0 && e.last_changed)) continue;
             const s = Date.parse(e.last_changed);
             Number.isFinite(s) && i.push({
@@ -1561,7 +1555,7 @@ let Nt = (_Class = class Nt extends at {
       <div class="setup-hint">
         <div>🌱 SmartGrow entities not found.</div>
         <div>
-          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config1 = this._config) === null || _this$_config1 === void 0 ? void 0 : _this$_config1.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ft}</code>
+          Expected prefix <code>${(_this$_config$prefix4 = (_this$_config1 = this._config) === null || _this$_config1 === void 0 ? void 0 : _this$_config1.prefix) !== null && _this$_config$prefix4 !== void 0 ? _this$_config$prefix4 : ut}</code>
           (${t.slice(0, 3).join(", ")}…).
         </div>
         <div>
@@ -1575,7 +1569,7 @@ let Nt = (_Class = class Nt extends at {
     var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10;
     if (!this._config || !this.hass) return I``;
     const t = this._ids(),
-      e = Et(this.hass, t, gt);
+      e = St(this.hass, t, ft);
     if (e.empty) {
       const e = Object.values(t).filter(t => {
         var _this$hass2;
@@ -1585,13 +1579,13 @@ let Nt = (_Class = class Nt extends at {
     }
     const s = (_this$_config$title2 = this._config.title) !== null && _this$_config$title2 !== void 0 ? _this$_config$title2 : e.device,
       i = null !== e.fanActual ? I`<span class="fan-sub">actual ${Math.round(e.fanActual)} %</span>` : B,
-      n = (r = e.vpd, a = e.bandLow, o = e.bandHigh, null !== r && Number.isFinite(r) && o > a ? $t((r - a) / (o - a), -.25, 1.25) : null);
+      n = (r = e.vpd, a = e.bandLow, o = e.bandHigh, null !== r && Number.isFinite(r) && o > a ? vt((r - a) / (o - a), -.25, 1.25) : null);
     var r, a, o;
     const c = null === (l = n) ? "unknown" : l < 0 ? "low" : l > 1 ? "high" : "ok";
     var l;
-    const d = null === n ? null : $t((n + .25) / 1.5 * 100, 0, 100),
-      h = $t(.25 / 1.5 * 100, 0, 100),
-      p = $t(1.25 / 1.5 * 100, 0, 100),
+    const d = null === n ? null : vt((n + .25) / 1.5 * 100, 0, 100),
+      h = vt(.25 / 1.5 * 100, 0, 100),
+      p = vt(1.25 / 1.5 * 100, 0, 100),
       u = function (t, e, s, i) {
         const n = t.filter(t => Number.isFinite(t.v));
         if (n.length < 2 || e <= 0 || s <= 0) return null;
@@ -1616,8 +1610,8 @@ let Nt = (_Class = class Nt extends at {
           max: o
         };
       }(this._sparkPoints, 300, 54, 4),
-      f = yt(St(this.hass, t.dehumidifier_decision)),
-      g = yt(St(this.hass, t.humidifier_decision)),
+      f = $t(kt(this.hass, t.dehumidifier_decision)),
+      g = $t(kt(this.hass, t.humidifier_decision)),
       m = [{
         key: "dah",
         label: "ΔAH",
@@ -1705,7 +1699,7 @@ let Nt = (_Class = class Nt extends at {
                 </div>
                 <div class="term-bar">
                   <div class="term-fill" style="width:${function (t) {
-      return null !== t && Number.isFinite(t) ? $t(t, 0, 100) : 0;
+      return null !== t && Number.isFinite(t) ? vt(t, 0, 100) : 0;
     }(t.value)}%"></div>
                 </div>
               </div>
@@ -1724,13 +1718,16 @@ let Nt = (_Class = class Nt extends at {
       </ha-card>
     `;
   }
-}, Tt = _Class, _Class.styles = ut, _Class._prefixOverride = null, _Class);
-t([ht({
+}
+_Ht = Ht;
+_Ht.styles = pt;
+_Ht._prefixOverride = null;
+t([dt({
   attribute: !1
-})], Nt.prototype, "hass", void 0), t([pt()], Nt.prototype, "_config", void 0), t([pt()], Nt.prototype, "_sparkPoints", void 0), Nt = Tt = t([ct("smartgrow-card")], Nt), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Nt), window.customCards = window.customCards || [], window.customCards.push({
+})], Ht.prototype, "hass", void 0), t([ht()], Ht.prototype, "_config", void 0), t([ht()], Ht.prototype, "_sparkPoints", void 0), customElements.get("smartgrow-card") || customElements.define("smartgrow-card", Ht), window.customCards = window.customCards || [], window.customCards.push({
   type: "smartgrow-card",
   name: "SmartGrow Card",
   description: "Grow-tent overview for the SmartGrow integration: fan gauge, VPD band, ΔAH sparkline, dehumidifier chip.",
   documentationURL: "https://github.com/niggo/smartgrow-card"
 });
-export { Mt as CARD_NAME, Ht as CARD_VERSION, Nt as SmartGrowCard, Rt as SmartGrowCardEditor };
+export { Tt as CARD_NAME, Rt as CARD_VERSION, Ht as SmartGrowCard, Ut as SmartGrowCardEditor };

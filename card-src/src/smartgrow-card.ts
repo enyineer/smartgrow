@@ -1,5 +1,5 @@
 import { LitElement, html, nothing } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { property, state } from "lit/decorators.js";
 
 import { cardStyles } from "./styles";
 import {
@@ -31,7 +31,6 @@ import "./smartgrow-card-editor";
 export const CARD_VERSION = "0.1.0";
 export const CARD_NAME = "smartgrow-card";
 
-@customElement("smartgrow-card")
 export class SmartGrowCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
 
