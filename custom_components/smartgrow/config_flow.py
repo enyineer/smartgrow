@@ -129,6 +129,33 @@ def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
     return schema
 
 
+def _wavemaker_schema(merged: dict[str, Any]) -> dict:
+    """Single source of truth for the wavemaker program fields.
+
+    Used verbatim by the setup step, the reconfigure step, and the options
+    (tuning) step — the three forms cannot drift because they share this.
+    """
+    return {
+        vol.Optional(
+            CONF_WAVEMAKER_MODE,
+            default=merged.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
+        ): SelectSelector(
+            SelectSelectorConfig(
+                options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
+            )
+        ),
+        vol.Optional(
+            CONF_WAVEMAKER_RUN_S,
+            default=merged.get(CONF_WAVEMAKER_RUN_S, 120),
+        ): vol.All(vol.Coerce(int), vol.Range(min=10, max=1800)),
+        vol.Optional(
+            CONF_WAVEMAKER_EVERY_MIN,
+            default=merged.get(CONF_WAVEMAKER_EVERY_MIN, 180),
+        ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
+    }
+
+
+
 class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the SmartGrow config flow."""
 
@@ -261,28 +288,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = _entity_schema(merged)
         # Wavemaker program fields — the entity picker alone is not enough;
         # without mode/run/every here the pump can never run (v0.9.6 gap).
-        schema.update(
-            {
-                vol.Optional(
-                    CONF_WAVEMAKER_MODE,
-                    default=merged.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
-                    )
-                ),
-                vol.Optional(
-                    CONF_WAVEMAKER_RUN_S,
-                    default=merged.get(CONF_WAVEMAKER_RUN_S, 120),
-                    description={"suggested_value": merged.get(CONF_WAVEMAKER_RUN_S, 120)},
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=1800)),
-                vol.Optional(
-                    CONF_WAVEMAKER_EVERY_MIN,
-                    default=merged.get(CONF_WAVEMAKER_EVERY_MIN, 180),
-                    description={"suggested_value": merged.get(CONF_WAVEMAKER_EVERY_MIN, 180)},
-                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
-            }
-        )
+        schema.update(_wavemaker_schema(merged))
         return self.async_show_form(
             step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
         )
@@ -400,22 +406,7 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                     CONF_ALERT_COOLDOWN_MIN,
                     default=current.get(CONF_ALERT_COOLDOWN_MIN, 60),
                 ): vol.All(vol.Coerce(float), vol.Range(min=5, max=720)),
-                vol.Optional(
-                    CONF_WAVEMAKER_MODE,
-                    default=current.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
-                    )
-                ),
-                vol.Optional(
-                    CONF_WAVEMAKER_RUN_S,
-                    default=current.get(CONF_WAVEMAKER_RUN_S, 120),
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=1800)),
-                vol.Optional(
-                    CONF_WAVEMAKER_EVERY_MIN,
-                    default=current.get(CONF_WAVEMAKER_EVERY_MIN, 180),
-                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
+                **_wavemaker_schema(current),
                 vol.Required(
                     CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]
                 ): bool,
