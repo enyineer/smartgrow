@@ -62,8 +62,11 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         if item.get("url") == _URL:
             _LOGGER.debug("SmartGrow lovelace resource already registered")
             return
-        # Upgrade older versioned URLs to the current one.
-        if item.get("url", "").startswith(_BASE_URL):
+        # Upgrade ANY stale SmartGrow URL (plain or old-versioned) to the current
+        # versioned one. v0.7.7's guard only matched the plain path, so a stored
+        # /smartgrow/vOLD/... URL survived restarts and 404'd once the old static
+        # path disappeared with the old version -> Lovelace "Configuration error".
+        if item.get("url", "").startswith("/smartgrow/") and item.get("url") != _URL:
             await collection.async_update_item(item["id"], {"url": _URL})
             _LOGGER.debug("Updated SmartGrow lovelace resource to %s", _URL)
             return
@@ -86,6 +89,26 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
             StaticPathConfig(_VERSIONED_PATH, str(card_path), cache_headers=False),
         ]
     )
+    # Wildcard route: ANY old versioned path serves the CURRENT bundle, so an app
+    # cached on /smartgrow/v0.7.8/... gets working bytes instead of a 404 ->
+    # "Configuration error". Regex registered directly on the aiohttp router.
+    import re
+
+    async def _serve_current_card(request):
+        from aiohttp import web as aioweb
+
+        return aioweb.FileResponse(card_path)
+
+    _versioned_re = re.compile(r"^/smartgrow/v[^/]+/smartgrow-card\.js$")
+    for route in list(hass.http.app.router.routes()):
+        if getattr(route, "resource", None) and _versioned_re.match(
+            getattr(route.resource, "canonical", "") or ""
+        ):
+            break
+    else:
+        hass.http.app.router.add_route(
+            "GET", "/smartgrow/{v:.*}/smartgrow-card.js", _serve_current_card
+        )
     # Belt: extra_js (works once loaded, also outside dashboards)
     add_extra_js_url(hass, _URL)
     # Suspenders: awaited Lovelace resource (deterministic in picker/dashboard)
