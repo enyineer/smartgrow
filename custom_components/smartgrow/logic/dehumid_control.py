@@ -62,12 +62,14 @@ def compute_dehum(
     """
     low = params.effective_band_low(inputs.stage, inputs.is_day)
     depth = params.dehum_band_depth
+    reengage = getattr(params, "dehum_reengage", 0.0)
     margin = params.dehum_vpd_margin
     sat_trigger = params.dehum_sat_trigger
     dry_floor = params.dehum_dry_floor
     hysteresis = params.dehum_hysteresis
     severity = params.dehum_severity
     off_target = low + depth
+    on_trigger = low + reengage
 
     common: dict[str, Any] = dict(
         lung_rh=inputs.lung_rh,
@@ -92,10 +94,13 @@ def compute_dehum(
     if dehum_is_on and inputs.vpd < off_target:
         # Hold: keep running until the target depth inside the band.
         return DehumDecision(action="on", reason="hold_to_depth", **common)
-    if inputs.vpd < low:
+    if inputs.vpd < on_trigger:
+        # Re-engage window: within `reengage` above the band low (or below
+        # it entirely), an idle unit comes back on — keeps the average near
+        # the band low instead of coasting to the edge before re-firing.
         return DehumDecision(action="on", reason="below_band", **common)
-    if not dehum_is_on and inputs.vpd >= low:
-        # Idle inside the window without triggers: stay off (hysteresis).
+    if not dehum_is_on and inputs.vpd >= on_trigger:
+        # Idle above the re-engage threshold: stay off (hysteresis).
         # MUST precede saturation_assist: the assist is an OUT-OF-BAND
         # reinforcement, never an in-window restart. Evaluated after it
         # (v0.9.0), a boosted fan (>=70%) + moderate lung RH restarted the

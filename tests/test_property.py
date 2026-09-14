@@ -135,7 +135,8 @@ def test_dead_zone_is_hysteretic(
     """
     low = P.effective_band_low("Flowering", is_day)
     depth = P.dehum_band_depth
-    if not (low <= vpd < low + depth):
+    reengage = P.dehum_reengage
+    if not (low + reengage <= vpd < low + depth):
         return
     if fan >= P.dehum_sat_trigger:
         return

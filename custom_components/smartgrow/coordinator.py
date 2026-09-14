@@ -111,6 +111,8 @@ class RuntimeOptions:
             cold_clamp=opts["cold_clamp"],
             dehum_sat_trigger=opts["dehum_sat_trigger"],
             dehum_dry_floor=opts["dehum_dry_floor"],
+            dehum_reengage=opts.get("dehum_reengage", 0.05),
+            dehum_band_depth=opts.get("dehum_band_depth", 0.15),
             adaptation_enabled=opts["adaptation_enabled"],
         )
         return cls(

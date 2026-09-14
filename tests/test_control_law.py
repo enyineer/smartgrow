@@ -160,15 +160,19 @@ class TestDehumControl:
         assert d.action == "on"
         assert d.reason == "below_band"
 
-    def test_off_guard_when_idle_below_band_edge(self) -> None:
-        """Idle and above band_low - margin: stay off (no spurious starts)."""
-        inputs = make_inputs(24.0, 55, 22.0, 50, 1.46, 40, **self.DAY)
+    def test_off_guard_when_idle_above_reengage(self) -> None:
+        """Idle above low+reengage (1.5+0.05=1.55): stay off."""
+        inputs = make_inputs(24.0, 55, 22.0, 50, 1.56, 40, **self.DAY)
         d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
-        # 1.46 < 1.5 -> actually ON (below band). Guard check uses vpd >= low:
-        inputs2 = make_inputs(24.0, 55, 22.0, 50, 1.52, 40, **self.DAY)
-        d2 = dehumid_control.compute_dehum(inputs2, P, dehum_is_on=False)
-        assert d2.action == "off"
-        assert d2.reason == "band_edge_guard"
+        assert d.action == "off"
+        assert d.reason == "band_edge_guard"
+
+    def test_reengage_between_low_and_reengage_line(self) -> None:
+        """Idle between band_low and low+reengage: re-engages ON (v0.9.3)."""
+        inputs = make_inputs(24.0, 55, 22.0, 50, 1.52, 40, **self.DAY)
+        d = dehumid_control.compute_dehum(inputs, P, dehum_is_on=False)
+        assert d.action == "on"
+        assert d.reason == "below_band"
 
     def test_hold_until_depth(self) -> None:
         """ON and VPD between low and low+depth: keep running."""
@@ -225,15 +229,21 @@ class TestDehumControl:
         assert d.reason == "band_edge_guard"
 
     def test_hysteresis_window_is_real(self) -> None:
-        """Document the in-band window boundaries explicitly (low=1.5, d=0.15)."""
-        # Idle at band_low exactly: below_band is strict (<), so off-guard fires
+        """Document the in-band window boundaries (low=1.5, re=0.05, d=0.15).
+
+        ON line: vpd < low + reengage (1.55). OFF line: low + depth (1.65).
+        """
+        # Idle at low exactly: inside re-engage zone -> ON
         at_low = make_inputs(24.0, 63, 22.0, 55, 1.50, 40, **self.DAY)
-        assert dehumid_control.compute_dehum(at_low, P, False).action == "off"
-        # Just below low: ON
-        below = make_inputs(24.0, 63, 22.0, 55, 1.4999, 40, **self.DAY)
+        assert dehumid_control.compute_dehum(at_low, P, False).action == "on"
+        # Idle at the re-engage line exactly: strict <, so guard holds OFF
+        at_re = make_inputs(24.0, 63, 22.0, 55, 1.55, 40, **self.DAY)
+        assert dehumid_control.compute_dehum(at_re, P, False).action == "off"
+        # Just below the re-engage line: ON
+        below = make_inputs(24.0, 63, 22.0, 55, 1.5499, 40, **self.DAY)
         assert dehumid_control.compute_dehum(below, P, False).action == "on"
         # ON unit mid-window: keeps running
-        mid = make_inputs(24.0, 63, 22.0, 55, 1.57, 40, **self.DAY)
+        mid = make_inputs(24.0, 63, 22.0, 55, 1.60, 40, **self.DAY)
         d_mid = dehumid_control.compute_dehum(mid, P, True)
         assert d_mid.action == "on"
         assert d_mid.reason == "hold_to_depth"

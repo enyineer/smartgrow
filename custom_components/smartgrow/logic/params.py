@@ -64,6 +64,7 @@ class ControlParams:
     dehum_dry_floor: float = 44.0  # lung RH below this -> over-dry, force OFF
     dehum_hysteresis: float = 3.0  # sat assist needs lung_rh >= floor + hysteresis
     dehum_vpd_margin: float = 0.05  # hysteresis guard just below the band low
+    dehum_reengage: float = 0.05  # ON threshold offset above band low
     dehum_band_depth: float = 0.15  # OFF target depth into the band above low
     dehum_severity: float = 0.1
 

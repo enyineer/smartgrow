@@ -45,6 +45,7 @@ async def async_setup_entry(
             TempGainNumber(coordinator, entry),
             ColdClampNumber(coordinator, entry),
             DehumBandDepthNumber(coordinator, entry),
+            DehumReengageNumber(coordinator, entry),
             DehumSatTriggerNumber(coordinator, entry),
             DehumDryFloorNumber(coordinator, entry),
         ]
@@ -254,6 +255,29 @@ class DehumBandDepthNumber(SmartGrowNumber):
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(dehum_band_depth=value)
+        )
+
+
+class DehumReengageNumber(SmartGrowNumber):
+    _attr_name = "SmartGrow dehumidifier re-engage offset"
+    _attr_icon = "mdi:restart"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 0.3
+    _attr_native_step = 0.05
+
+    def __init__(self, coordinator, entry) -> None:
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = _uid(entry, "dehum_reengage")
+
+    def _param(self) -> float:
+        return self.coordinator.options_rt.control.dehum_reengage
+
+    def _options_key(self) -> str:
+        return "dehum_reengage"
+
+    def _set_param(self, value: float) -> None:
+        self.coordinator.options_rt.control = (
+            self.coordinator.options_rt.control.with_updates(dehum_reengage=value)
         )
 
 
