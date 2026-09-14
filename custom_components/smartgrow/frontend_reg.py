@@ -113,16 +113,16 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
 
         return aioweb.FileResponse(card_path)
 
-    _versioned_re = re.compile(r"^/smartgrow/v[^/]+/smartgrow-card\.js$")
-    for route in list(hass.http.app.router.routes()):
-        if getattr(route, "resource", None) and _versioned_re.match(
-            getattr(route.resource, "canonical", "") or ""
-        ):
-            break
-    else:
-        hass.http.app.router.add_route(
-            "GET", "/smartgrow/{v:.*}/smartgrow-card.js", _serve_current_card
-        )
+    # ALWAYS register the wildcard. The previous "skip if any route already
+    # matches" guard was self-defeating: the EXACT static resource for the
+    # current version (/smartgrow/v<current>/smartgrow-card.js) matches the
+    # regex, so the wildcard was never added and every OLD versioned URL
+    # 404'd after each release. aiohttp resolves exact static resources
+    # before dynamic ones, so the current version still hits the static
+    # path and older versions fall through to the wildcard.
+    hass.http.app.router.add_route(
+        "GET", "/smartgrow/{v:.+}/smartgrow-card.js", _serve_current_card
+    )
     # Belt: extra_js (works once loaded, also outside dashboards)
     add_extra_js_url(hass, _URL)
     # Suspenders: awaited Lovelace resource (deterministic in picker/dashboard)
