@@ -1277,7 +1277,7 @@ function wt(t) {
 }
 function xt(t, e) {
   const n = t.replace(/^sensor\./, "").replace(/^binary_sensor\./, "").replace(/^switch\./, ""),
-    s = [["fan_target", "fan_target", "sensor"], ["fan_dah_term", "fan_dah_term", "sensor"], ["fan_vpd_term", "fan_vpd_term", "sensor"], ["fan_need_term", "fan_need_term", "sensor"], ["fan_temp_term", "fan_temp_term", "sensor"], ["active_fan_term", "active_fan_term", "sensor"], ["dah", "dah", "sensor"], ["ah_tent", "ah_tent", "sensor"], ["ah_lung_room", "ah_lung_room", "sensor"], ["dehumidifier_decision", "dehumidifier_decision", "sensor"], ["humidifier_decision", "humidifier_decision", "sensor"], ["dry_run", "dry_run", "sensor"], ["phase", "phase", "sensor"], ["cycles_24h", "cycles_24h", "sensor"], ["stage", "stage", "select"], ["adaptation", "adaptation", "switch"], ["oscillation_warning", "oscillation_warning", "binary_sensor"], ["legacy_automation_warning", "legacy_automation_warning", "binary_sensor"]],
+    s = [["fan_target", "fan_target", "sensor"], ["fan_dah_term", "fan_dah_term", "sensor"], ["fan_vpd_term", "fan_vpd_term", "sensor"], ["fan_need_term", "fan_need_term", "sensor"], ["fan_temp_term", "fan_temp_term", "sensor"], ["active_fan_term", "active_fan_term", "sensor"], ["dah", "dah", "sensor"], ["ah_tent", "ah_tent", "sensor"], ["ah_lung_room", "ah_lung_room", "sensor"], ["dehumidifier_decision", "dehumidifier_decision", "sensor"], ["humidifier_decision", "humidifier_decision", "sensor"], ["dry_run", "dry_run", "sensor"], ["phase", "phase", "sensor"], ["cycles_24h", "cycles_24h", "sensor"], ["lights_on", "lights_on", "time"], ["lights_off", "lights_off", "time"], ["stage", "stage", "select"], ["adaptation", "adaptation", "switch"], ["oscillation_warning", "oscillation_warning", "binary_sensor"], ["legacy_automation_warning", "legacy_automation_warning", "binary_sensor"]],
     i = {};
   for (const [t, r, a] of s) {
     const s = e === null || e === void 0 ? void 0 : e[t];
@@ -1463,8 +1463,8 @@ function St(t, e, n) {
       high: "number" == typeof b.band_high ? b.band_high : null,
       depth: "number" == typeof b.band_depth ? b.band_depth : null
     },
-    lightsOn: "string" == typeof g.lights_on_time ? g.lights_on_time : null,
-    lightsOff: "string" == typeof g.lights_off_time ? g.lights_off_time : null,
+    lightsOn: At(t, e.lights_on).missing ? "string" == typeof g.lights_on_time ? g.lights_on_time : null : String(At(t, e.lights_on).state),
+    lightsOff: At(t, e.lights_off).missing ? "string" == typeof g.lights_off_time ? g.lights_off_time : null : String(At(t, e.lights_off).state),
     wavemaker: {
       entity: k !== null && k !== void 0 ? k : null,
       mode: "string" == typeof g.wavemaker_mode ? g.wavemaker_mode : null,

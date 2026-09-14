@@ -267,6 +267,8 @@ export function resolveEntityIds(
     ["dry_run", "dry_run", "sensor"],
     ["phase", "phase", "sensor"],
     ["cycles_24h", "cycles_24h", "sensor"],
+    ["lights_on", "lights_on", "time"],
+    ["lights_off", "lights_off", "time"],
     ["stage", "stage", "select"],
     ["adaptation", "adaptation", "switch"],
     ["oscillation_warning", "oscillation_warning", "binary_sensor"],
@@ -546,13 +548,17 @@ export function parseSmartGrowState(
       depth: typeof dehumAttrs.band_depth === "number" ? dehumAttrs.band_depth : null,
     },
     lightsOn:
-      typeof sourcesCache.lights_on_time === "string"
-        ? (sourcesCache.lights_on_time as string)
-        : null,
+      getBacking(hass, ids.lights_on).missing
+        ? typeof sourcesCache.lights_on_time === "string"
+          ? (sourcesCache.lights_on_time as string)
+          : null
+        : String(getBacking(hass, ids.lights_on).state),
     lightsOff:
-      typeof sourcesCache.lights_off_time === "string"
-        ? (sourcesCache.lights_off_time as string)
-        : null,
+      getBacking(hass, ids.lights_off).missing
+        ? typeof sourcesCache.lights_off_time === "string"
+          ? (sourcesCache.lights_off_time as string)
+          : null
+        : String(getBacking(hass, ids.lights_off).state),
     wavemaker: {
       entity: wavemakerId ?? null,
       mode:
