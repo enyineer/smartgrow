@@ -83,12 +83,26 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         _LOGGER.warning("SmartGrow card bundle missing at %s", card_path)
         return
 
+    async def _serve_card_no_cache(request):
+        """Serve the card with explicit no-cache (webview heuristic-buster).
+
+        StaticPathConfig(cache_headers=False) sends NO Cache-Control header at
+        all, which lets companion-app webviews heuristic-cache the JS for the
+        plain URL — stale bytes then render "Configuration error" for days.
+        An explicit no-cache forces etag revalidation on every load.
+        """
+        from aiohttp import web as aioweb
+
+        response = aioweb.FileResponse(card_path)
+        response.headers["Cache-Control"] = "no-cache, must-revalidate, max-age=0"
+        return response
+
+    # versioned path: static is fine (fresh URL per release)
     await hass.http.async_register_static_paths(
-        [
-            StaticPathConfig(_BASE_URL, str(card_path), cache_headers=False),
-            StaticPathConfig(_VERSIONED_PATH, str(card_path), cache_headers=False),
-        ]
+        [StaticPathConfig(_VERSIONED_PATH, str(card_path), cache_headers=False)]
     )
+    # plain path: custom handler with explicit no-cache headers
+    hass.http.app.router.add_route("GET", _BASE_URL, _serve_card_no_cache)
     # Wildcard route: ANY old versioned path serves the CURRENT bundle, so an app
     # cached on /smartgrow/v0.7.8/... gets working bytes instead of a 404 ->
     # "Configuration error". Regex registered directly on the aiohttp router.
