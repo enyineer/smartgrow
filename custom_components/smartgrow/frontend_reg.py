@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
+from homeassistant.components.frontend import remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
@@ -123,9 +123,14 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     hass.http.app.router.add_route(
         "GET", "/smartgrow/{v:.+}/smartgrow-card.js", _serve_current_card
     )
-    # Belt: extra_js (works once loaded, also outside dashboards)
-    add_extra_js_url(hass, _URL)
-    # Suspenders: awaited Lovelace resource (deterministic in picker/dashboard)
+    # Single import source: ONLY the awaited Lovelace storage resource.
+    # add_extra_js_url eagerly injected <script type=module> into EVERY HA
+    # page; on the dashboard this raced HA's own resource loader (two
+    # import tasks for the same 65 KB module while the document parses).
+    # Real-Chromium A/B showed ~50% of loads ended with the module fetched
+    # but never executed -> element undefined forever -> hui-error-card
+    # "Custom element doesn't exist" / "Configuration error". With a single
+    # awaited import there is no race window.
     await _async_register_lovelace_resource(hass)
     _LOGGER.debug("SmartGrow card registered at %s", _URL)
 
