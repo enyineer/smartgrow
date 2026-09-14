@@ -210,8 +210,22 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
             "lamp_entity",
             "lamp_switch_entity",
             "camera_entity",
+            "wavemaker_entity",
         )
         attrs = {k: self.coordinator._source(k) or None for k in keys}
+        # Wavemaker program visibility (mode + cadence) — makes "is the
+        # component actually running the pump?" checkable from the dashboard.
+        data_cfg = self.entry.data
+        opts = self.entry.options
+        attrs["wavemaker_mode"] = opts.get(
+            "wavemaker_mode", data_cfg.get("wavemaker_mode", "none")
+        )
+        attrs["wavemaker_run_s"] = opts.get(
+            "wavemaker_run_s", data_cfg.get("wavemaker_run_s")
+        )
+        attrs["wavemaker_every_min"] = opts.get(
+            "wavemaker_every_min", data_cfg.get("wavemaker_every_min")
+        )
         # Live VPD actually used by the control law (linked sensor if configured,
         # otherwise computed from tent temp/RH). The card displays this when no
         # vpd_entity is linked.
