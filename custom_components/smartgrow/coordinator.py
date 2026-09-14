@@ -40,6 +40,7 @@ from .const import (
     CONF_HUM_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
+    CONF_LAMP_SWITCH_ENTITY,
     CONF_CAMERA_ENTITY,
     CONF_LIGHTS_ON_TIME,
     CONF_LIGHTS_OFF_TIME,
@@ -173,6 +174,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "vpd": data.get(CONF_VPD_ENTITY, ""),
             "camera": data.get(CONF_CAMERA_ENTITY, ""),
             "lamp": data.get(CONF_LAMP_ENTITY, ""),
+            "lamp_switch": data.get(CONF_LAMP_SWITCH_ENTITY, ""),
         }
 
     @property
@@ -301,11 +303,25 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._read_float(self.source_entities["tent_rh"]),
         )
 
+    def _lamp_switch_is_on(self) -> bool | None:
+        """Master-switch state; None when no master switch is configured."""
+        switch = self.source_entities.get("lamp_switch", "")
+        if not switch:
+            return None
+        st = self.hass.states.get(switch)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return False
+        return st.state == STATE_ON
+
     def _lamp_is_on(self) -> bool:
         """Lamp state; conservative day=True when no lamp configured/unavailable.
 
         The band table's day floors are higher, so with unknown phase the fan
         errs toward more ventilation — never silently under-ventilates.
+
+        With a master switch configured (failsafe plug that cuts lamp mains),
+        day requires BOTH the dimmer and the master to be on: master off means
+        the lamp cannot produce light regardless of the dimmer state.
         """
         lamp = self.source_entities.get("lamp", "")
         if not lamp:
@@ -313,7 +329,12 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         st = self.hass.states.get(lamp)
         if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return True
-        return st.state == STATE_ON
+        if st.state != STATE_ON:
+            return False
+        master = self._lamp_switch_is_on()
+        if master is False:
+            return False
+        return True
 
     def _phase(self) -> str:
         """'day'/'night' from the configured lamp; 'unknown' otherwise.
@@ -327,6 +348,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         st = self.hass.states.get(lamp)
         if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
             return "unknown"
+        if st.state == STATE_ON and self._lamp_switch_is_on() is False:
+            # Master switch off: the lamp is mains-cut, no light output.
+            return "night"
         return "day" if st.state == STATE_ON else "night"
 
     def schedule_options_reload(self) -> None:
@@ -383,12 +407,22 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 lamp, "on" if turn_on else "off",
             )
             return
-        domain = lamp.split(".", 1)[0]
         service = "turn_on" if turn_on else "turn_off"
+        domain = lamp.split(".", 1)[0]
         self.hass.async_create_task(
             self.hass.services.async_call(domain, service, {"entity_id": lamp})
         )
-        _LOGGER.debug("Schedule: lamp %s -> %s", lamp, service)
+        # Master switch (failsafe mains plug) follows the dimmer so both are
+        # always in the same state — no LED glimmer at night, no mains-cut day.
+        master = self.source_entities.get("lamp_switch", "")
+        if master:
+            self.hass.async_create_task(
+                self.hass.services.async_call(
+                    master.split(".", 1)[0], service, {"entity_id": master}
+                )
+            )
+        _LOGGER.debug("Schedule: lamp %s%s -> %s", lamp,
+                      f" + master {master}" if master else "", service)
 
     def _apply_schedule(self) -> None:
         """Evaluate the lights schedule and actuate the lamp if needed."""

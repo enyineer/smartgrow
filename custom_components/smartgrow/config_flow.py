@@ -26,6 +26,7 @@ from .const import (
     CONF_CAMERA_ENTITY,
     CONF_FAN_ENTITY,
     CONF_LAMP_ENTITY,
+    CONF_LAMP_SWITCH_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_VENT_AUTOMATION,
     CONF_LUNG_RH_ENTITY,
@@ -82,6 +83,9 @@ ENTITY_SELECTORS = {
     CONF_VPD_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor")),
     CONF_LAMP_ENTITY: EntitySelector(
         EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
+    ),
+    CONF_LAMP_SWITCH_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain=["switch", "input_boolean"])
     ),
     CONF_CAMERA_ENTITY: EntitySelector(EntitySelectorConfig(domain="camera")),
     CONF_WAVEMAKER_ENTITY: EntitySelector(EntitySelectorConfig(domain="switch")),
@@ -234,6 +238,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             for key in (
                 CONF_VPD_ENTITY,
                 CONF_LAMP_ENTITY,
+                CONF_LAMP_SWITCH_ENTITY,
                 CONF_CAMERA_ENTITY,
                 CONF_HUM_ENTITY,
                 CONF_DEHUM_ENTITY,

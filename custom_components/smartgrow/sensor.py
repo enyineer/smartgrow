@@ -208,6 +208,7 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
             "dehum_entity",
             "hum_entity",
             "lamp_entity",
+            "lamp_switch_entity",
             "camera_entity",
         )
         attrs = {k: self.coordinator._source(k) or None for k in keys}
