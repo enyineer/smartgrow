@@ -1795,7 +1795,7 @@ class jt extends at {
     `;
   }
   render() {
-    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _e$dehumBand$high, _this$_config$dehum_p, _this$_config11, _ref5, _e$dehumReason, _$$label, _e$lightsOn, _e$lightsOff, _e$wavemaker$entity, _e$wavemaker$mode;
+    var _this$_config$title2, _ref4, _this$_config$camera_, _this$_config10, _e$wavemaker$mode, _e$dehumBand$high, _this$_config$dehum_p, _this$_config11, _ref5, _e$dehumReason, _$$label, _e$lightsOn, _e$lightsOff, _e$wavemaker$entity, _e$wavemaker$mode2;
     if (!this._config || !this.hass) return B``;
     const t = this._ids(),
       e = St(this.hass, t, ft),
@@ -1929,36 +1929,37 @@ class jt extends at {
         runS: e.wavemaker.runS,
         everyMin: e.wavemaker.everyMin
       }, e.wavemaker.isOn, e.wavemaker.lastChangedMs, s, "day" === e.phase || "night" !== e.phase && null),
-      b = (_e$dehumBand$high = e.dehumBand.high) !== null && _e$dehumBand$high !== void 0 ? _e$dehumBand$high : e.bandHigh,
-      w = null !== e.dehumBand.low && null !== e.dehumBand.depth ? e.dehumBand.low + e.dehumBand.depth : null,
-      x = t => _t((t + .25) / 2 * 100, 0, 100),
-      k = t => (t - e.bandLow) / (e.bandHigh - e.bandLow),
-      A = k(b),
-      S = null !== w ? k(w) : null,
-      E = null !== e.dehumBand.depth ? A : null,
-      O = [];
+      b = !e.wavemaker.entity && "none" === ((_e$wavemaker$mode = e.wavemaker.mode) !== null && _e$wavemaker$mode !== void 0 ? _e$wavemaker$mode : "none"),
+      w = (_e$dehumBand$high = e.dehumBand.high) !== null && _e$dehumBand$high !== void 0 ? _e$dehumBand$high : e.bandHigh,
+      x = null !== e.dehumBand.low && null !== e.dehumBand.depth ? e.dehumBand.low + e.dehumBand.depth : null,
+      k = t => _t((t + .25) / 2 * 100, 0, 100),
+      A = t => (t - e.bandLow) / (e.bandHigh - e.bandLow),
+      S = A(w),
+      E = null !== x ? A(x) : null,
+      O = null !== e.dehumBand.depth ? S : null,
+      C = [];
     if ("day" === e.phase) {
       const t = !0 === e.lampOn && !1 !== e.masterOn;
-      null === e.lampOn || t || O.push({
+      null === e.lampOn || t || C.push({
         text: !1 === e.masterOn ? "Lamp dark during day — master plug OFF" : "Lamp dark during day — dimmer OFF",
         cls: ""
       });
     }
-    "low" === c ? O.push({
+    "low" === c ? C.push({
       text: "VPD below band — too humid",
       cls: ""
-    }) : "high" === c && O.push({
+    }) : "high" === c && C.push({
       text: "VPD above band — too dry",
       cls: ""
     });
-    const C = O.length,
-      M = (_this$_config$dehum_p = (_this$_config11 = this._config) === null || _this$_config11 === void 0 ? void 0 : _this$_config11.dehum_power_entity) !== null && _this$_config$dehum_p !== void 0 ? _this$_config$dehum_p : null;
-    let P = null,
-      N = !1;
-    if (M) {
+    const M = C.length,
+      P = (_this$_config$dehum_p = (_this$_config11 = this._config) === null || _this$_config11 === void 0 ? void 0 : _this$_config11.dehum_power_entity) !== null && _this$_config$dehum_p !== void 0 ? _this$_config$dehum_p : null;
+    let N = null,
+      T = !1;
+    if (P) {
       var _this$hass3;
-      const t = mt((_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.states) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3[M]) === null || _this$hass3 === void 0 ? void 0 : _this$hass3.state);
-      null === t ? P = "power ?" : !0 === g.on && t <= 2 ? (P = "standby — commanded ON", N = !0) : P = `${Math.round(t)} W`;
+      const t = mt((_this$hass3 = this.hass) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3.states) === null || _this$hass3 === void 0 || (_this$hass3 = _this$hass3[P]) === null || _this$hass3 === void 0 ? void 0 : _this$hass3.state);
+      null === t ? N = "power ?" : !0 === g.on && t <= 2 ? (N = "standby — commanded ON", T = !0) : N = `${Math.round(t)} W`;
     }
     return B`
       <ha-card>
@@ -1968,7 +1969,7 @@ class jt extends at {
           <div class="phase-chip ${e.phase}">${e.phase}</div>
           <div class="header-icons">
             ${!0 === e.dryRun ? B`<span class="badge-dry">DRY</span>` : W}
-            ${C > 0 ? B`<span class="alert-pill">${C}</span>` : W}
+            ${M > 0 ? B`<span class="alert-pill">${M}</span>` : W}
             ${v ? B`<button
                   class="camera-icon"
                   title="Open live camera stream"
@@ -1991,7 +1992,7 @@ class jt extends at {
             <div class="fan-sub">VPD ${null !== e.vpd ? e.vpd.toFixed(2) : "—"} kPa · band ${e.bandLow.toFixed(1)}–${e.bandHigh.toFixed(1)}</div>
             <div class="band-bar">
               <div class="band-ok" style="left:${h}%; width:${u - h}%"></div>
-              ${null !== S && null !== E ? B`<div style="position:absolute;top:2px;bottom:2px;background:color-mix(in srgb, var(--sgc-warn) 45%, transparent);border-radius:5px;left:${x(S)}%;width:${Math.max(2, x(E) - x(S))}%"></div>` : W}
+              ${null !== E && null !== O ? B`<div style="position:absolute;top:2px;bottom:2px;background:color-mix(in srgb, var(--sgc-warn) 45%, transparent);border-radius:5px;left:${k(E)}%;width:${Math.max(2, k(O) - k(E))}%"></div>` : W}
               ${null !== p ? B`<div class="band-marker ${"ok" === c ? "" : c}" style="left:${p}%"></div>` : W}
             </div>
             <div class="band-labels"><span>humid</span><span>${"unknown" === c ? "VPD unknown" : "low" === c ? "too humid — below band" : "high" === c ? "too dry — above band" : "in band"}</span><span>too dry</span></div>
@@ -2008,7 +2009,7 @@ class jt extends at {
               ` : B`<div class="spark-empty">no history yet — recording…</div>`}
         </div>
 
-        <div class="status-grid">
+        <div class="status-grid" style=${b ? "grid-template-columns: 1fr 1fr 1fr;" : ""}>
           <div class="tile">
             <div class="tile-name"><span class="dot ${null !== e.fanTarget && e.fanTarget > 0 ? "on" : ""}"></span>Fan</div>
             <div class="tile-value">${null !== e.fanTarget ? `${Math.round(e.fanTarget)} %` : "—"}</div>
@@ -2026,22 +2027,22 @@ class jt extends at {
               ${y ? `${"on" === y.next ? "on in" : "off in"} ${Pt(y.ms)}` : !1 === e.masterOn ? "plug off" : ""}
             </div>
           </div>
-          <div class="tile">
-            <div class="tile-name"><span class="dot ${!0 === $.running ? "on" : !1 === $.running ? "off" : "warn"}"></span>Wave</div>
-            <div class="tile-value">${$.visible ? null === $.running ? "—" : $.running ? "ON" : "idle" : "off"}</div>
-            <div class="tile-sub">${(_$$label = $.label) !== null && _$$label !== void 0 ? _$$label : e.wavemaker.entity ? "" : "not configured"}</div>
-          </div>
+          ${b ? W : B`<div class="tile">
+                <div class="tile-name"><span class="dot ${!0 === $.running ? "on" : !1 === $.running ? "off" : "warn"}"></span>Wave</div>
+                <div class="tile-value">${$.visible ? null === $.running ? "—" : $.running ? "ON" : "idle" : "off"}</div>
+                <div class="tile-sub">${(_$$label = $.label) !== null && _$$label !== void 0 ? _$$label : e.wavemaker.entity ? "" : "not configured"}</div>
+              </div>`}
         </div>
 
-        ${O.length > 0 ? B`<div class="alert-strip">
-              ${O.map(t => B`<div class="alert-row ${t.cls}">⚠️ ${t.text}</div>`)}
+        ${C.length > 0 ? B`<div class="alert-strip">
+              ${C.map(t => B`<div class="alert-row ${t.cls}">⚠️ ${t.text}</div>`)}
             </div>` : W}
 
         <div class="chip-row">
           ${null !== e.dryRun ? B`<span class="chip ${e.dryRun ? "dryrun" : "off"}">${e.dryRun ? "DRY RUN" : "live"}</span>` : W}
           ${null !== e.adaptation ? B`<span class="chip ${e.adaptation ? "on" : "off"}">adaptation ${e.adaptation ? "on" : "off"}</span>` : W}
           ${_ ? B`<span class="chip">${_}</span>` : W}
-          ${P ? B`<span class="chip ${N ? "warn" : ""}">${P}</span>` : W}
+          ${N ? B`<span class="chip ${T ? "warn" : ""}">${N}</span>` : W}
         </div>
         ${g.reason ? B`<p class="dehum-reason">reason: ${g.reason}</p>` : W}
 
@@ -2077,14 +2078,14 @@ class jt extends at {
               ${y ? B`<div class="row"><span class="k">Next switch</span><span class="v">${y.next} in ${Pt(y.ms)}</span></div>` : W}
               <div class="section">Wavemaker</div>
               <div class="row"><span class="k">Entity</span><span class="v">${(_e$wavemaker$entity = e.wavemaker.entity) !== null && _e$wavemaker$entity !== void 0 ? _e$wavemaker$entity : "not configured"}</span></div>
-              <div class="row"><span class="k">Mode</span><span class="v">${(_e$wavemaker$mode = e.wavemaker.mode) !== null && _e$wavemaker$mode !== void 0 ? _e$wavemaker$mode : "—"}</span></div>
+              <div class="row"><span class="k">Mode</span><span class="v">${(_e$wavemaker$mode2 = e.wavemaker.mode) !== null && _e$wavemaker$mode2 !== void 0 ? _e$wavemaker$mode2 : "—"}</span></div>
               ${null !== e.wavemaker.runS ? B`<div class="row"><span class="k">Run</span><span class="v">${e.wavemaker.runS} s</span></div>` : W}
               ${null !== e.wavemaker.everyMin ? B`<div class="row"><span class="k">Every</span><span class="v">${e.wavemaker.everyMin} min</span></div>` : W}
               <div class="section">Dehumidifier</div>
               <div class="row"><span class="k">Band</span><span class="v">${null !== e.dehumBand.low ? `${e.dehumBand.low.toFixed(2)} – ${null !== e.dehumBand.high ? e.dehumBand.high.toFixed(2) : "?"} kPa` : "—"}</span></div>
-              ${null !== e.dehumBand.depth && null !== e.dehumBand.low && null !== w ? B`<div class="row"><span class="k">Window</span><span class="v">${w.toFixed(2)} → ${(e.dehumBand.low + e.dehumBand.depth).toFixed(2)} kPa</span></div>` : W}
+              ${null !== e.dehumBand.depth && null !== e.dehumBand.low && null !== x ? B`<div class="row"><span class="k">Window</span><span class="v">${x.toFixed(2)} → ${(e.dehumBand.low + e.dehumBand.depth).toFixed(2)} kPa</span></div>` : W}
               <div class="row"><span class="k">Cycles 24h</span><span class="v">${_ || "—"}</span></div>
-              <div class="row"><span class="k">Power</span><span class="v">${P !== null && P !== void 0 ? P : "configure dehum_power_entity"}</span></div>
+              <div class="row"><span class="k">Power</span><span class="v">${N !== null && N !== void 0 ? N : "configure dehum_power_entity"}</span></div>
               <div class="section">Diagnostics</div>
               <div class="row"><span class="k">Master plug</span><span class="v">${null === e.masterOn ? "not configured" : e.masterOn ? "on" : "off"}</span></div>
               <div class="row"><span class="k">Lamp dimmer</span><span class="v">${null === e.lampOn ? "—" : e.lampOn ? "on" : "off"}</span></div>

@@ -60,7 +60,9 @@ _LOGGER = logging.getLogger(__name__)
 # marker as the field NAME -> 500. Regressed against by
 # tests/test_flow_serialization.py (double-wrap + JSON round-trip).
 ENTITY_SELECTORS = {
-    CONF_FAN_ENTITY: EntitySelector(EntitySelectorConfig(domain="fan")),
+    CONF_FAN_ENTITY: EntitySelector(
+        EntitySelectorConfig(domain=["fan", "switch", "input_boolean"])
+    ),
     CONF_TENT_TEMP_ENTITY: EntitySelector(
         EntitySelectorConfig(domain="sensor", device_class="temperature")
     ),

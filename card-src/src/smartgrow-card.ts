@@ -200,6 +200,9 @@ export class SmartGrowCard extends LitElement {
       now,
       s.phase === "day" ? true : s.phase === "night" ? false : null
     );
+    // Unconfigured (mode none + no entity) -> hide the tile entirely: a dead
+    // "off" tile implies a configured pump that is idle, which is misleading.
+    const wmHidden = !s.wavemaker.entity && (s.wavemaker.mode ?? "none") === "none";
 
     // Effective band overlay: prefer the decision sensor's adaptation-aware
     // window; fall back to the stage table when the sensor is missing.
@@ -313,7 +316,7 @@ export class SmartGrowCard extends LitElement {
             : html`<div class="spark-empty">no history yet — recording…</div>`}
         </div>
 
-        <div class="status-grid">
+        <div class="status-grid" style=${wmHidden ? "grid-template-columns: 1fr 1fr 1fr;" : ""}>
           <div class="tile">
             <div class="tile-name"><span class="dot ${s.fanTarget !== null && s.fanTarget > 0 ? "on" : ""}"></span>Fan</div>
             <div class="tile-value">${s.fanTarget !== null ? `${Math.round(s.fanTarget)} %` : "—"}</div>
@@ -335,11 +338,13 @@ export class SmartGrowCard extends LitElement {
                   : ""}
             </div>
           </div>
-          <div class="tile">
-            <div class="tile-name"><span class="dot ${wm.running === true ? "on" : wm.running === false ? "off" : "warn"}"></span>Wave</div>
-            <div class="tile-value">${wm.visible ? (wm.running === null ? "—" : wm.running ? "ON" : "idle") : "off"}</div>
-            <div class="tile-sub">${wm.label ?? (s.wavemaker.entity ? "" : "not configured")}</div>
-          </div>
+          ${wmHidden
+            ? nothing
+            : html`<div class="tile">
+                <div class="tile-name"><span class="dot ${wm.running === true ? "on" : wm.running === false ? "off" : "warn"}"></span>Wave</div>
+                <div class="tile-value">${wm.visible ? (wm.running === null ? "—" : wm.running ? "ON" : "idle") : "off"}</div>
+                <div class="tile-sub">${wm.label ?? (s.wavemaker.entity ? "" : "not configured")}</div>
+              </div>`}
         </div>
 
         ${alerts.length > 0

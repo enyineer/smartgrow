@@ -586,6 +586,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         else:
             st = self.hass.states.get(fan_entity)
             supports_pct = bool(st and st.attributes.get("percentage") is not None)
+            # Domain-aware: a switch-plug "fan" (no percentage) is driven as a
+            # single-step fan — target > 0 = on, target == 0 = off.
+            fan_domain = fan_entity.split(".", 1)[0]
             if decision.fan_target > 0:
                 payload = (
                     {"entity_id": fan_entity, "percentage": decision.fan_target}
@@ -593,11 +596,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     else {"entity_id": fan_entity}
                 )
                 await self.hass.services.async_call(
-                    "fan", "turn_on", payload, blocking=True
+                    fan_domain, "turn_on", payload, blocking=True
                 )
             else:
                 await self.hass.services.async_call(
-                    "fan",
+                    fan_domain,
                     "turn_off",
                     {"entity_id": fan_entity},
                     blocking=True,
