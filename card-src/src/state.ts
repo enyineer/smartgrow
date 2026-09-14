@@ -48,6 +48,12 @@ export interface ParsedState {
   masterOn: boolean | null;
   lampEntity: string | null;
   masterEntity: string | null;
+  /** Absolute climate readings for the tent/lung mini-row. */
+  tentTemp: number | null;
+  tentRh: number | null;
+  lungTemp: number | null;
+  lungRh: number | null;
+  lungConfigured: boolean;
 }
 
 const NUMERIC_STATE_RE = /^-?\d+(\.\d+)?$/;
@@ -482,6 +488,32 @@ export function parseSmartGrowState(
   const stageConflict: string | null =
     (getBacking(hass, ids.stage)?.attrs?.stage_conflict as string | undefined) ?? null;
 
+  const tentTempId =
+    typeof sourcesCache.tent_temp_entity === 'string'
+      ? (sourcesCache.tent_temp_entity as string)
+      : undefined;
+  const tentRhId =
+    typeof sourcesCache.tent_rh_entity === 'string'
+      ? (sourcesCache.tent_rh_entity as string)
+      : undefined;
+  const tentTempE = getBacking(hass, tentTempId);
+  const tentRhE = getBacking(hass, tentRhId);
+  const lungTempId =
+    typeof sourcesCache.lung_temp_entity === "string"
+      ? (sourcesCache.lung_temp_entity as string)
+      : undefined;
+  const lungRhId =
+    typeof sourcesCache.lung_rh_entity === "string"
+      ? (sourcesCache.lung_rh_entity as string)
+      : undefined;
+  const lungConfigured = !!(lungTempId && lungRhId);
+  const lungTemp = lungConfigured
+    ? toNumber(getBacking(hass, lungTempId).state)
+    : null;
+  const lungRh = lungConfigured
+    ? toNumber(getBacking(hass, lungRhId).state)
+    : null;
+
   return {
     device,
     stage: stageE && !stageE.missing ? String(stageE.state) : "",
@@ -542,6 +574,11 @@ export function parseSmartGrowState(
     masterOn,
     lampEntity: typeof ids.lamp === "string" ? ids.lamp : null,
     masterEntity: masterId ?? null,
+    tentTemp: tentTempE.missing ? null : toNumber(tentTempE.state),
+    tentRh: tentRhE.missing ? null : toNumber(tentRhE.state),
+    lungTemp,
+    lungRh,
+    lungConfigured,
     empty: !anyPresent || (!anyNumeric && !anyPresent),
   };
 }

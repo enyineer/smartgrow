@@ -173,6 +173,19 @@ export const cardStyles = css`
     font-style: italic;
   }
 
+  .climate-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--sgc-primary);
+    margin: 8px 0 2px;
+  }
+  .climate-row .cl-k {
+    color: var(--sgc-secondary);
+    margin-right: 4px;
+  }
+
   .status-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

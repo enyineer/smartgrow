@@ -316,6 +316,15 @@ export class SmartGrowCard extends LitElement {
             : html`<div class="spark-empty">no history yet — recording…</div>`}
         </div>
 
+        <div class="climate-row">
+          <span><span class="cl-k">tent</span> ${s.tentTemp !== null ? s.tentTemp.toFixed(1) : "—"} °C · ${s.tentRh !== null ? Math.round(s.tentRh) : "—"} %</span>
+          <span>
+            ${s.lungConfigured
+              ? html`<span class="cl-k">lung</span> ${s.lungTemp !== null ? s.lungTemp.toFixed(1) : "—"} °C · ${s.lungRh !== null ? Math.round(s.lungRh) : "—"} %`
+              : html`<span class="cl-k">lung</span> not configured`}
+          </span>
+        </div>
+
         <div class="status-grid" style=${wmHidden ? "grid-template-columns: 1fr 1fr 1fr;" : ""}>
           <div class="tile">
             <div class="tile-name"><span class="dot ${s.fanTarget !== null && s.fanTarget > 0 ? "on" : ""}"></span>Fan</div>
