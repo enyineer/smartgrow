@@ -12,6 +12,7 @@ diagnostic entities and logged.
 from __future__ import annotations
 
 import logging
+import asyncio
 import time
 from dataclasses import dataclass
 from datetime import datetime as dt_datetime, time as dtime, timedelta
@@ -393,7 +394,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # overnight schedule (e.g. on 20:00, off 04:00)
         return now >= on or now < off
 
-    def _apply_lamp(self, turn_on: bool) -> None:
+    async def _apply_lamp(self, turn_on: bool) -> None:
         """Drive the configured lamp entity (light/switch/input_boolean).
 
         Honors dry-run like the fan/dehumidifier/humidifier actuators: in
@@ -411,23 +412,42 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
         service = "turn_on" if turn_on else "turn_off"
         domain = lamp.split(".", 1)[0]
-        self.hass.async_create_task(
-            self.hass.services.async_call(domain, service, {"entity_id": lamp})
+        await self.hass.services.async_call(
+            domain, service, {"entity_id": lamp}, blocking=True
         )
         # Master switch (failsafe mains plug) follows the dimmer so both are
         # always in the same state — no LED glimmer at night, no mains-cut day.
         master = self.source_entities.get("lamp_switch", "")
         if master:
-            self.hass.async_create_task(
-                self.hass.services.async_call(
-                    master.split(".", 1)[0], service, {"entity_id": master}
-                )
+            await self.hass.services.async_call(
+                master.split(".", 1)[0], service, {"entity_id": master},
+                blocking=True,
             )
+            # Radio can swallow the command (switch drops to unavailable under
+            # load). Verify and retry ONCE.
+            await asyncio.sleep(2)
+            mst = self.hass.states.get(master)
+            if mst is None or mst.state != (STATE_ON if turn_on else STATE_OFF):
+                _LOGGER.warning(
+                    "Lamp master %s did not follow %s; retrying once",
+                    master, service,
+                )
+                await self.hass.services.async_call(
+                    master.split(".", 1)[0], service, {"entity_id": master},
+                    blocking=True,
+                )
         _LOGGER.debug("Schedule: lamp %s%s -> %s", lamp,
                       f" + master {master}" if master else "", service)
 
-    def _apply_schedule(self) -> None:
-        """Evaluate the lights schedule and actuate the lamp if needed."""
+    async def _apply_schedule(self) -> None:
+        """Evaluate the lights schedule and actuate lamp + master.
+
+        Reconciles BOTH actuators independently: the dimmer following the
+        schedule is not enough — the master plug's radio is flaky (drops to
+        unavailable under load), and a missed master turn_on left the lamp
+        dark for an hour on 2026-09-14 while the dimmer read "on". Each
+        cycle now corrects whichever actuator diverges from the schedule.
+        """
         on, off = self._schedule_times()
         if on is None or off is None:
             return
@@ -437,14 +457,27 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         lamp = self.source_entities.get("lamp", "")
         if not lamp:
             return
+
+        want = STATE_ON if wants_day else STATE_OFF
         st = self.hass.states.get(lamp)
-        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-            return
-        is_on = st.state == STATE_ON
-        if wants_day and not is_on:
-            self._apply_lamp(True)
-        elif not wants_day and is_on:
-            self._apply_lamp(False)
+        if (
+            st is not None
+            and st.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
+            and st.state != want
+        ):
+            await self._apply_lamp(want == STATE_ON)
+
+        master = self.source_entities.get("lamp_switch", "")
+        if master:
+            mst = self.hass.states.get(master)
+            if mst is not None and mst.state not in (
+                STATE_UNKNOWN, STATE_UNAVAILABLE
+            ) and mst.state != want:
+                _LOGGER.warning(
+                    "Lamp master %s diverged from schedule (want %s); "
+                    "re-actuating", master, want,
+                )
+                await self._apply_lamp(want == STATE_ON)
 
     # -- optional wavemaker ------------------------------------------------
     def _wavemaker_tick(self) -> None:
@@ -679,7 +712,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Lights schedule (day/night cycle): cheap check, every sample.
         try:
-            self._apply_schedule()
+            await self._apply_schedule()
         except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
             _LOGGER.warning("Lights schedule evaluation failed: %s", err)
         try:

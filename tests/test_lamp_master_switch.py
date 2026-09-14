@@ -44,9 +44,6 @@ def _make_coordinator(hass, entry_data):
         services = _Services()
         states = hass.states
 
-        def async_create_task(self, coro):
-            coro.close()  # service call already recorded synchronously
-
     c = MagicMock(spec=SmartGrowCoordinator)
     c.entry = MagicMock()
     c.entry.data = data
@@ -71,11 +68,20 @@ async def test_apply_lamp_drives_both(hass):
         CONF_LAMP_ENTITY: "light.growlampe_light_0",
         CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
     })
-    coord._apply_lamp(True)
-    coord._apply_lamp(False)
+    # First call: master state unset -> verification fails -> ONE retry for
+    # the master (the dimmer has no verification retry). This pins the retry.
+    await coord._apply_lamp(True)
     assert coord._calls == [
         ("light", "turn_on", "light.growlampe_light_0"),
         ("switch", "turn_on", "switch.growlampe_master"),
+        ("switch", "turn_on", "switch.growlampe_master"),  # retry
+    ]
+    # Second call: states pre-set to the WANTED (off) value -> verify passes,
+    # no retry fires.
+    _set(hass, "light.growlampe_light_0", STATE_OFF)
+    _set(hass, "switch.growlampe_master", STATE_OFF)
+    await coord._apply_lamp(False)
+    assert coord._calls[3:] == [
         ("light", "turn_off", "light.growlampe_light_0"),
         ("switch", "turn_off", "switch.growlampe_master"),
     ]
@@ -84,7 +90,7 @@ async def test_apply_lamp_drives_both(hass):
 async def test_apply_lamp_single_when_no_master(hass):
     """No master configured -> only the dimmer is driven (old behavior)."""
     coord = _make_coordinator(hass, {CONF_LAMP_ENTITY: "light.growlampe_light_0"})
-    coord._apply_lamp(True)
+    await coord._apply_lamp(True)
     assert coord._calls == [("light", "turn_on", "light.growlampe_light_0")]
 
 
