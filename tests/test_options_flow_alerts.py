@@ -38,6 +38,9 @@ async def test_options_schema_serializes_with_alert_fields(
     assert "notify_targets" in names
     assert "alert_vpd_tolerance" in names
     assert "alert_cooldown_min" in names
+    assert "wavemaker_mode" in names
+    assert "wavemaker_run_s" in names
+    assert "wavemaker_every_min" in names
 
 
 async def test_notify_targets_defaults_available(hass, enable_custom_integrations):

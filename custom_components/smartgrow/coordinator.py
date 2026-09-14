@@ -492,12 +492,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._apply_lamp(want == STATE_ON)
 
     # -- optional wavemaker ------------------------------------------------
-    def _wavemaker_tick(self) -> None:
+    async def _wavemaker_tick(self) -> None:
         """Run the configured wavemaker program (interval mode) or mirror lights."""
-        entity = self.entry.data.get(CONF_WAVEMAKER_ENTITY, "")
+        merged = {**self.entry.data, **self.entry.options}
+        entity = merged.get(CONF_WAVEMAKER_ENTITY, "")
         if not entity:
             return
-        mode = self.entry.data.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE)
+        mode = merged.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE)
         if mode == WAVEMAKER_MODE_NONE:
             return
 
@@ -513,8 +514,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         if mode == WAVEMAKER_MODE_INTERVAL:
-            run_s = int(self.entry.data.get(CONF_WAVEMAKER_RUN_S, 30))
-            every_min = int(self.entry.data.get(CONF_WAVEMAKER_EVERY_MIN, 60))
+            run_s = int(merged.get(CONF_WAVEMAKER_RUN_S, 30))
+            every_min = int(merged.get(CONF_WAVEMAKER_EVERY_MIN, 60))
             if run_s <= 0 or every_min <= 0:
                 return
             now = time.time()
@@ -528,11 +529,22 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self._async_switch(entity, False)
                     self._wavemaker_last_toggle = now
 
-    def _async_switch(self, entity: str, turn_on: bool) -> None:
+    async def _async_switch(self, entity: str, turn_on: bool) -> None:
+        """Drive the pump plug with verification + one retry (flaky radio)."""
         service = "turn_on" if turn_on else "turn_off"
-        self.hass.async_create_task(
-            self.hass.services.async_call("switch", service, {"entity_id": entity})
+        await self.hass.services.async_call(
+            "switch", service, {"entity_id": entity}, blocking=True
         )
+        await asyncio.sleep(2)
+        st = self.hass.states.get(entity)
+        want = STATE_ON if turn_on else STATE_OFF
+        if st is None or st.state != want:
+            _LOGGER.warning(
+                "Wavemaker %s did not follow %s; retrying once", entity, service
+            )
+            await self.hass.services.async_call(
+                "switch", service, {"entity_id": entity}, blocking=True
+            )
 
     def _current_stage(self) -> str:
         """Stage from the integration-owned select entity; '' when unavailable.
@@ -774,7 +786,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
             _LOGGER.warning("Lights schedule evaluation failed: %s", err)
         try:
-            self._wavemaker_tick()
+            await self._wavemaker_tick()
         except Exception as err:  # noqa: BLE001
             _LOGGER.warning("Wavemaker tick failed: %s", err)
 

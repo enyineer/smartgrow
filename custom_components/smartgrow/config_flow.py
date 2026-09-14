@@ -400,6 +400,22 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                     CONF_ALERT_COOLDOWN_MIN,
                     default=current.get(CONF_ALERT_COOLDOWN_MIN, 60),
                 ): vol.All(vol.Coerce(float), vol.Range(min=5, max=720)),
+                vol.Optional(
+                    CONF_WAVEMAKER_MODE,
+                    default=current.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
+                    )
+                ),
+                vol.Optional(
+                    CONF_WAVEMAKER_RUN_S,
+                    default=current.get(CONF_WAVEMAKER_RUN_S, 120),
+                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=1800)),
+                vol.Optional(
+                    CONF_WAVEMAKER_EVERY_MIN,
+                    default=current.get(CONF_WAVEMAKER_EVERY_MIN, 180),
+                ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
                 vol.Required(
                     CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]
                 ): bool,
