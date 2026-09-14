@@ -1,4 +1,10 @@
-"""Number entities: floors, gains and thresholds as live-tunable controls."""
+"""Number entities: floors, gains and thresholds as live-tunable controls.
+
+Every number persists its value into ``entry.options`` (single-key partial
+update) and rebuilds ``RuntimeOptions`` from the entry, so tuning survives
+reloads/restarts. In-memory-only mutation reverted on every reload — same
+bug class as the old dry-run flip.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +18,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     UNIQUE_ID_TEMPLATE,
 )
-from .coordinator import SmartGrowCoordinator, async_get_coordinator
+from .coordinator import (
+    RuntimeOptions,
+    SmartGrowCoordinator,
+    async_get_coordinator,
+)
 from .entity import SmartGrowEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,7 +56,7 @@ def _uid(entry: ConfigEntry, name: str) -> str:
 
 
 class SmartGrowNumber(SmartGrowEntity, NumberEntity):
-    """Base number bound to a ControlParams field."""
+    """Base number bound to a ControlParams field + entry.options key."""
 
     _attr_mode = NumberMode.BOX
 
@@ -56,15 +66,25 @@ class SmartGrowNumber(SmartGrowEntity, NumberEntity):
     def _param(self) -> float:
         raise NotImplementedError
 
-    def _set_param(self, value: float) -> None:
+    def _options_key(self) -> str:
+        """The DEFAULTS/entry.options key this number persists to."""
         raise NotImplementedError
+
+    def _persist(self, value: float) -> None:
+        """Persist the single key into entry.options (PARTIAL merge — never
+        wholesale) and rebuild RuntimeOptions from the entry."""
+        entry = self.coordinator.entry
+        new_options = dict(entry.options)
+        new_options[self._options_key()] = value
+        self.hass.config_entries.async_update_entry(entry, options=new_options)
+        self.coordinator.options_rt = RuntimeOptions.from_entry(entry)
 
     @property
     def native_value(self) -> float:
         return self._param()
 
     async def async_set_native_value(self, value: float) -> None:
-        self._set_param(value)
+        self._persist(value)
         self.async_write_ha_state()
 
 
@@ -82,13 +102,16 @@ class FanFloorDayNumber(SmartGrowNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.fan_floor_day
 
+    def _options_key(self) -> str:
+        return "fan_floor_day"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(fan_floor_day=value)
         )
 
 
-class FanFloorNightNumber(FanFloorDayNumber):
+class FanFloorNightNumber(SmartGrowNumber):
     _attr_name = "SmartGrow fan floor night"
     _attr_icon = "mdi:fan-chevron-down"
 
@@ -99,13 +122,16 @@ class FanFloorNightNumber(FanFloorDayNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.fan_floor_night
 
+    def _options_key(self) -> str:
+        return "fan_floor_night"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(fan_floor_night=value)
         )
 
 
-class DeltaGainNumber(FanFloorDayNumber):
+class DeltaGainNumber(SmartGrowNumber):
     _attr_name = "SmartGrow ΔAH gain"
     _attr_icon = "mdi:tune"
     _attr_native_min_value = 0
@@ -119,13 +145,16 @@ class DeltaGainNumber(FanFloorDayNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.delta_gain
 
+    def _options_key(self) -> str:
+        return "delta_gain"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(delta_gain=value)
         )
 
 
-class VpdGainNumber(DeltaGainNumber):
+class VpdGainNumber(SmartGrowNumber):
     _attr_name = "SmartGrow VPD gain"
 
     def __init__(self, coordinator, entry) -> None:
@@ -135,13 +164,16 @@ class VpdGainNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.vpd_gain
 
+    def _options_key(self) -> str:
+        return "vpd_gain"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(vpd_gain=value)
         )
 
 
-class NeedGainNumber(DeltaGainNumber):
+class NeedGainNumber(SmartGrowNumber):
     _attr_name = "SmartGrow need gain"
 
     def __init__(self, coordinator, entry) -> None:
@@ -151,13 +183,16 @@ class NeedGainNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.need_gain
 
+    def _options_key(self) -> str:
+        return "need_gain"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(need_gain=value)
         )
 
 
-class TempGainNumber(DeltaGainNumber):
+class TempGainNumber(SmartGrowNumber):
     _attr_name = "SmartGrow temp gain"
 
     def __init__(self, coordinator, entry) -> None:
@@ -167,13 +202,16 @@ class TempGainNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.temp_gain
 
+    def _options_key(self) -> str:
+        return "temp_gain"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(temp_gain=value)
         )
 
 
-class ColdClampNumber(DeltaGainNumber):
+class ColdClampNumber(SmartGrowNumber):
     _attr_name = "SmartGrow cold clamp"
     _attr_icon = "mdi:snowflake"
     _attr_native_min_value = 0
@@ -187,13 +225,16 @@ class ColdClampNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.cold_clamp
 
+    def _options_key(self) -> str:
+        return "cold_clamp"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(cold_clamp=value)
         )
 
 
-class DehumBandDepthNumber(DeltaGainNumber):
+class DehumBandDepthNumber(SmartGrowNumber):
     _attr_name = "SmartGrow dehumidifier band depth"
     _attr_icon = "mdi:arrow-collapse-down"
     _attr_native_min_value = 0.05
@@ -207,13 +248,16 @@ class DehumBandDepthNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.dehum_band_depth
 
+    def _options_key(self) -> str:
+        return "dehum_band_depth"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(dehum_band_depth=value)
         )
 
 
-class DehumSatTriggerNumber(DeltaGainNumber):
+class DehumSatTriggerNumber(SmartGrowNumber):
     _attr_name = "SmartGrow dehumidifier saturation trigger"
     _attr_icon = "mdi:air-humidifier"
     _attr_native_min_value = 0
@@ -227,13 +271,16 @@ class DehumSatTriggerNumber(DeltaGainNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.dehum_sat_trigger
 
+    def _options_key(self) -> str:
+        return "dehum_sat_trigger"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(dehum_sat_trigger=value)
         )
 
 
-class DehumDryFloorNumber(DehumSatTriggerNumber):
+class DehumDryFloorNumber(SmartGrowNumber):
     _attr_name = "SmartGrow dehumidifier dry floor"
 
     def __init__(self, coordinator, entry) -> None:
@@ -243,7 +290,12 @@ class DehumDryFloorNumber(DehumSatTriggerNumber):
     def _param(self) -> float:
         return self.coordinator.options_rt.control.dehum_dry_floor
 
+    def _options_key(self) -> str:
+        return "dehum_dry_floor"
+
     def _set_param(self, value: float) -> None:
         self.coordinator.options_rt.control = (
             self.coordinator.options_rt.control.with_updates(dehum_dry_floor=value)
         )
+
+
