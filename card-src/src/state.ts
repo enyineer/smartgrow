@@ -383,6 +383,23 @@ export function applySourceEntities(
       }
     }
   }
+  // Integration-owned lights entities carry the DEVICE label prefix
+  // (time.growbox_1_smartgrow_lights_on), not the entity prefix. If the
+  // prefix-derived id does not exist, follow the one that does.
+  for (const [kind, re] of [
+    ["lights_on", /^time\..*_smartgrow_lights_on$/],
+    ["lights_off", /^time\..*_smartgrow_lights_off$/],
+    // same for the sources/staleness device-label family used elsewhere
+  ] as const) {
+    if (out[kind] && !hass?.states?.[out[kind]]) {
+      for (const eid of Object.keys(hass?.states ?? {})) {
+        if (re.test(eid)) {
+          out[kind] = eid;
+          break;
+        }
+      }
+    }
+  }
   return out;
 }
 

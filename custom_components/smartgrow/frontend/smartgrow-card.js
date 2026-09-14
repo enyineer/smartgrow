@@ -1749,6 +1749,16 @@ class jt extends at {
           break;
         }
       }
+      for (const [e, n] of [["lights_on", /^time\..*_smartgrow_lights_on$/], ["lights_off", /^time\..*_smartgrow_lights_off$/]]) {
+        var _t$states7;
+        if (i[e] && !(t !== null && t !== void 0 && (_t$states7 = t.states) !== null && _t$states7 !== void 0 && _t$states7[i[e]])) for (const s of Object.keys((_t$states8 = t === null || t === void 0 ? void 0 : t.states) !== null && _t$states8 !== void 0 ? _t$states8 : {})) {
+          var _t$states8;
+          if (n.test(s)) {
+            i[e] = s;
+            break;
+          }
+        }
+      }
       return i;
     }(this.hass, s, e, (_this$_config9 = this._config) === null || _this$_config9 === void 0 ? void 0 : _this$_config9.entities);
   }

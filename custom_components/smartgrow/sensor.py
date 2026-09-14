@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import UNIQUE_ID_TEMPLATE
+from .const import DOMAIN, UNIQUE_ID_TEMPLATE
 from .coordinator import SmartGrowCoordinator, async_get_coordinator
 from .entity import SmartGrowEntity
 
@@ -233,6 +233,19 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
         inputs = data.get("inputs") if isinstance(data, dict) else None
         vpd = getattr(inputs, "vpd", None)
         attrs["vpd_computed"] = round(vpd, 3) if isinstance(vpd, (int, float)) else None
+        # Lights schedule: the time entities are the source of truth (they
+        # self-default even when never explicitly set), so publish THEIR live
+        # states rather than entry data that may never have been persisted.
+        # The time entities are the visible truth (they self-default); find
+        # them by their deterministic unique ids — robust to renames.
+        from homeassistant.helpers import entity_registry as er
+        reg = er.async_get(self.coordinator.hass)
+        for key, slug in (("lights_on_time", "lights_on_time"),
+                          ("lights_off_time", "lights_off_time")):
+            uid = UNIQUE_ID_TEMPLATE.format(entry_id=self.entry.entry_id, name=slug)
+            ent = reg.async_get_entity_id("time", DOMAIN, uid)
+            st = self.coordinator.hass.states.get(ent) if ent else None
+            attrs[key] = st.state if st and st.state not in ("unknown", "unavailable") else None
         return attrs
 
 
