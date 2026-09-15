@@ -330,7 +330,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return None
         st = self.hass.states.get(switch)
         if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
-            return False
+            # Radio flap / unreachable: NOT the same as off. Treating this as
+            # False fired bogus lamp_day_off alerts (v0.10.5 regression).
+            return None
         return st.state == STATE_ON
 
     def _lamp_is_on(self) -> bool:

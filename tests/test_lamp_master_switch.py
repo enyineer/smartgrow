@@ -118,15 +118,23 @@ async def test_phase_master_on_is_day(hass):
     assert coord._lamp_is_on() is True
 
 
-async def test_phase_master_unavailable_counts_off(hass):
-    """Master unavailable (radio drop) must not be read as day-capable."""
+async def test_phase_master_unavailable_is_unknown_not_off(hass):
+    """Master radio flap (unavailable) must NOT read as 'off'.
+
+    v0.9.4-era behavior treated unavailable as off -> phase 'night' and
+    bogus lamp_day_off alerts on every flap (~15/night on this plug). Now:
+    unavailable -> None (unknown); dimmer stays authoritative; alerts fire
+    only on a real 'off' state.
+    """
     coord = _make_coordinator(hass, {
         CONF_LAMP_ENTITY: "light.growlampe_light_0",
         CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
     })
     _set(hass, "light.growlampe_light_0", STATE_ON)
     _set(hass, "switch.growlampe_master", STATE_UNAVAILABLE)
-    assert coord._phase() == "night"
+    assert coord._lamp_switch_is_on() is None
+    assert coord._phase() == "day"
+    assert coord._lamp_is_on() is True
 
 
 async def test_lamp_switch_in_optional_schema():
