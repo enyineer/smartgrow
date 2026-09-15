@@ -807,6 +807,21 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except Exception as err:  # noqa: BLE001
             _LOGGER.warning("Wavemaker tick failed: %s", err)
 
+        # On a day/night transition tick the snapshot above was taken before
+        # the schedule flipped the lamp — is_day (and the lamp-derived facts)
+        # are stale for everything downstream (band selection, alerts; this
+        # also fired spurious vpd alerts at transitions). Re-gather ONCE when
+        # day-ness diverged so control + alerts see post-transition truth.
+        # (Cheap: reads are hass.states.get, no I/O; UpdateFailed-safe —
+        # keep the earlier snapshot if the re-read fails.)
+        try:
+            fresh = self._gather_inputs()
+            if fresh.is_day != inputs.is_day:
+                inputs = fresh
+                self.last_inputs = inputs
+        except UpdateFailed:
+            pass  # keep the pre-schedule snapshot
+
         now = time.time()
         base = self.options_rt.control
         # Adaptation may rewrite gains/margins (watchdog-guarded). The engine
