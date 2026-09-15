@@ -694,12 +694,19 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         degraded = result.get("degraded", {})
         band_low = params.effective_band_low(inputs.stage, inputs.is_day)
         band_high = params.band_high(inputs.stage, inputs.is_day)
+        # Day-ness for the lamp-divergence alert must be the SCHEDULE's
+        # verdict evaluated NOW, not inputs.is_day: inputs were gathered
+        # before _apply_schedule ran in this same tick, so on the exact
+        # night-transition tick is_day was still True while the schedule
+        # had just turned the lamp off -> bogus "It is DAY but the lamp
+        # cannot light" (v0.10.5, fired at every lights_off).
+        sched_day = self._schedule_wants_day(dt_datetime.now().time())
         alerts = self.alerts.evaluate(
             now,
             vpd=inputs.vpd,
             band_low=band_low,
             band_high=band_high,
-            is_day=inputs.is_day,
+            is_day=bool(sched_day) if sched_day is not None else self._lamp_is_on(),
             lamp_on=self._lamp_is_on(),
             master_on=self._lamp_switch_is_on(),
             degraded={
