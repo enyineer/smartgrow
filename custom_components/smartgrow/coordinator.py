@@ -171,6 +171,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.legacy_last_warned: dict[str, float] = {}
         self.last_sample_ts: float | None = None  # availability/staleness
         self._wavemaker_last_toggle: float = 0.0
+        self._wavemaker_seen_on: bool = False
         self.last_inputs: SensorInputs | None = None
 
     # -- entity id helpers -------------------------------------------------
@@ -527,6 +528,18 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return
             now = time.time()
             last = self._wavemaker_last_toggle or 0.0
+            if is_on and not self._wavemaker_seen_on:
+                # The pump is ON but WE did not observe our own turn-on: a
+                # manual toggle at the plug (or HA dashboard). Adopt it as the
+                # start of a run so the user gets the full run_s window
+                # before we cut it - do not kill a manual run mid-swing.
+                # (Our own toggles always pass through _async_switch, which
+                # sets _wavemaker_last_toggle immediately, so now-last is
+                # tiny for ours and large for manual ones.)
+                if now - last >= 5:
+                    last = now
+                    self._wavemaker_last_toggle = now
+            self._wavemaker_seen_on = is_on
             if not is_on:
                 if now - last >= every_min * 60:
                     self.hass.async_create_task(self._async_switch(entity, True))
