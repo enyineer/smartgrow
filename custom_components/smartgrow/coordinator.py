@@ -870,10 +870,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._apply_schedule()
         except Exception as err:  # noqa: BLE001 — schedule must never kill the loop
             _LOGGER.warning("Lights schedule evaluation failed: %s", err)
-        try:
-            await self._wavemaker_tick()
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.warning("Wavemaker tick failed: %s", err)
+        if (self._current_stage() or "") == "Drying":
+            pass  # drying: wavemaker stays off (no wind on hanging buds)
+        else:
+            try:
+                await self._wavemaker_tick()
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.warning("Wavemaker tick failed: %s", err)
 
         # On a day/night transition tick the snapshot above was taken before
         # the schedule flipped the lamp — is_day (and the lamp-derived facts)
@@ -920,6 +923,40 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             self._drying_fan_demand = decision.fan_target >= 100
             await self._apply_drying_fan(decision)
+
+            # Wavemaker: force OFF (wind slows the dry, interval has no
+            # business running over hanging buds). Only command when still on.
+            wm = self.source_entities.get("wavemaker", "")
+            if wm:
+                wst = self.hass.states.get(wm)
+                if wst is not None and wst.state == STATE_ON:
+                    await self._async_switch(wm, False)
+
+            # Dehumidifier: same RH band as the fan. It is the stronger tool
+            # when the exhaust alone can't keep RH down (cool/damp season).
+            # A dehum left ON from a pre-Drying stage would otherwise run
+            # forever (the VPD cascade that governs it is skipped here).
+            dehum = self.source_entities.get("dehum", "")
+            if dehum:
+                dst = self.hass.states.get(dehum)
+                want_dehum = decision.fan_target >= 100  # mirrors fan demand
+                if dst is not None and dst.state not in (
+                    STATE_UNKNOWN, STATE_UNAVAILABLE
+                ):
+                    dehum_on = dst.state == STATE_ON
+                    domain = dehum.split(".", 1)[0]
+                    service = ("turn_on" if want_dehum else "turn_off")
+                    if dehum_on != want_dehum and domain in (
+                        "humidifier", "switch"
+                    ):
+                        await self.hass.services.async_call(
+                            domain, service,
+                            {ATTR_ENTITY_ID: dehum}, blocking=True,
+                        )
+                        _LOGGER.debug(
+                            "Drying: dehum %s -> %s", dehum, service
+                        )
+
             alerts = drying.drying_alerts(
                 inputs.tent_rh,
                 self.options_rt.control.drying_rh_floor,

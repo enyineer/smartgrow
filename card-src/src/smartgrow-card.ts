@@ -161,6 +161,68 @@ export class SmartGrowCard extends LitElement {
     }
 
     const title = this._config.title ?? s.device;
+
+    // ---- Drying stage: dedicated representation -------------------------
+    // No VPD band, no lamp/wave tiles, no terms — the tent is a drying room:
+    // RH + fan state + mold/too-fast warnings are the whole story.
+    if (s.stage === "Drying") {
+      const rh = s.tentRh;
+      const rhTxt = rh !== null ? `${Math.round(rh)} %` : "—";
+      const tempTxt = s.tentTemp !== null ? `${s.tentTemp.toFixed(1)} °C` : "";
+      const fanOn = s.fanTarget !== null && s.fanTarget > 0;
+      const status = rh === null
+        ? { txt: "RH unknown", cls: "warn" }
+        : rh >= 65
+          ? { txt: "MOLD RISK — dry faster", cls: "warn" }
+          : rh <= 45
+            ? { txt: "drying too fast", cls: "warn" }
+            : { txt: "in drying window", cls: "ok" };
+      return html`<ha-card>
+        <div class="header">
+          <div class="title">${title}</div>
+          <div class="stage">Drying</div>
+          <div class="phase-chip drying">drying</div>
+          <div class="header-icons">
+            ${s.dryRun === true ? html`<span class="badge-dry">DRY</span>` : nothing}
+          </div>
+        </div>
+
+        <div class="gauge-row">
+          <div class="gauge">
+            <div class="fan-big">${rhTxt}</div>
+            <div class="fan-sub">tent RH ${tempTxt ? `· ${tempTxt}` : ""}</div>
+          </div>
+          <div style="flex:1">
+            <div class="fan-sub">
+              ${status.txt} · exhaust ${fanOn ? "ON" : "OFF"}
+            </div>
+            <div class="band-bar">
+              <div class="band-ok" style="left:${clamp(((45 - 25) / 1.5) * 100, 0, 100)}%; width:${clamp(((62 - 45) / 1.5) * 100, 0, 100)}%"></div>
+              ${rh !== null
+                ? html`<div class="band-marker ${status.cls}" style="left:${clamp(((rh - 25) / 1.5) * 100, 0, 100)}%"></div>`
+                : nothing}
+            </div>
+            <div class="band-labels"><span>too fast</span><span>drying window 45–62 %</span><span>mold risk</span></div>
+          </div>
+        </div>
+
+        ${status.cls === "warn"
+          ? html`<div class="alert-strip">${status.txt}</div>`
+          : nothing}
+
+        <div class="climate-row">
+          <span><span class="cl-k">lamp</span> forced off</span>
+          <span><span class="cl-k">wavemaker</span> off</span>
+          <span><span class="cl-k">exhaust</span> ${fanOn ? "running" : "idle"}</span>
+        </div>
+
+        <div class="chip-row">
+          ${s.dryRun === true ? html`<span class="chip">DRY-RUN — no actuation</span>` : nothing}
+          <span class="chip">slow is good: 55–62 % RH</span>
+        </div>
+      </ha-card>`;
+    }
+
     const fanActualHtml =
       s.fanActual !== null
         ? html`<span class="fan-sub">actual ${Math.round(s.fanActual)} %</span>`
