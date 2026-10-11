@@ -13,8 +13,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
-      - name: Install test dependencies (uv sync incl. dev group)
-        run: uv sync --dev
+      - name: Install test dependencies (uv sync incl. test extra + dev group)
+        run: uv sync --extra test --group dev
       - name: Ruff
         run: uv run ruff check custom_components/smartgrow tests
       - name: Black (check)
