@@ -11,7 +11,9 @@ the eager injection — these tests make sure it never comes back.
 import ast
 import pathlib
 
-MODULE = pathlib.Path("/root/smartgrow/custom_components/smartgrow/frontend_reg.py").read_text()
+REPO = pathlib.Path(__file__).resolve().parent.parent
+
+MODULE = (REPO / "custom_components/smartgrow/frontend_reg.py").read_text()
 
 
 def _import_names_from(module_text: str, import_line_prefix: str) -> set[str]:

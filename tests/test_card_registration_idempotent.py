@@ -9,10 +9,12 @@ These tests pin that.
 """
 
 import pathlib
+
+REPO = pathlib.Path(__file__).resolve().parent.parent
 import re
 
-CARD_TS = pathlib.Path("/root/smartgrow/card-src/src/smartgrow-card.ts").read_text()
-EDITOR_TS = pathlib.Path("/root/smartgrow/card-src/src/smartgrow-card-editor.ts").read_text()
+CARD_TS = (REPO / "card-src/src/smartgrow-card.ts").read_text()
+EDITOR_TS = (REPO / "card-src/src/smartgrow-card-editor.ts").read_text()
 
 
 def test_no_custom_element_decorator():
@@ -35,8 +37,8 @@ def test_guarded_define_present():
 
 def test_deployed_bundle_is_the_built_bundle():
     """The bundle shipped in custom_components must be the card-src build output."""
-    built = pathlib.Path("/root/smartgrow/card-src/dist/smartgrow-card.js").read_bytes()
-    deployed = pathlib.Path("/root/smartgrow/custom_components/smartgrow/frontend/smartgrow-card.js").read_bytes()
+    built = (REPO / "card-src/dist/smartgrow-card.js").read_bytes()
+    deployed = (REPO / "custom_components/smartgrow/frontend/smartgrow-card.js").read_bytes()
     assert built == deployed, (
         "deployed smartgrow-card.js differs from card-src/dist build output "
         "(stale bundle deployed — rebuild card-src and copy)"

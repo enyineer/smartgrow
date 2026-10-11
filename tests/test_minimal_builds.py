@@ -15,7 +15,7 @@ diagnostic (decisions still flow) — it does, via the normal chip path.
 
 import sys
 
-sys.path.insert(0, "/root/smartgrow")
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
 
 from custom_components.smartgrow.logic import dehumid_control, fan_control
 from custom_components.smartgrow.logic.params import ControlParams, SensorInputs
