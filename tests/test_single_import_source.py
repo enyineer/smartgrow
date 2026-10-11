@@ -19,10 +19,11 @@ def _import_names_from(module_text: str, import_line_prefix: str) -> set[str]:
     tree = ast.parse(module_text)
     names: set[str] = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module == "homeassistant.components.frontend":
-            for alias in node.names:
-                names.add(alias.name)
-        elif isinstance(node, ast.Import):
+        is_frontend_from = (
+            isinstance(node, ast.ImportFrom)
+            and node.module == "homeassistant.components.frontend"
+        )
+        if is_frontend_from or isinstance(node, ast.Import):
             for alias in node.names:
                 names.add(alias.name)
     return names

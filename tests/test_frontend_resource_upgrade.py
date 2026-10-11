@@ -26,7 +26,6 @@ def _collection(stored_url):
 async def test_stale_versioned_url_upgraded(hass):
     """A stored vOLD URL is rewritten to the current versioned URL."""
     collection = _collection("/smartgrow/v0.7.8/smartgrow-card.js")
-    lovelace = {"resources": collection}
     hass.data["lovelace"] = SimpleNamespace(resources=collection)
 
     await _async_register_lovelace_resource(hass)

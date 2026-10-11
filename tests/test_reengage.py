@@ -56,6 +56,7 @@ def test_window_top_unchanged():
 def test_from_entry_reads_reengage():
     """RuntimeOptions.from_entry carries the reengage option."""
     from types import SimpleNamespace
+
     from custom_components.smartgrow.coordinator import RuntimeOptions
 
     entry = SimpleNamespace(

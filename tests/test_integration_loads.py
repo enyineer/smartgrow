@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from unittest.mock import patch
 
 import pytest
 

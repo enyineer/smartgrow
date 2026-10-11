@@ -8,8 +8,6 @@ silently no-opped and a manually-on pump stayed on through Drying.
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 from custom_components.smartgrow.coordinator import SmartGrowCoordinator
 
 
@@ -31,7 +29,6 @@ def test_drying_force_off_uses_conf_wavemaker_entity():
     c.options_rt = SimpleNamespace(dry_run=False, notify_targets=[])
 
     # call the force-off the way the drying branch does
-    import asyncio
     merged = {**c.entry.data, **c.entry.options}
     wm = merged.get("wavemaker_entity", "")
     assert wm == "switch.umwalzpumpe"

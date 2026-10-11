@@ -13,7 +13,6 @@ sensor reports dehum_entity: null, and _apply_dehum records
 diagnostic (decisions still flow) — it does, via the normal chip path.
 """
 import sys
-import math
 
 sys.path.insert(0, "/root/smartgrow")
 

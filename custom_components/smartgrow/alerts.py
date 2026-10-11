@@ -89,7 +89,7 @@ class AlertEngine:
 
         # conditions that cleared reset their cooldown bookkeeping
         active_kinds = {m["kind"] for m in out}
-        for kind in [k for k in self._last_sent if k not in active_kinds]:
+        for _kind in [k for k in self._last_sent if k not in active_kinds]:
             # keep the timestamp; cooldown measures from last NOTIFY, and a
             # re-fire after resolution is fine — do not delete, so a flapping
             # condition cannot spam. Resolution is silent by design.

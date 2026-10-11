@@ -5,7 +5,6 @@ always None because they were never published (v0.10.3 regression report).
 The time entities are the source of truth — read them via the registry.
 """
 import pytest
-
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -32,13 +31,14 @@ def config_entry(hass):
 
 async def test_sources_publishes_lights_times(hass: HomeAssistant, config_entry):
     from unittest.mock import patch
-    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
 
     # deterministic registry entries (production pattern)
     from homeassistant.helpers import entity_registry as er
+
+    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
     reg = er.async_get(hass)
     ids = {}
-    for slug, state in (("lights_on_time", "20:00:00"), ("lights_off_time", "08:00:00")):
+    for slug, _state in (("lights_on_time", "20:00:00"), ("lights_off_time", "08:00:00")):
         uid = UNIQUE_ID_TEMPLATE.format(entry_id=config_entry.entry_id, name=slug)
         entry = reg.async_get_or_create(
             "time", DOMAIN, uid,
@@ -66,6 +66,7 @@ async def test_sources_publishes_lights_times(hass: HomeAssistant, config_entry)
 
 async def test_sources_lights_times_none_when_entities_missing(hass, config_entry):
     from unittest.mock import patch
+
     from custom_components.smartgrow.coordinator import SmartGrowCoordinator
 
     entry = config_entry

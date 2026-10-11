@@ -52,10 +52,7 @@ def _record_task(coro):
 @pytest.mark.parametrize("now", [1000.0])
 def test_manual_on_is_adopted_not_killed(now):
     c = _coordinator("on", last_toggle=0.0, seen_on=False)
-    import time
     with __import__("unittest").mock.patch("time.time", return_value=now):
-        c._wavemaker_tick.__wrapped__ if False else None
-        # run the sync tick body via asyncio shell
         import asyncio
         asyncio.get_event_loop().run_until_complete(c._wavemaker_tick())
     # adopt: clock starts at `now`; NOT scheduled off immediately
@@ -64,7 +61,7 @@ def test_manual_on_is_adopted_not_killed(now):
 
 def test_manual_on_still_cut_after_run_s():
     """After run_s has elapsed since adoption, the component cuts it."""
-    import asyncio, time
+    import asyncio
     c = _coordinator("on", last_toggle=1000.0 - 121, seen_on=True)
     with __import__("unittest").mock.patch("time.time", return_value=1000.0):
         asyncio.get_event_loop().run_until_complete(c._wavemaker_tick())

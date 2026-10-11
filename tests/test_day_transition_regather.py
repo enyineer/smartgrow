@@ -12,7 +12,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.smartgrow.const import DOMAIN
@@ -30,8 +29,9 @@ def _make(hass: HomeAssistant, data: dict) -> SmartGrowCoordinator:
 
 def test_update_regathers_after_schedule_flips_lamp(hass):
     """Night->day: schedule turns lamp on mid-tick; inputs must follow."""
-    from homeassistant.const import STATE_ON, STATE_OFF
     from unittest.mock import AsyncMock
+
+    from homeassistant.const import STATE_OFF, STATE_ON
 
     c = _make(hass, {
         "name": "Growbox 1",

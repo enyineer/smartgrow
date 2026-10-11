@@ -5,7 +5,9 @@
     "@enyineer"
   ],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": [
+    "http"
+  ],
   "documentation": "https://github.com/enyineer/smartgrow",
   "integration_type": "hub",
   "iot_class": "local_polling",

@@ -13,14 +13,13 @@ its dashboard card. Registered on setup via:
 
 from __future__ import annotations
 
+import json
 import logging
+import pathlib
 
 from homeassistant.components.frontend import remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
-
-import json
-import pathlib
 
 _BASE_URL = "/smartgrow/smartgrow-card.js"
 # Versioned PATH (not just query): companion-app webviews have been observed
@@ -106,7 +105,6 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     # Wildcard route: ANY old versioned path serves the CURRENT bundle, so an app
     # cached on /smartgrow/v0.7.8/... gets working bytes instead of a 404 ->
     # "Configuration error". Regex registered directly on the aiohttp router.
-    import re
 
     async def _serve_current_card(request):
         from aiohttp import web as aioweb

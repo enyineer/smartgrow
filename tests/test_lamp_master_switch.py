@@ -5,7 +5,6 @@ The Growlampe is a dimmable light plus a "Growlampe Master" smart plug that full
 cuts mains (no LED glimmer at night). Both must switch together on schedule
 changes, and day/night detection must treat master-off as night.
 """
-from unittest.mock import patch
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 
@@ -16,13 +15,12 @@ def _make_coordinator(hass, entry_data):
     """Mock-based coordinator with the real lamp/phase methods bound."""
     from unittest.mock import MagicMock
 
-    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
-
     from custom_components.smartgrow.const import (
         CONF_FAN_ENTITY,
         CONF_TENT_RH_ENTITY,
         CONF_TENT_TEMP_ENTITY,
     )
+    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
 
     data = {
         CONF_FAN_ENTITY: "fan.f",

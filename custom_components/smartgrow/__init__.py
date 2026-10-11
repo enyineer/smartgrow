@@ -6,12 +6,11 @@ import logging
 from typing import cast
 
 from homeassistant.config_entries import ConfigEntry
-from .const import CONF_DRY_RUN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DEFAULTS, DOMAIN
+from .const import CONF_DRY_RUN, DEFAULTS, DOMAIN
 from .coordinator import RuntimeOptions, SmartGrowCoordinator
 from .frontend_reg import CARD_URL, async_register_frontend, remove_extra_js_url
 

@@ -5,7 +5,6 @@ notify services) and that submitting options stores them.
 """
 import json
 
-import pytest
 import voluptuous_serialize
 from homeassistant.helpers import config_validation as cv
 from pytest_homeassistant_custom_component.common import MockConfigEntry

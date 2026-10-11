@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.smartgrow.logic.drying import (
-    DryingDecision,
     compute_drying_fan,
     drying_alerts,
 )

@@ -1,7 +1,6 @@
 """Lights schedule logic tests."""
 from datetime import time
-import pytest
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock
 
 from custom_components.smartgrow.coordinator import SmartGrowCoordinator
 

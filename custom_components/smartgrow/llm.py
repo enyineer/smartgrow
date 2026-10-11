@@ -23,6 +23,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+
 try:  # HA >= 2026.8 exposes the llm component with LLMTools
     from homeassistant.components.llm import LLMTools  # noqa: F401
 except ImportError:  # older HA: tools are registered via helpers.llm API instead
@@ -337,7 +338,7 @@ class GetCameraSnapshotTool(_SmartGrowTool):
 
     async def async_get_value(self, llm_context: LLMContext, **kwargs: Any) -> Any:
         camera = None
-        for entry_id, data in self.hass.data.get(DOMAIN, {}).items():
+        for entry_id, _data in self.hass.data.get(DOMAIN, {}).items():
             entry = self.hass.config_entries.async_get_entry(entry_id)
             if entry and entry.data.get(CONF_CAMERA_ENTITY):
                 camera = entry.data[CONF_CAMERA_ENTITY]

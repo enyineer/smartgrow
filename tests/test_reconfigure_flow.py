@@ -1,5 +1,4 @@
 """Reconfigure flow must init and submit without crashing (regression for 500)."""
-import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.smartgrow.const import DOMAIN

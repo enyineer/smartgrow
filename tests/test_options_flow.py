@@ -1,5 +1,4 @@
 """Options flow must initialize without touching the read-only config_entry property."""
-import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.smartgrow.const import DOMAIN
@@ -21,7 +20,6 @@ DATA = {
 async def test_options_flow_init(hass, enable_custom_integrations):
     """Regression: assigning self.config_entry raises AttributeError on HA >= 2025.3
     (read-only property), which surfaced as HTTP 500 on the Configure dialog."""
-    from homeassistant.core import State
 
     for eid, st in [
         ("fan.demo", "off"),

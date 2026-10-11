@@ -4,7 +4,7 @@ Level-triggered with dead zone, for early-stage grows where seedlings/
 clones need higher RH than the lung room provides.
 
     ON  if  lung_rh > wet_ceiling              (too dry floor mirror)
-         or tent_vpd < high + 0.05 reversed? 
+         or tent_vpd < high + 0.05 reversed?
 
     Actually: humidifier ON raises RH, which LOWERS VPD. The band already
     handles the upper VPD bound. The humidifier should fire when VPD is

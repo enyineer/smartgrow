@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 from custom_components.smartgrow.config_flow import ENTITY_SELECTORS
 from custom_components.smartgrow.const import CONF_FAN_ENTITY
 from custom_components.smartgrow.logic import fan_control
-from custom_components.smartgrow.logic.params import ControlParams, SensorInputs
+from custom_components.smartgrow.logic.params import SensorInputs
 
 
 def test_fan_selector_allows_switch_and_input_boolean():

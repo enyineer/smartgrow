@@ -26,11 +26,9 @@ from custom_components.smartgrow.config_flow import (
     OPTIONAL_ENTITY_KEYS,
     REQUIRED_ENTITY_KEYS,
     SmartGrowConfigFlow,
-    SmartGrowOptionsFlow,
     _entity_schema,
 )
 from custom_components.smartgrow.const import DOMAIN
-from homeassistant.config_entries import SOURCE_RECONFIGURE
 
 REQUIRED_DATA = {
     "fan_entity": "fan.demo",
@@ -178,7 +176,7 @@ async def test_options_schema_serializes(hass, enable_custom_integrations):
     blob = json.dumps(_converted(result["data_schema"]))
     assert '"entity"' in blob, "options schema lost its entity pickers"
     # tuning knobs still present as numbers
-    assert '"type": "number"' not in blob or True  # knobs serialize as float inputs
+    assert True  # knobs serialize as float inputs
 
 
 
@@ -204,7 +202,6 @@ async def test_reconfigure_submit_persists_and_aborts(hass, enable_custom_integr
         lambda entry_id: reloads.append(entry_id) and __import__("asyncio").get_event_loop().create_future()
     )
     # simpler: monkeypatch via stub
-    import types
     async def _fake_reload(entry_id):
         reloads.append(entry_id)
     flow.hass.config_entries.async_reload = _fake_reload
@@ -250,7 +247,6 @@ async def test_reconfigure_clear_optional_sources(hass, enable_custom_integratio
     flow = SmartGrowConfigFlow()
     flow.hass = hass
     flow._get_reconfigure_entry = lambda: entry
-    import types
     async def _fake_reload(entry_id):
         pass
     hass.config_entries.async_reload = _fake_reload

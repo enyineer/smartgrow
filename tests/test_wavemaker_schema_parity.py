@@ -14,7 +14,6 @@ from custom_components.smartgrow.config_flow import (
 )
 from custom_components.smartgrow.const import DOMAIN
 
-
 PROGRAM_FIELDS = ("wavemaker_mode", "wavemaker_run_s", "wavemaker_every_min")
 
 

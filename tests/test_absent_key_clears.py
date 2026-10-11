@@ -3,10 +3,8 @@ Proves vol default materialization: submitting WITHOUT an optional key that has
 default=old still yields the old value in user_input (flow-manager validation).
 With suggested_value, the key stays absent -> the clear-semantics work.
 """
-import voluptuous as vol
-from voluptuous import UNDEFINED
-
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from voluptuous import UNDEFINED
 
 from custom_components.smartgrow.const import DOMAIN
 from tests.test_flow_serialization import REQUIRED_DATA

@@ -11,11 +11,13 @@ diagnostic entities and logged.
 
 from __future__ import annotations
 
-import logging
 import asyncio
+import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime as dt_datetime, time as dtime, timedelta
+from datetime import datetime as dt_datetime
+from datetime import time as dtime
+from datetime import timedelta
 from typing import Any, TypedDict
 
 from homeassistant.config_entries import ConfigEntry
@@ -37,32 +39,32 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .adaptation import AdaptationEngine
 from .const import (
+    CONF_CAMERA_ENTITY,
     CONF_DEHUM_ENTITY,
-    CONF_HUM_ENTITY,
     CONF_FAN_ENTITY,
+    CONF_HUM_ENTITY,
     CONF_LAMP_ENTITY,
     CONF_LAMP_SWITCH_ENTITY,
-    CONF_CAMERA_ENTITY,
-    CONF_LIGHTS_ON_TIME,
-    CONF_LIGHTS_OFF_TIME,
-    DEFAULT_LIGHTS_ON,
-    DEFAULT_LIGHTS_OFF,
-    CONF_WAVEMAKER_ENTITY,
-    CONF_WAVEMAKER_MODE,
-    CONF_WAVEMAKER_RUN_S,
-    CONF_WAVEMAKER_EVERY_MIN,
-    WAVEMAKER_MODE_NONE,
-    WAVEMAKER_MODE_WITH_LIGHTS,
-    WAVEMAKER_MODE_INTERVAL,
-    CONF_VPD_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
     CONF_LEGACY_VENT_AUTOMATION,
+    CONF_LIGHTS_OFF_TIME,
+    CONF_LIGHTS_ON_TIME,
     CONF_LUNG_RH_ENTITY,
     CONF_LUNG_TEMP_ENTITY,
     CONF_TENT_RH_ENTITY,
     CONF_TENT_TEMP_ENTITY,
+    CONF_VPD_ENTITY,
+    CONF_WAVEMAKER_ENTITY,
+    CONF_WAVEMAKER_EVERY_MIN,
+    CONF_WAVEMAKER_MODE,
+    CONF_WAVEMAKER_RUN_S,
+    DEFAULT_LIGHTS_OFF,
+    DEFAULT_LIGHTS_ON,
     DEFAULTS,
     DOMAIN,
+    WAVEMAKER_MODE_INTERVAL,
+    WAVEMAKER_MODE_NONE,
+    WAVEMAKER_MODE_WITH_LIGHTS,
     FanDecisionDict,
 )
 from .logic import dehumid_control, drying, fan_control
@@ -357,9 +359,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if st.state != STATE_ON:
             return False
         master = self._lamp_switch_is_on()
-        if master is False:
-            return False
-        return True
+        return master is not False
 
     def _phase(self) -> str:
         """'day'/'night' from the configured lamp; 'unknown' otherwise.
