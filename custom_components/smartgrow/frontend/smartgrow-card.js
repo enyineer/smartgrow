@@ -350,8 +350,8 @@ const w = globalThis,
   H = /-->/g,
   j = />/g,
   D = RegExp(`>|${N}(?:([^\\s"'>=/]+)(${N}*=${N}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g"),
-  F = /'/g,
-  z = /"/g,
+  z = /'/g,
+  F = /"/g,
   L = /^(?:script|style|textarea|title)$/i,
   B = (t => (e, ...s) => ({
     _$litType$: t,
@@ -378,7 +378,7 @@ const Y = (t, e) => {
       l,
       c = -1,
       d = 0;
-    for (; d < s.length && (a.lastIndex = d, l = a.exec(s), null !== l);) d = a.lastIndex, a === U ? "!--" === l[1] ? a = H : void 0 !== l[1] ? a = j : void 0 !== l[2] ? (L.test(l[2]) && (i = RegExp("</" + l[2], "g")), a = D) : void 0 !== l[3] && (a = D) : a === D ? ">" === l[0] ? (a = i !== null && i !== void 0 ? i : U, c = -1) : void 0 === l[1] ? c = -2 : (c = a.lastIndex - l[2].length, o = l[1], a = void 0 === l[3] ? D : '"' === l[3] ? z : F) : a === z || a === F ? a = D : a === H || a === j ? a = U : (a = D, i = void 0);
+    for (; d < s.length && (a.lastIndex = d, l = a.exec(s), null !== l);) d = a.lastIndex, a === U ? "!--" === l[1] ? a = H : void 0 !== l[1] ? a = j : void 0 !== l[2] ? (L.test(l[2]) && (i = RegExp("</" + l[2], "g")), a = D) : void 0 !== l[3] && (a = D) : a === D ? ">" === l[0] ? (a = i !== null && i !== void 0 ? i : U, c = -1) : void 0 === l[1] ? c = -2 : (c = a.lastIndex - l[2].length, o = l[1], a = void 0 === l[3] ? D : '"' === l[3] ? F : z) : a === F || a === z ? a = D : a === H || a === j ? a = U : (a = D, i = void 0);
     const p = a === D && t[e + 1].startsWith("/>") ? " " : "";
     r += a === U ? s + C : c >= 0 ? (n.push(o), s.slice(0, c) + S + s.slice(c) + E + p) : s + E + (-2 === c ? e : p);
   }
@@ -1429,9 +1429,9 @@ function St(t, e, s) {
     H = At(t, N),
     j = "string" == typeof g.lung_temp_entity ? g.lung_temp_entity : void 0,
     D = "string" == typeof g.lung_rh_entity ? g.lung_rh_entity : void 0,
-    F = !(!j || !D),
-    z = F ? mt(At(t, j).state) : null,
-    L = F ? mt(At(t, D).state) : null;
+    z = !(!j || !D),
+    F = z ? mt(At(t, j).state) : null,
+    L = z ? mt(At(t, D).state) : null;
   return {
     device: d,
     stage: r && !r.missing ? String(r.state) : "",
@@ -1479,9 +1479,9 @@ function St(t, e, s) {
     masterEntity: x !== null && x !== void 0 ? x : null,
     tentTemp: U.missing ? null : mt(U.state),
     tentRh: H.missing ? null : mt(H.state),
-    lungTemp: z,
+    lungTemp: F,
     lungRh: L,
-    lungConfigured: F,
+    lungConfigured: z,
     empty: !h || !u && !h
   };
 }
@@ -1880,13 +1880,13 @@ class jt extends at {
           </div>
           <div style="flex:1">
             <div class="fan-sub">
-              ${a.txt} · exhaust ${r ? "ON" : "OFF"}
+              ${a.txt}${r ? " · exhaust pulling" : " · exhaust idle"}
             </div>
             <div class="band-bar">
-              <div class="band-ok" style="left:${_t(20 / 1.5 * 100, 0, 100)}%; width:${_t(17 / 1.5 * 100, 0, 100)}%"></div>
-              ${null !== t ? B`<div class="band-marker ${a.cls}" style="left:${_t((t - 25) / 1.5 * 100, 0, 100)}%"></div>` : W}
+              <div class="band-ok" style="left:${5 / 30 * 100}%; width:${17 / 30 * 100}%"></div>
+              ${null !== t ? B`<div class="band-marker ${"ok" === a.cls ? "" : a.cls}" style="left:${_t((t - 40) / 30 * 100, 0, 100)}%"></div>` : W}
             </div>
-            <div class="band-labels"><span>too fast</span><span>drying window 45–62 %</span><span>mold risk</span></div>
+            <div class="band-labels"><span>40 %</span><span>drying window 45–62 %</span><span>70 %</span></div>
           </div>
         </div>
 

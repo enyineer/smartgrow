@@ -902,6 +902,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # fan/dehum cascades are meaningless (no transpiration). Alerts swap
         # to mold-risk / too-fast-dry.
         if (self._current_stage() or "") == "Drying":
+            merged = {**self.entry.data, **self.entry.options}
             # enforce lamp + master OFF (schedule must not relight the tent)
             if hasattr(self, "_apply_schedule"):
                 lamp = self.source_entities.get("lamp", "")
@@ -926,7 +927,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             # Wavemaker: force OFF (wind slows the dry, interval has no
             # business running over hanging buds). Only command when still on.
-            wm = self.source_entities.get("wavemaker", "")
+            # Entity source: merged data+options (source_entities has no
+            # wavemaker key - the pump is configured via CONF_WAVEMAKER_ENTITY).
+            wm = merged.get(CONF_WAVEMAKER_ENTITY, "")
             if wm:
                 wst = self.hass.states.get(wm)
                 if wst is not None and wst.state == STATE_ON:

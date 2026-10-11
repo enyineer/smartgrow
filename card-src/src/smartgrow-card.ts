@@ -194,15 +194,15 @@ export class SmartGrowCard extends LitElement {
           </div>
           <div style="flex:1">
             <div class="fan-sub">
-              ${status.txt} · exhaust ${fanOn ? "ON" : "OFF"}
+              ${status.txt}${fanOn ? " · exhaust pulling" : " · exhaust idle"}
             </div>
             <div class="band-bar">
-              <div class="band-ok" style="left:${clamp(((45 - 25) / 1.5) * 100, 0, 100)}%; width:${clamp(((62 - 45) / 1.5) * 100, 0, 100)}%"></div>
+              <div class="band-ok" style="left:${(45 - 40) / 30 * 100}%; width:${(62 - 45) / 30 * 100}%"></div>
               ${rh !== null
-                ? html`<div class="band-marker ${status.cls}" style="left:${clamp(((rh - 25) / 1.5) * 100, 0, 100)}%"></div>`
+                ? html`<div class="band-marker ${status.cls === "ok" ? "" : status.cls}" style="left:${clamp(((rh - 40) / 30) * 100, 0, 100)}%"></div>`
                 : nothing}
             </div>
-            <div class="band-labels"><span>too fast</span><span>drying window 45–62 %</span><span>mold risk</span></div>
+            <div class="band-labels"><span>40 %</span><span>drying window 45–62 %</span><span>70 %</span></div>
           </div>
         </div>
 
