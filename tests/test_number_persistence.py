@@ -5,6 +5,7 @@ any config-entry reload reverted the value to entry.options/defaults (same
 bug class as the old in-memory dry-run flip). The write must land in
 ``entry.options`` (single-key partial merge) and rebuild RuntimeOptions.
 """
+
 from unittest.mock import MagicMock
 
 from custom_components.smartgrow.coordinator import RuntimeOptions
@@ -18,9 +19,7 @@ def _make_number(tmp_entry):
     coordinator.options_rt = RuntimeOptions.from_entry(entry)
     num = DeltaGainNumber(coordinator, entry)
     num.hass = MagicMock()
-    num.hass.config_entries.async_update_entry = (
-        lambda e, **kwargs: e.__dict__.update(kwargs)
-    )
+    num.hass.config_entries.async_update_entry = lambda e, **kwargs: e.__dict__.update(kwargs)
     return num, coordinator
 
 
@@ -29,8 +28,7 @@ from types import SimpleNamespace
 
 def _Entry(options, data=None):
     """Minimal config-entry stand-in with attribute access."""
-    return SimpleNamespace(entry_id="test_entry", options=options,
-                           data=data or {})
+    return SimpleNamespace(entry_id="test_entry", options=options, data=data or {})
 
 
 def test_set_value_persists_into_entry_options():

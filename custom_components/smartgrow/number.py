@@ -107,9 +107,7 @@ class FanFloorDayNumber(SmartGrowNumber):
         return "fan_floor_day"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(fan_floor_day=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(fan_floor_day=value)
 
 
 class FanFloorNightNumber(SmartGrowNumber):
@@ -127,9 +125,7 @@ class FanFloorNightNumber(SmartGrowNumber):
         return "fan_floor_night"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(fan_floor_night=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(fan_floor_night=value)
 
 
 class DeltaGainNumber(SmartGrowNumber):
@@ -150,9 +146,7 @@ class DeltaGainNumber(SmartGrowNumber):
         return "delta_gain"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(delta_gain=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(delta_gain=value)
 
 
 class VpdGainNumber(SmartGrowNumber):
@@ -169,9 +163,7 @@ class VpdGainNumber(SmartGrowNumber):
         return "vpd_gain"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(vpd_gain=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(vpd_gain=value)
 
 
 class NeedGainNumber(SmartGrowNumber):
@@ -188,9 +180,7 @@ class NeedGainNumber(SmartGrowNumber):
         return "need_gain"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(need_gain=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(need_gain=value)
 
 
 class TempGainNumber(SmartGrowNumber):
@@ -207,9 +197,7 @@ class TempGainNumber(SmartGrowNumber):
         return "temp_gain"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(temp_gain=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(temp_gain=value)
 
 
 class ColdClampNumber(SmartGrowNumber):
@@ -230,9 +218,7 @@ class ColdClampNumber(SmartGrowNumber):
         return "cold_clamp"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(cold_clamp=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(cold_clamp=value)
 
 
 class DehumBandDepthNumber(SmartGrowNumber):
@@ -253,9 +239,7 @@ class DehumBandDepthNumber(SmartGrowNumber):
         return "dehum_band_depth"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(dehum_band_depth=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(dehum_band_depth=value)
 
 
 class DehumReengageNumber(SmartGrowNumber):
@@ -276,9 +260,7 @@ class DehumReengageNumber(SmartGrowNumber):
         return "dehum_reengage"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(dehum_reengage=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(dehum_reengage=value)
 
 
 class DehumSatTriggerNumber(SmartGrowNumber):
@@ -299,9 +281,7 @@ class DehumSatTriggerNumber(SmartGrowNumber):
         return "dehum_sat_trigger"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(dehum_sat_trigger=value)
-        )
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(dehum_sat_trigger=value)
 
 
 class DehumDryFloorNumber(SmartGrowNumber):
@@ -318,8 +298,4 @@ class DehumDryFloorNumber(SmartGrowNumber):
         return "dehum_dry_floor"
 
     def _set_param(self, value: float) -> None:
-        self.coordinator.options_rt.control = (
-            self.coordinator.options_rt.control.with_updates(dehum_dry_floor=value)
-        )
-
-
+        self.coordinator.options_rt.control = self.coordinator.options_rt.control.with_updates(dehum_dry_floor=value)

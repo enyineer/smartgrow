@@ -60,17 +60,13 @@ def compute_fan(inputs: SensorInputs, params: ControlParams) -> FanDecision:
 
     fan_delta = d_ah * params.delta_gain * cold_mult
     fan_vpd = max(0.0, low - inputs.vpd) * params.vpd_gain * cold_mult
-    fan_temp = min(
-        max(0.0, inputs.tent_temp - (max_temp - 2.0)) * params.temp_gain, 100.0
-    )
+    fan_temp = min(max(0.0, inputs.tent_temp - (max_temp - 2.0)) * params.temp_gain, 100.0)
     if inputs.vpd < low:
         fan_need = round((50.0 + (low - inputs.vpd) * params.need_gain) * cold_mult)
     else:
         fan_need = 0.0
 
-    fan_target = int(
-        min(max(fan_delta, fan_vpd, fan_temp, float(min_fan), float(fan_need)), 100.0)
-    )
+    fan_target = int(min(max(fan_delta, fan_vpd, fan_temp, float(min_fan), float(fan_need)), 100.0))
 
     terms: dict[str, float] = {
         "delta": fan_delta,

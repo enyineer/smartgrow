@@ -55,8 +55,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Remove a source-entity key from entry data (device/service panel)."""
         key: str = call.data.get("key", "")
         allowed = {
-            "vpd_entity", "lamp_entity", "camera_entity", "hum_entity",
-            "dehum_entity", "lung_temp_entity", "lung_rh_entity",
+            "vpd_entity",
+            "lamp_entity",
+            "camera_entity",
+            "hum_entity",
+            "dehum_entity",
+            "lung_temp_entity",
+            "lung_rh_entity",
         }
         if key not in allowed:
             _LOGGER.warning("clear_source: refusing unknown key %s", key)

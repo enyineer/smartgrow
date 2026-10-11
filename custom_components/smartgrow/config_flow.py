@@ -62,45 +62,25 @@ _LOGGER = logging.getLogger(__name__)
 # marker as the field NAME -> 500. Regressed against by
 # tests/test_flow_serialization.py (double-wrap + JSON round-trip).
 ENTITY_SELECTORS = {
-    CONF_FAN_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain=["fan", "switch", "input_boolean"])
-    ),
-    CONF_TENT_TEMP_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="temperature")
-    ),
-    CONF_TENT_RH_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="humidity")
-    ),
+    CONF_FAN_ENTITY: EntitySelector(EntitySelectorConfig(domain=["fan", "switch", "input_boolean"])),
+    CONF_TENT_TEMP_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
+    CONF_TENT_RH_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor", device_class="humidity")),
     # Everything below degrades gracefully when omitted — the flow tells the
     # user what stops working (labels), the logic never breaks.
-    CONF_DEHUM_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain=["switch", "humidifier"])
-    ),
-    CONF_HUM_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain=["humidifier", "switch", "valve"])
-    ),
-    CONF_LUNG_TEMP_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="temperature")
-    ),
-    CONF_LUNG_RH_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain="sensor", device_class="humidity")
-    ),
+    CONF_DEHUM_ENTITY: EntitySelector(EntitySelectorConfig(domain=["switch", "humidifier"])),
+    CONF_HUM_ENTITY: EntitySelector(EntitySelectorConfig(domain=["humidifier", "switch", "valve"])),
+    CONF_LUNG_TEMP_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature")),
+    CONF_LUNG_RH_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor", device_class="humidity")),
     CONF_VPD_ENTITY: EntitySelector(EntitySelectorConfig(domain="sensor")),
-    CONF_LAMP_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain=["light", "switch", "input_boolean"])
-    ),
-    CONF_LAMP_SWITCH_ENTITY: EntitySelector(
-        EntitySelectorConfig(domain=["switch", "input_boolean"])
-    ),
+    CONF_LAMP_ENTITY: EntitySelector(EntitySelectorConfig(domain=["light", "switch", "input_boolean"])),
+    CONF_LAMP_SWITCH_ENTITY: EntitySelector(EntitySelectorConfig(domain=["switch", "input_boolean"])),
     CONF_CAMERA_ENTITY: EntitySelector(EntitySelectorConfig(domain="camera")),
     CONF_WAVEMAKER_ENTITY: EntitySelector(EntitySelectorConfig(domain="switch")),
 }
 
 REQUIRED_ENTITY_KEYS = (CONF_FAN_ENTITY, CONF_TENT_TEMP_ENTITY, CONF_TENT_RH_ENTITY)
 
-OPTIONAL_ENTITY_KEYS = tuple(
-    k for k in ENTITY_SELECTORS if k not in REQUIRED_ENTITY_KEYS
-)
+OPTIONAL_ENTITY_KEYS = tuple(k for k in ENTITY_SELECTORS if k not in REQUIRED_ENTITY_KEYS)
 
 
 def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
@@ -115,9 +95,7 @@ def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
     """
     schema: dict = {}
     for key in REQUIRED_ENTITY_KEYS:
-        schema[vol.Required(key, default=entry_or_data.get(key))] = (
-            ENTITY_SELECTORS[key]
-        )
+        schema[vol.Required(key, default=entry_or_data.get(key))] = ENTITY_SELECTORS[key]
     for key in OPTIONAL_ENTITY_KEYS:
         current = entry_or_data.get(key) or None
         if current is None:
@@ -127,9 +105,7 @@ def _entity_schema(entry_or_data: dict[str, Any]) -> dict:
             # materialized into user_input by validation when the frontend
             # omits the key (cleared picker). A vol default would re-inject
             # the old value server-side, making "cleared" undetectable.
-            schema[
-                vol.Optional(key, description={"suggested_value": current})
-            ] = ENTITY_SELECTORS[key]
+            schema[vol.Optional(key, description={"suggested_value": current})] = ENTITY_SELECTORS[key]
     return schema
 
 
@@ -143,11 +119,7 @@ def _wavemaker_schema(merged: dict[str, Any]) -> dict:
         vol.Optional(
             CONF_WAVEMAKER_MODE,
             default=merged.get(CONF_WAVEMAKER_MODE, WAVEMAKER_MODE_NONE),
-        ): SelectSelector(
-            SelectSelectorConfig(
-                options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
-            )
-        ),
+        ): SelectSelector(SelectSelectorConfig(options=[{"value": m, "label": m} for m in WAVEMAKER_MODES])),
         vol.Optional(
             CONF_WAVEMAKER_RUN_S,
             default=merged.get(CONF_WAVEMAKER_RUN_S, 120),
@@ -159,7 +131,6 @@ def _wavemaker_schema(merged: dict[str, Any]) -> dict:
     }
 
 
-
 class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the SmartGrow config flow."""
 
@@ -169,17 +140,13 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialise the flow store."""
         self._data: dict[str, Any] = {}
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Step 1: entities and dry-run."""
         errors: dict[str, str] = {}
         if user_input is not None:
             self._data.update(user_input)
             # prevent duplicate entries for the same tent sensor set
-            await self.async_set_unique_id(
-                f"{self._data[CONF_TENT_TEMP_ENTITY]}|{self._data[CONF_TENT_RH_ENTITY]}"
-            )
+            await self.async_set_unique_id(f"{self._data[CONF_TENT_TEMP_ENTITY]}|{self._data[CONF_TENT_RH_ENTITY]}")
             self._abort_if_unique_id_configured()
 
             # Tent-unique entities: sharing these across entries means two
@@ -215,19 +182,13 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional(CONF_LIGHTS_ON_TIME): TimeSelector(TimeSelectorConfig()),
             vol.Optional(CONF_LIGHTS_OFF_TIME): TimeSelector(TimeSelectorConfig()),
             vol.Optional(CONF_WAVEMAKER_MODE): SelectSelector(
-                SelectSelectorConfig(
-                    options=[{"value": m, "label": m} for m in WAVEMAKER_MODES]
-                )
+                SelectSelectorConfig(options=[{"value": m, "label": m} for m in WAVEMAKER_MODES])
             ),
             vol.Required(CONF_DRY_RUN, default=True): bool,
         }
-        return self.async_show_form(
-            step_id="user", data_schema=vol.Schema(schema), errors=errors
-        )
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(schema), errors=errors)
 
-    async def async_step_extras(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_extras(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Step 2: legacy automations (optional) and initial stage."""
         if user_input is not None:
             self._data.update(user_input)
@@ -237,18 +198,13 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         schema = {
-            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): EntitySelector(
-                EntitySelectorConfig(domain="automation")
-            ),
-            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): EntitySelector(
-                EntitySelectorConfig(domain="automation")
-            ),
+            vol.Optional(CONF_LEGACY_VENT_AUTOMATION): EntitySelector(EntitySelectorConfig(domain="automation")),
+            vol.Optional(CONF_LEGACY_DEHUM_AUTOMATION): EntitySelector(EntitySelectorConfig(domain="automation")),
             vol.Required("stage", default="Flowering"): SelectSelector(
                 SelectSelectorConfig(options=[{"value": s, "label": s} for s in STAGES])
             ),
         }
         return self.async_show_form(step_id="extras", data_schema=vol.Schema(schema))
-
 
     @staticmethod
     @callback
@@ -293,9 +249,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Wavemaker program fields — the entity picker alone is not enough;
         # without mode/run/every here the pump can never run (v0.9.6 gap).
         schema.update(_wavemaker_schema(merged))
-        return self.async_show_form(
-            step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors
-        )
+        return self.async_show_form(step_id="reconfigure", data_schema=vol.Schema(schema), errors=errors)
 
     @staticmethod
     @callback
@@ -324,9 +278,7 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
         opts.append("persistent_notification")
         return sorted(set(opts))
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Show combined options form."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -359,15 +311,15 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
         schema = vol.Schema(
             {
                 **entity_fields,
-                vol.Required(
-                    CONF_FAN_FLOOR_DAY, default=current[CONF_FAN_FLOOR_DAY]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                vol.Required(
-                    CONF_FAN_FLOOR_NIGHT, default=current[CONF_FAN_FLOOR_NIGHT]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                vol.Required(
-                    CONF_DELTA_GAIN, default=current[CONF_DELTA_GAIN]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
+                vol.Required(CONF_FAN_FLOOR_DAY, default=current[CONF_FAN_FLOOR_DAY]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
+                vol.Required(CONF_FAN_FLOOR_NIGHT, default=current[CONF_FAN_FLOOR_NIGHT]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
+                vol.Required(CONF_DELTA_GAIN, default=current[CONF_DELTA_GAIN]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
                 vol.Required(CONF_VPD_GAIN, default=current[CONF_VPD_GAIN]): vol.All(
                     vol.Coerce(float), vol.Range(min=0, max=200)
                 ),
@@ -377,21 +329,21 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(CONF_TEMP_GAIN, default=current[CONF_TEMP_GAIN]): vol.All(
                     vol.Coerce(float), vol.Range(min=0, max=100)
                 ),
-                vol.Required(
-                    CONF_COLD_CLAMP, default=current[CONF_COLD_CLAMP]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-                vol.Required(
-                    CONF_DEHUM_SAT_TRIGGER, default=current[CONF_DEHUM_SAT_TRIGGER]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                vol.Required(
-                    CONF_DEHUM_DRY_FLOOR, default=current[CONF_DEHUM_DRY_FLOOR]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=100)),
-                vol.Required(
-                    CONF_BAND_LOW_DAY, default=current[CONF_BAND_LOW_DAY]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
-                vol.Required(
-                    CONF_BAND_LOW_NIGHT, default=current[CONF_BAND_LOW_NIGHT]
-                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+                vol.Required(CONF_COLD_CLAMP, default=current[CONF_COLD_CLAMP]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=1)
+                ),
+                vol.Required(CONF_DEHUM_SAT_TRIGGER, default=current[CONF_DEHUM_SAT_TRIGGER]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
+                vol.Required(CONF_DEHUM_DRY_FLOOR, default=current[CONF_DEHUM_DRY_FLOOR]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=100)
+                ),
+                vol.Required(CONF_BAND_LOW_DAY, default=current[CONF_BAND_LOW_DAY]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=5)
+                ),
+                vol.Required(CONF_BAND_LOW_NIGHT, default=current[CONF_BAND_LOW_NIGHT]): vol.All(
+                    vol.Coerce(float), vol.Range(min=0, max=5)
+                ),
                 vol.Optional(
                     CONF_NOTIFY_TARGETS,
                     default=list(current.get(CONF_NOTIFY_TARGETS) or []),
@@ -411,16 +363,12 @@ class SmartGrowOptionsFlow(config_entries.OptionsFlow):
                     default=current.get(CONF_ALERT_COOLDOWN_MIN, 60),
                 ): vol.All(vol.Coerce(float), vol.Range(min=5, max=720)),
                 **_wavemaker_schema(current),
-                vol.Required(
-                    CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]
-                ): bool,
+                vol.Required(CONF_ADAPTATION_ENABLED, default=current[CONF_ADAPTATION_ENABLED]): bool,
                 vol.Required(
                     CONF_ADAPTATION_AGGRESSIVENESS,
                     default=current[CONF_ADAPTATION_AGGRESSIVENESS],
                 ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
-                vol.Required(
-                    CONF_DRY_RUN, default=current[CONF_DRY_RUN]
-                ): bool,
+                vol.Required(CONF_DRY_RUN, default=current[CONF_DRY_RUN]): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

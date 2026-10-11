@@ -5,6 +5,7 @@ so the average coasted to the very edge of the band before each cycle.
 The re-engage offset moves the ON threshold to band_low + dehum_reengage
 (default 0.05) so the unit re-fires earlier and the average sits higher.
 """
+
 from custom_components.smartgrow.logic import dehumid_control
 from custom_components.smartgrow.logic.params import ControlParams, SensorInputs
 
@@ -13,9 +14,16 @@ NIGHT = dict(is_day=False, stage="Flowering")
 
 
 def si(vpd, fan_pct=50, lung_rh=53):
-    return SensorInputs(tent_temp=25.0, tent_rh=58.0, lung_temp=25.1,
-                        lung_rh=lung_rh, vpd=vpd, fan_pct=fan_pct,
-                        is_day=False, stage="Flowering")
+    return SensorInputs(
+        tent_temp=25.0,
+        tent_rh=58.0,
+        lung_temp=25.1,
+        lung_rh=lung_rh,
+        vpd=vpd,
+        fan_pct=fan_pct,
+        is_day=False,
+        stage="Flowering",
+    )
 
 
 def test_reengages_above_band_low():

@@ -217,15 +217,9 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
         # component actually running the pump?" checkable from the dashboard.
         data_cfg = self.entry.data
         opts = self.entry.options
-        attrs["wavemaker_mode"] = opts.get(
-            "wavemaker_mode", data_cfg.get("wavemaker_mode", "none")
-        )
-        attrs["wavemaker_run_s"] = opts.get(
-            "wavemaker_run_s", data_cfg.get("wavemaker_run_s")
-        )
-        attrs["wavemaker_every_min"] = opts.get(
-            "wavemaker_every_min", data_cfg.get("wavemaker_every_min")
-        )
+        attrs["wavemaker_mode"] = opts.get("wavemaker_mode", data_cfg.get("wavemaker_mode", "none"))
+        attrs["wavemaker_run_s"] = opts.get("wavemaker_run_s", data_cfg.get("wavemaker_run_s"))
+        attrs["wavemaker_every_min"] = opts.get("wavemaker_every_min", data_cfg.get("wavemaker_every_min"))
         # Live VPD actually used by the control law (linked sensor if configured,
         # otherwise computed from tent temp/RH). The card displays this when no
         # vpd_entity is linked.
@@ -239,9 +233,9 @@ class SourcesSensor(SmartGrowEntity, SensorEntity):
         # The time entities are the visible truth (they self-default); find
         # them by their deterministic unique ids — robust to renames.
         from homeassistant.helpers import entity_registry as er
+
         reg = er.async_get(self.coordinator.hass)
-        for key, slug in (("lights_on_time", "lights_on_time"),
-                          ("lights_off_time", "lights_off_time")):
+        for key, slug in (("lights_on_time", "lights_on_time"), ("lights_off_time", "lights_off_time")):
             uid = UNIQUE_ID_TEMPLATE.format(entry_id=self.entry.entry_id, name=slug)
             ent = reg.async_get_entity_id("time", DOMAIN, uid)
             st = self.coordinator.hass.states.get(ent) if ent else None
@@ -358,8 +352,7 @@ class DryRunSensor(SmartGrowEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         return {
             "cutover_hint": (
-                "Disable your legacy vent/dehum automations, then switch dry_run off "
-                "in the integration options."
+                "Disable your legacy vent/dehum automations, then switch dry_run off " "in the integration options."
             )
         }
 

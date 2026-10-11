@@ -47,7 +47,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
 ignore = ["SIM108", "SIM102", "N802", "E402"]
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ["py311"]
 
 [dependency-groups]

@@ -7,6 +7,7 @@ While the stage select is Drying:
   - VPD fan/dehum cascades are skipped entirely;
   - mold-risk / too-fast-dry alerts fire with cooldown.
 """
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -82,15 +83,24 @@ def _coordinator(stage: str, rh: float | None, fan_state: str = "off"):
     c.hass.services.async_call = AsyncMock()
     c.hass.add_job = lambda *a, **k: None
     from custom_components.smartgrow.logic.params import ControlParams
+
     ctl = ControlParams(
-        drying_rh_on=62.0, drying_rh_off=55.0,
-        drying_rh_floor=45.0, drying_lamp_off=True,
+        drying_rh_on=62.0,
+        drying_rh_off=55.0,
+        drying_rh_floor=45.0,
+        drying_lamp_off=True,
     )
     c.options_rt = SimpleNamespace(control=ctl, dry_run=False, notify_targets=[])
     c._current_stage = lambda: stage
     c._gather_inputs = lambda: SimpleNamespace(
-        tent_temp=19.0, tent_rh=rh, lung_temp=19.0, lung_rh=rh,
-        vpd=0.5, fan_pct=0, is_day=False, stage=stage,
+        tent_temp=19.0,
+        tent_rh=rh,
+        lung_temp=19.0,
+        lung_rh=rh,
+        vpd=0.5,
+        fan_pct=0,
+        is_day=False,
+        stage=stage,
     )
     c._apply_schedule = AsyncMock()
     c._wavemaker_tick = AsyncMock()
@@ -118,9 +128,7 @@ async def test_drying_branch_turns_fan_on_above_threshold():
     c.async_set_updated_data = lambda data: None
     await c._async_update_data()
     args = c.hass.services.async_call.call_args_list
-    assert any(
-        call.args[0] == "fan" and call.args[1] == "turn_on" for call in args
-    ), args
+    assert any(call.args[0] == "fan" and call.args[1] == "turn_on" for call in args), args
     assert c._drying_fan_demand is True
 
 

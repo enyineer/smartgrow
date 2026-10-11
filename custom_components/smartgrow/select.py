@@ -36,9 +36,7 @@ class StageSelect(SmartGrowEntity, SelectEntity, RestoreEntity):
 
     def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = UNIQUE_ID_TEMPLATE.format(
-            entry_id=entry.entry_id, name="stage"
-        )
+        self._attr_unique_id = UNIQUE_ID_TEMPLATE.format(entry_id=entry.entry_id, name="stage")
         self._attr_current_option = "Flowering"
 
     async def async_added_to_hass(self) -> None:

@@ -24,9 +24,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up SmartGrow switches."""
     coordinator = async_get_coordinator(hass, entry)
-    async_add_entities(
-        [DryRunSwitch(coordinator, entry), AdaptationSwitch(coordinator, entry)]
-    )
+    async_add_entities([DryRunSwitch(coordinator, entry), AdaptationSwitch(coordinator, entry)])
 
 
 def _uid(entry: ConfigEntry, name: str) -> str:
@@ -55,13 +53,7 @@ class DryRunSwitch(SmartGrowEntity, SwitchEntity, RestoreEntity):
 
     @property
     def extra_state_attributes(self):
-        return {
-            "safety": (
-                "Cutover = disable legacy automations first, then flip this off."
-                if self.is_on
-                else None
-            )
-        }
+        return {"safety": ("Cutover = disable legacy automations first, then flip this off." if self.is_on else None)}
 
     async def async_turn_on(self, **kwargs) -> None:
         """Enable dry-run (safe observation mode)."""
@@ -79,9 +71,7 @@ class DryRunSwitch(SmartGrowEntity, SwitchEntity, RestoreEntity):
         rebuilt from entry options where dry_run defaulted to True.
         """
         new_options = {**self.entry.options, "dry_run": value}
-        self.hass.config_entries.async_update_entry(
-            self.entry, options=new_options
-        )
+        self.hass.config_entries.async_update_entry(self.entry, options=new_options)
         self.coordinator.options_rt.dry_run = value
         self._attr_is_on = value
         self.async_write_ha_state()

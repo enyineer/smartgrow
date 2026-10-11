@@ -82,8 +82,7 @@ async def test_platform_setup_with_harness(hass, enable_custom_integrations) -> 
     state = hass.config_entries.async_get_entry(entry.entry_id)
     assert state is not None
     assert state.state != "setup_error", (
-        "integration platform crashed during setup — regression of the "
-        "v0.1.x import/attribute error class"
+        "integration platform crashed during setup — regression of the " "v0.1.x import/attribute error class"
     )
     from homeassistant.config_entries import ConfigEntryState
 
@@ -110,6 +109,6 @@ async def test_frontend_card_registration(hass, enable_custom_integrations) -> N
     flag = hass.data.get(f"{DOMAIN}_frontend_registered")
     assert flag is not None, "frontend registration never attempted"
     if flag is True:
-        assert "/smartgrow/smartgrow-card.js" in hass.data.get(
-            "frontend_extra_module_url", set()
-        ) or True  # URL set membership depends on frontend component version
+        assert (
+            "/smartgrow/smartgrow-card.js" in hass.data.get("frontend_extra_module_url", set()) or True
+        )  # URL set membership depends on frontend component version

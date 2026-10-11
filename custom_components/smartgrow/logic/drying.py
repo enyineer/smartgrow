@@ -40,9 +40,7 @@ def compute_drying_fan(
     sensor must not silently stop airflow for hanging buds.
     """
     if tent_rh is None:
-        return DryingDecision(
-            "hold", 100 if current else 0, "rh_unavailable_fail_safe", None
-        )
+        return DryingDecision("hold", 100 if current else 0, "rh_unavailable_fail_safe", None)
     if tent_rh >= rh_on:
         return DryingDecision("on", 100, "rh_above_on_threshold", tent_rh)
     if tent_rh <= rh_off:
@@ -81,8 +79,7 @@ def drying_alerts(
     if tent_rh >= 65.0:
         fire(
             "drying_mold_risk",
-            f"Drying RH {tent_rh:.0f}% >= 65% — mold risk on hanging buds. "
-            "Increase exhaust/airflow now.",
+            f"Drying RH {tent_rh:.0f}% >= 65% — mold risk on hanging buds. " "Increase exhaust/airflow now.",
         )
     elif tent_rh <= rh_floor:
         fire(

@@ -1,4 +1,5 @@
 """Reconfigure flow must init and submit without crashing (regression for 500)."""
+
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.smartgrow.const import DOMAIN
@@ -23,11 +24,16 @@ DATA = {
 async def test_reconfigure_flow_init_and_submit(hass, enable_custom_integrations):
     """The reconfigure step must serve a form and accept input (no 500/AttributeError)."""
     for eid, st in [
-        ("fan.demo", "off"), ("switch.demo", "off"),
-        ("sensor.demo_tent_temp", "24.0"), ("sensor.demo_tent_rh", "55.0"),
-        ("sensor.demo_lung_temp", "23.0"), ("sensor.demo_lung_rh", "50.0"),
-        ("sensor.demo_vpd", "1.2"), ("light.demo_lamp", "off"),
-        ("camera.demo", "idle"), ("humidifier.demo", "off"),
+        ("fan.demo", "off"),
+        ("switch.demo", "off"),
+        ("sensor.demo_tent_temp", "24.0"),
+        ("sensor.demo_tent_rh", "55.0"),
+        ("sensor.demo_lung_temp", "23.0"),
+        ("sensor.demo_lung_rh", "50.0"),
+        ("sensor.demo_vpd", "1.2"),
+        ("light.demo_lamp", "off"),
+        ("camera.demo", "idle"),
+        ("humidifier.demo", "off"),
     ]:
         hass.states.async_set(eid, st, {})
 

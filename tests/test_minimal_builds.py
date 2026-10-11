@@ -12,6 +12,7 @@ sensor reports dehum_entity: null, and _apply_dehum records
 'unconfigured'. The card must therefore show the dehum tile as a
 diagnostic (decisions still flow) — it does, via the normal chip path.
 """
+
 import sys
 
 sys.path.insert(0, "/root/smartgrow")
@@ -25,9 +26,16 @@ DAY = dict(is_day=True, stage="Flowering")
 
 def _inputs_no_lung(vpd=1.2, fan_pct=50):
     """No lung sensors -> coordinator sets lung := tent (same temp/rh)."""
-    return SensorInputs(tent_temp=25.0, tent_rh=60.0, lung_temp=25.0,
-                        lung_rh=60.0, vpd=vpd, fan_pct=fan_pct,
-                        is_day=True, stage="Flowering")
+    return SensorInputs(
+        tent_temp=25.0,
+        tent_rh=60.0,
+        lung_temp=25.0,
+        lung_rh=60.0,
+        vpd=vpd,
+        fan_pct=fan_pct,
+        is_day=True,
+        stage="Flowering",
+    )
 
 
 def test_no_lung_dah_term_collapses():
@@ -45,9 +53,9 @@ def test_no_lung_dehum_still_guards_tent_rh():
     d = dehumid_control.compute_dehum(si, P, dehum_is_on=False)
     assert d.action in ("on", "no_change", "off")
     # the protective floor still vetoes when lung (== tent) is over-dry
-    si_dry = SensorInputs(tent_temp=25.0, tent_rh=40.0, lung_temp=25.0,
-                          lung_rh=40.0, vpd=1.2, fan_pct=50,
-                          is_day=True, stage="Flowering")
+    si_dry = SensorInputs(
+        tent_temp=25.0, tent_rh=40.0, lung_temp=25.0, lung_rh=40.0, vpd=1.2, fan_pct=50, is_day=True, stage="Flowering"
+    )
     d2 = dehumid_control.compute_dehum(si_dry, P, False)
     assert d2.action == "off" and d2.reason == "over_dry_floor"
 

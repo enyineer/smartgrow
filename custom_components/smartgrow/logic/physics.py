@@ -10,9 +10,7 @@ from __future__ import annotations
 import math
 
 
-def actual_vapor_pressure_hpa(
-    temperature_c: float, relative_humidity_pct: float
-) -> float:
+def actual_vapor_pressure_hpa(temperature_c: float, relative_humidity_pct: float) -> float:
     """Return the actual water-vapour pressure in hPa (Magnus formula).
 
     This reproduces the production template expression:
@@ -24,11 +22,7 @@ def actual_vapor_pressure_hpa(
     The name is kept to mirror the proven production formula.
     """
     rh = min(max(relative_humidity_pct, 0.0), 100.0)
-    return (
-        6.112
-        * (rh / 100.0)
-        * math.exp((17.62 * temperature_c) / (243.12 + temperature_c))
-    )
+    return 6.112 * (rh / 100.0) * math.exp((17.62 * temperature_c) / (243.12 + temperature_c))
 
 
 def absolute_humidity_gm3(temperature_c: float, relative_humidity_pct: float) -> float:

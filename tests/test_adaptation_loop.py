@@ -52,16 +52,12 @@ def test_band_window_ends_the_churn() -> None:
     not the primary churn fix.
     """
     base_flips = count_flips(run_cascade(BASE, window=True))
-    assert base_flips <= FLIP_WARN_THRESHOLD, (
-        "in-band window should keep the fixture under the churn threshold"
-    )
+    assert base_flips <= FLIP_WARN_THRESHOLD, "in-band window should keep the fixture under the churn threshold"
 
     # Deepening the target further never increases churn (monotonicity pin).
     results = {}
     for deepen in (0.02, 0.08, 0.15):
-        params = BASE.with_updates(
-            dehum_band_depth=BASE.dehum_band_depth + deepen
-        )
+        params = BASE.with_updates(dehum_band_depth=BASE.dehum_band_depth + deepen)
         results[deepen] = count_flips(run_cascade(params, window=True))
     print("\nflips vs band depth:", results)
     assert results[0.15] <= base_flips + 1

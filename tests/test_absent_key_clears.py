@@ -3,6 +3,7 @@ Proves vol default materialization: submitting WITHOUT an optional key that has
 default=old still yields the old value in user_input (flow-manager validation).
 With suggested_value, the key stays absent -> the clear-semantics work.
 """
+
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from voluptuous import UNDEFINED
 
@@ -28,7 +29,8 @@ async def test_absent_optional_key_stays_absent(hass, enable_custom_integrations
     await hass.async_block_till_done()
 
     result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": "reconfigure", "entry_id": entry.entry_id})
+        DOMAIN, context={"source": "reconfigure", "entry_id": entry.entry_id}
+    )
     assert result["type"] == "form"
 
     def _name(marker):
@@ -40,16 +42,10 @@ async def test_absent_optional_key_stays_absent(hass, enable_custom_integrations
             return None
         return d
 
-    submitted = {
-        _name(m): _default(m) for m in result["data_schema"].schema
-    }
+    submitted = {_name(m): _default(m) for m in result["data_schema"].schema}
     # simulate the browser: omit the cleared vpd key, submit everything else
     submitted.pop("vpd_entity")
     # validate EXACTLY like the flow manager would
-    clean = result["data_schema"]({
-        k: v for k, v in submitted.items() if v is not None
-    })
+    clean = result["data_schema"]({k: v for k, v in submitted.items() if v is not None})
     print("VALIDATED user_input keys:", sorted(clean.keys()))
-    assert "vpd_entity" not in clean, (
-        "default materialized the cleared key back — clear semantics broken"
-    )
+    assert "vpd_entity" not in clean, "default materialized the cleared key back — clear semantics broken"

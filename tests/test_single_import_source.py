@@ -7,22 +7,18 @@ fetched-but-never-executed on ~50% of real dashboard loads; HA's 2s
 ``whenDefined`` fallback then stuck on "Configuration error". v0.8.4 removed
 the eager injection — these tests make sure it never comes back.
 """
+
 import ast
 import pathlib
 
-MODULE = pathlib.Path(
-    "/root/smartgrow/custom_components/smartgrow/frontend_reg.py"
-).read_text()
+MODULE = pathlib.Path("/root/smartgrow/custom_components/smartgrow/frontend_reg.py").read_text()
 
 
 def _import_names_from(module_text: str, import_line_prefix: str) -> set[str]:
     tree = ast.parse(module_text)
     names: set[str] = set()
     for node in ast.walk(tree):
-        is_frontend_from = (
-            isinstance(node, ast.ImportFrom)
-            and node.module == "homeassistant.components.frontend"
-        )
+        is_frontend_from = isinstance(node, ast.ImportFrom) and node.module == "homeassistant.components.frontend"
         if is_frontend_from or isinstance(node, ast.Import):
             for alias in node.names:
                 names.add(alias.name)
@@ -41,9 +37,7 @@ def test_no_add_extra_js_url_import():
 
 def test_no_add_extra_js_url_call():
     """The eager-injection helper must not be called anywhere."""
-    assert "add_extra_js_url(" not in MODULE.replace(
-        "from homeassistant.components.frontend import", ""
-    ), (
+    assert "add_extra_js_url(" not in MODULE.replace("from homeassistant.components.frontend import", ""), (
         "add_extra_js_url(...) call re-introduced in frontend_reg.py — "
         "single import source rule violated (dual-import race)."
     )
@@ -62,6 +56,5 @@ def test_lovelace_resource_registration_present():
         for node in ast.walk(tree)
     )
     assert awaited, (
-        "async_register_frontend must await _async_register_lovelace_resource "
-        "(deterministic single import source)."
+        "async_register_frontend must await _async_register_lovelace_resource " "(deterministic single import source)."
     )

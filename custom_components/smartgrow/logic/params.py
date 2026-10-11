@@ -83,7 +83,7 @@ class ControlParams:
     hum_severity: float = 0.1  # severity backstop depth below band low
 
     # Drying stage (RH-driven; replaces the VPD law while drying).
-    drying_rh_on: float = 62.0   # tent RH above this -> exhaust ON
+    drying_rh_on: float = 62.0  # tent RH above this -> exhaust ON
     drying_rh_off: float = 55.0  # tent RH below this -> exhaust OFF (hysteresis)
     drying_rh_floor: float = 45.0  # never drive RH below this (too-fast dry)
     drying_lamp_off: bool = True  # enforce lamp OFF during drying
@@ -167,9 +167,7 @@ class AdaptationState:
 
     hysteresis_widen: float = 0.0  # extra anti-churn margin, capped
     delta_gain_factor: float = 1.0  # measured sensitivity correction
-    transpiration: dict[str, float] = field(
-        default_factory=dict
-    )  # "phase|stage" -> g/m3 h
+    transpiration: dict[str, float] = field(default_factory=dict)  # "phase|stage" -> g/m3 h
     confidence: dict[str, float] = field(default_factory=dict)
     history: list[dict[str, float | str]] = field(default_factory=list)
     disabled_reason: str | None = None

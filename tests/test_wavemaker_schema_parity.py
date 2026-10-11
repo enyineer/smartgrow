@@ -2,6 +2,7 @@
 wavemaker program fields identically (v0.9.9). They drifted once: the mode
 selector existed in reconfigure while run/interval only existed in tuning —
 users configured an entity that could never run."""
+
 import json
 
 import voluptuous_serialize
@@ -32,9 +33,7 @@ def _converted(schema):
     return voluptuous_serialize.convert(schema, custom_serializer=cv.custom_serializer)
 
 
-async def test_reconfigure_and_options_wavemaker_fields_match(
-    hass, enable_custom_integrations
-):
+async def test_reconfigure_and_options_wavemaker_fields_match(hass, enable_custom_integrations):
     entry = MockConfigEntry(domain=DOMAIN, data={"dry_run": True}, options={})
     entry.add_to_hass(hass)
 
@@ -53,8 +52,7 @@ async def test_reconfigure_and_options_wavemaker_fields_match(
     res2 = await opt_flow.async_step_init()
     op_fields = _wavemaker_fields(_converted(res2["data_schema"]))
 
-    assert set(re_fields) == set(PROGRAM_FIELDS), (
-        f"field sets diverged: {sorted(re_fields)} vs {sorted(op_fields)}")
+    assert set(re_fields) == set(PROGRAM_FIELDS), f"field sets diverged: {sorted(re_fields)} vs {sorted(op_fields)}"
     assert json.dumps(re_fields, sort_keys=True) == json.dumps(
         op_fields, sort_keys=True
     ), "wavemaker field definitions diverged between reconfigure and tuning"

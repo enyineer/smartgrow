@@ -7,6 +7,7 @@ seconds after it started. Now an externally-driven ON is adopted as the
 start of a run: the component leaves it alone for the full run_s (120 s
 default, user runs 120 s / 180 min interval).
 """
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -54,6 +55,7 @@ def test_manual_on_is_adopted_not_killed(now):
     c = _coordinator("on", last_toggle=0.0, seen_on=False)
     with __import__("unittest").mock.patch("time.time", return_value=now):
         import asyncio
+
         asyncio.get_event_loop().run_until_complete(c._wavemaker_tick())
     # adopt: clock starts at `now`; NOT scheduled off immediately
     assert c._wavemaker_last_toggle == now
@@ -62,6 +64,7 @@ def test_manual_on_is_adopted_not_killed(now):
 def test_manual_on_still_cut_after_run_s():
     """After run_s has elapsed since adoption, the component cuts it."""
     import asyncio
+
     c = _coordinator("on", last_toggle=1000.0 - 121, seen_on=True)
     with __import__("unittest").mock.patch("time.time", return_value=1000.0):
         asyncio.get_event_loop().run_until_complete(c._wavemaker_tick())

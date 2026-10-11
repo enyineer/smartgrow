@@ -46,8 +46,7 @@ class AlertEngine:
         # --- sensor degradation (highest priority) ---
         bad = [name for name, flag in degraded.items() if flag]
         if bad:
-            msg = self._fire("sensor_degraded", ts,
-                             f"Sensors unavailable/stale: {', '.join(sorted(bad))}")
+            msg = self._fire("sensor_degraded", ts, f"Sensors unavailable/stale: {', '.join(sorted(bad))}")
             if msg:
                 out.append(msg)
 
@@ -57,7 +56,8 @@ class AlertEngine:
             hi = band_high + self.vpd_tolerance
             if vpd < lo:
                 msg = self._fire(
-                    "vpd_low", ts,
+                    "vpd_low",
+                    ts,
                     f"VPD {vpd:.2f} kPa is BELOW the band "
                     f"({band_low:.2f}-{band_high:.2f}) by {lo - vpd:.2f}. "
                     "Humidity too high — check dehumidifier/ventilation.",
@@ -66,7 +66,8 @@ class AlertEngine:
                     out.append(msg)
             elif vpd > hi:
                 msg = self._fire(
-                    "vpd_high", ts,
+                    "vpd_high",
+                    ts,
                     f"VPD {vpd:.2f} kPa is ABOVE the band "
                     f"({band_low:.2f}-{band_high:.2f}) by {vpd - hi:.2f}. "
                     "Too dry — check humidification/lamp distance.",
@@ -81,7 +82,8 @@ class AlertEngine:
             if not lit:
                 detail = "master plug is OFF" if master_on is False else "dimmer is OFF"
                 msg = self._fire(
-                    "lamp_day_off", ts,
+                    "lamp_day_off",
+                    ts,
                     f"It is DAY but the lamp cannot light ({detail}).",
                 )
                 if msg:

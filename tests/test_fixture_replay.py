@@ -127,9 +127,7 @@ class TestFanReplay:
                 within += 1
         assert len(attributed) >= 15, f"too few attributed samples: {len(attributed)}"
         rate = within / len(attributed)
-        assert (
-            rate >= 0.95
-        ), f"term-attributed parity {rate:.2%} ({within}/{len(attributed)})"
+        assert rate >= 0.95, f"term-attributed parity {rate:.2%} ({within}/{len(attributed)})"
 
     def test_temp_term_exact_match(self) -> None:
         """When the heat term engages, the recorded fan follows it closely."""
@@ -138,17 +136,13 @@ class TestFanReplay:
             if dec.active_term == "temp" and not (EXCLUDE_START <= ts <= EXCLUDE_END):
                 errs.append(abs(dec.fan_temp_term - rec))
         assert len(errs) >= 15
-        assert (
-            statistics.mean(errs) <= 3.0
-        ), f"mean temp-term error {statistics.mean(errs):.2f}pp"
+        assert statistics.mean(errs) <= 3.0, f"mean temp-term error {statistics.mean(errs):.2f}pp"
 
     def test_full_law_bounds(self) -> None:
         """The brief's full law always yields 0..100 and >= phase floor."""
         for _ts, dec, _rec in replay_fan():
             assert 0 <= dec.fan_target <= 100
-            floor = (
-                P.fan_floor_day if dec.min_fan == P.fan_floor_day else P.fan_floor_night
-            )
+            floor = P.fan_floor_day if dec.min_fan == P.fan_floor_day else P.fan_floor_night
             assert dec.fan_target >= floor
 
     def test_floor_value_matches_phase(self) -> None:
@@ -185,10 +179,12 @@ class TestDehumReplay:
         for _ts, dec, _pw in replay_dehum():
             if dec.action != "on":
                 continue
-            assert dec.reason in ("below_band", "hold_to_depth",
-                                  "saturation_assist", "severity_backstop"), (
-                f"unexpected ON reason {dec.reason}"
-            )
+            assert dec.reason in (
+                "below_band",
+                "hold_to_depth",
+                "saturation_assist",
+                "severity_backstop",
+            ), f"unexpected ON reason {dec.reason}"
 
     def test_on_matches_power_ramp(self) -> None:
         """ON decisions align with real actuator runs (>200W within ±10 min)."""
@@ -204,10 +200,7 @@ class TestDehumReplay:
         assert total > 0, "replay never issued ON — harness broken?"
         recall = matched / total
         assert recall >= 0.75, f"ON alignment {recall:.2%} ({matched}/{total})"
-        print(
-            f"\ndehum ON alignment with recorded power ramps: "
-            f"{recall:.1%} ({matched}/{total})"
-        )
+        print(f"\ndehum ON alignment with recorded power ramps: " f"{recall:.1%} ({matched}/{total})")
 
     def test_off_cascade_matches_recorded_continuous_run(self) -> None:
         """Cascade OFF-from-ON outside the churn window vs recorded behaviour.

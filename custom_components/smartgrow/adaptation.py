@@ -81,9 +81,7 @@ class GainEstimator:
     samples: list[tuple[float, float]] = field(default_factory=list)
     factor: float = 1.0
 
-    def record(
-        self, fan_above_floor: float, d_ah_change: float, ts: float
-    ) -> float | None:
+    def record(self, fan_above_floor: float, d_ah_change: float, ts: float) -> float | None:
         """Add a sample; return the updated gain factor when enough data."""
         if fan_above_floor <= 0:
             return None
@@ -99,9 +97,7 @@ class GainEstimator:
         raw_factor = self.factor * (expected / slope)
         # Smooth: move at most GAIN_ADJUST_RATE toward the raw correction.
         self.factor += GAIN_ADJUST_RATE * (raw_factor - self.factor)
-        self.factor = max(
-            1.0 - MAX_DRIFT_FRACTION, min(1.0 + MAX_DRIFT_FRACTION, self.factor)
-        )
+        self.factor = max(1.0 - MAX_DRIFT_FRACTION, min(1.0 + MAX_DRIFT_FRACTION, self.factor))
         return self.factor
 
     def _slope(self) -> float:
@@ -188,9 +184,7 @@ class AdaptationEngine:
         return result
 
     # --- gain adaptation ---------------------------------------------
-    def record_sensitivity(
-        self, fan_above_floor: float, d_ah_change: float, ts: float
-    ) -> float | None:
+    def record_sensitivity(self, fan_above_floor: float, d_ah_change: float, ts: float) -> float | None:
         """Feed the gain estimator; returns new factor or None."""
         if not self.enabled:
             return None
@@ -236,9 +230,7 @@ class AdaptationEngine:
                 return adapted != 0
             return abs(adapted) > MAX_DRIFT_FRACTION * abs(default)
 
-        if drifted(self.widen, base.dehum_band_depth) or drifted(
-            self.gain.factor - 1.0, 1.0
-        ):
+        if drifted(self.widen, base.dehum_band_depth) or drifted(self.gain.factor - 1.0, 1.0):
             self.enabled = False
             self.disabled_reason = (
                 f"convergence watchdog: adapted parameters drifted more than "
@@ -284,9 +276,7 @@ class AdaptationEngine:
             "delta_gain_factor": round(self.gain.factor, 4),
             "gain_samples": len(self.gain.samples),
             "confidence": round(self.confidence, 3),
-            "transpiration_buckets": {
-                k: len(v) for k, v in self.transpiration.buckets.items()
-            },
+            "transpiration_buckets": {k: len(v) for k, v in self.transpiration.buckets.items()},
             "parameter_history": self.parameter_history[-20:],
         }
 

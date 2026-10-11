@@ -5,6 +5,7 @@ does not exist in that map (the pump is configured via CONF_WAVEMAKER_ENTITY
 in entry data/options, read by _wavemaker_tick from merged). The force-off
 silently no-opped and a manually-on pump stayed on through Drying.
 """
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -16,8 +17,10 @@ def test_drying_force_off_uses_conf_wavemaker_entity():
     c = object.__new__(SmartGrowCoordinator)
     c.entry = MagicMock()
     c.entry.data = {
-        "name": "G", "fan_entity": "fan.f",
-        "tent_temp_entity": "sensor.t", "tent_rh_entity": "sensor.rh",
+        "name": "G",
+        "fan_entity": "fan.f",
+        "tent_temp_entity": "sensor.t",
+        "tent_rh_entity": "sensor.rh",
         "wavemaker_entity": "switch.umwalzpumpe",
         "wavemaker_mode": "interval",
     }
@@ -34,4 +37,5 @@ def test_drying_force_off_uses_conf_wavemaker_entity():
     assert wm == "switch.umwalzpumpe"
     # and the coordinator's own tick config path agrees:
     from custom_components.smartgrow.const import CONF_WAVEMAKER_ENTITY
+
     assert merged.get(CONF_WAVEMAKER_ENTITY) == wm

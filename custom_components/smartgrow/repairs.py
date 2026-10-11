@@ -17,9 +17,7 @@ WATCHDOG_ISSUE_ID = "adaptation_watchdog"
 UNREACHABLE_BAND_ISSUE_ID = "unreachable_band"
 
 
-async def async_create_watchdog_issue(
-    hass: HomeAssistant, entry: ConfigEntry, reason: str | None
-) -> None:
+async def async_create_watchdog_issue(hass: HomeAssistant, entry: ConfigEntry, reason: str | None) -> None:
     """Raise a repair issue when the adaptation watchdog trips."""
     ir.async_create_issue(
         hass,

@@ -251,9 +251,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 return float(pct)
             except (TypeError, ValueError) as err:
-                raise UpdateFailed(
-                    f"{entity_id} percentage not numeric: {pct}"
-                ) from err
+                raise UpdateFailed(f"{entity_id} percentage not numeric: {pct}") from err
         try:
             return float(state.state)
         except ValueError:
@@ -288,16 +286,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         tent_temp = self._read_float(src["tent_temp"])
         tent_rh = self._read_float(src["tent_rh"])
 
-        lung_temp = (
-            self._read_float_optional(src["lung_temp"])
-            if src.get("lung_temp")
-            else None
-        )
-        lung_rh = (
-            self._read_float_optional(src["lung_rh"])
-            if src.get("lung_rh")
-            else None
-        )
+        lung_temp = self._read_float_optional(src["lung_temp"]) if src.get("lung_temp") else None
+        lung_rh = self._read_float_optional(src["lung_rh"]) if src.get("lung_rh") else None
 
         has_lamp = bool(src.get("lamp"))
         is_day = self._lamp_is_on() if has_lamp else True
@@ -390,6 +380,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         explicit times — the time entities render those same defaults, so the
         schedule the user sees is the schedule that runs.
         """
+
         def parse(v: Any) -> dtime | None:
             if not v:
                 return None
@@ -398,12 +389,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return dtime(int(hh), int(mm))
             except (ValueError, AttributeError):
                 return None
-        on = parse(self.entry.data.get(CONF_LIGHTS_ON_TIME)) or parse(
-            DEFAULT_LIGHTS_ON
-        )
-        off = parse(self.entry.data.get(CONF_LIGHTS_OFF_TIME)) or parse(
-            DEFAULT_LIGHTS_OFF
-        )
+
+        on = parse(self.entry.data.get(CONF_LIGHTS_ON_TIME)) or parse(DEFAULT_LIGHTS_ON)
+        off = parse(self.entry.data.get(CONF_LIGHTS_OFF_TIME)) or parse(DEFAULT_LIGHTS_OFF)
         return on, off
 
     def _schedule_wants_day(self, now: dtime) -> bool | None:
@@ -429,20 +417,21 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.options_rt.dry_run:
             _LOGGER.info(
                 "DRY-RUN: schedule wants lamp %s -> %s (not actuated)",
-                lamp, "on" if turn_on else "off",
+                lamp,
+                "on" if turn_on else "off",
             )
             return
         service = "turn_on" if turn_on else "turn_off"
         domain = lamp.split(".", 1)[0]
-        await self.hass.services.async_call(
-            domain, service, {"entity_id": lamp}, blocking=True
-        )
+        await self.hass.services.async_call(domain, service, {"entity_id": lamp}, blocking=True)
         # Master switch (failsafe mains plug) follows the dimmer so both are
         # always in the same state — no LED glimmer at night, no mains-cut day.
         master = self.source_entities.get("lamp_switch", "")
         if master:
             await self.hass.services.async_call(
-                master.split(".", 1)[0], service, {"entity_id": master},
+                master.split(".", 1)[0],
+                service,
+                {"entity_id": master},
                 blocking=True,
             )
             # Radio can swallow the command (switch drops to unavailable under
@@ -452,14 +441,16 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if mst is None or mst.state != (STATE_ON if turn_on else STATE_OFF):
                 _LOGGER.warning(
                     "Lamp master %s did not follow %s; retrying once",
-                    master, service,
+                    master,
+                    service,
                 )
                 await self.hass.services.async_call(
-                    master.split(".", 1)[0], service, {"entity_id": master},
+                    master.split(".", 1)[0],
+                    service,
+                    {"entity_id": master},
                     blocking=True,
                 )
-        _LOGGER.debug("Schedule: lamp %s%s -> %s", lamp,
-                      f" + master {master}" if master else "", service)
+        _LOGGER.debug("Schedule: lamp %s%s -> %s", lamp, f" + master {master}" if master else "", service)
 
     async def _apply_schedule(self) -> None:
         """Evaluate the lights schedule and actuate lamp + master.
@@ -482,22 +473,17 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         want = STATE_ON if wants_day else STATE_OFF
         st = self.hass.states.get(lamp)
-        if (
-            st is not None
-            and st.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE)
-            and st.state != want
-        ):
+        if st is not None and st.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE) and st.state != want:
             await self._apply_lamp(want == STATE_ON)
 
         master = self.source_entities.get("lamp_switch", "")
         if master:
             mst = self.hass.states.get(master)
-            if mst is not None and mst.state not in (
-                STATE_UNKNOWN, STATE_UNAVAILABLE
-            ) and mst.state != want:
+            if mst is not None and mst.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE) and mst.state != want:
                 _LOGGER.warning(
-                    "Lamp master %s diverged from schedule (want %s); "
-                    "re-actuating", master, want,
+                    "Lamp master %s diverged from schedule (want %s); " "re-actuating",
+                    master,
+                    want,
                 )
                 await self._apply_lamp(want == STATE_ON)
 
@@ -554,19 +540,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_switch(self, entity: str, turn_on: bool) -> None:
         """Drive the pump plug with verification + one retry (flaky radio)."""
         service = "turn_on" if turn_on else "turn_off"
-        await self.hass.services.async_call(
-            "switch", service, {"entity_id": entity}, blocking=True
-        )
+        await self.hass.services.async_call("switch", service, {"entity_id": entity}, blocking=True)
         await asyncio.sleep(2)
         st = self.hass.states.get(entity)
         want = STATE_ON if turn_on else STATE_OFF
         if st is None or st.state != want:
-            _LOGGER.warning(
-                "Wavemaker %s did not follow %s; retrying once", entity, service
-            )
-            await self.hass.services.async_call(
-                "switch", service, {"entity_id": entity}, blocking=True
-            )
+            _LOGGER.warning("Wavemaker %s did not follow %s; retrying once", entity, service)
+            await self.hass.services.async_call("switch", service, {"entity_id": entity}, blocking=True)
 
     def _current_stage(self) -> str:
         """Stage from the integration-owned select entity; '' when unavailable.
@@ -592,9 +572,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return val
         return self.entry.data.get(key)
 
-    async def _apply_fan(
-        self, decision: fan_control.FanDecision, inputs: SensorInputs
-    ) -> None:
+    async def _apply_fan(self, decision: fan_control.FanDecision, inputs: SensorInputs) -> None:
         fan_entity = self._source(CONF_FAN_ENTITY)
         if self.options_rt.dry_run:
             _LOGGER.debug(
@@ -602,9 +580,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 decision.fan_target,
                 decision.active_term,
             )
-            self._record(
-                "fan", "dry_run", decision.active_term, decision.fan_target, inputs
-            )
+            self._record("fan", "dry_run", decision.active_term, decision.fan_target, inputs)
         else:
             st = self.hass.states.get(fan_entity)
             supports_pct = bool(st and st.attributes.get("percentage") is not None)
@@ -617,9 +593,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     if supports_pct
                     else {"entity_id": fan_entity}
                 )
-                await self.hass.services.async_call(
-                    fan_domain, "turn_on", payload, blocking=True
-                )
+                await self.hass.services.async_call(fan_domain, "turn_on", payload, blocking=True)
             else:
                 await self.hass.services.async_call(
                     fan_domain,
@@ -627,13 +601,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     {"entity_id": fan_entity},
                     blocking=True,
                 )
-            self._record(
-                "fan", "command", decision.active_term, decision.fan_target, inputs
-            )
+            self._record("fan", "command", decision.active_term, decision.fan_target, inputs)
 
-    async def _apply_dehum(
-        self, decision: dehumid_control.DehumDecision, inputs: SensorInputs
-    ) -> None:
+    async def _apply_dehum(self, decision: dehumid_control.DehumDecision, inputs: SensorInputs) -> None:
         dehum_entity = self._source(CONF_DEHUM_ENTITY)
         if not dehum_entity:
             # Fan-only build: decision still computed and recorded, no actuation.
@@ -709,9 +679,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
         want_on = decision.fan_target > 0
         if self.options_rt.dry_run:
-            _LOGGER.debug(
-                "DRY-RUN drying fan -> %s (%s)", decision.action, decision.reason
-            )
+            _LOGGER.debug("DRY-RUN drying fan -> %s (%s)", decision.action, decision.reason)
             return
         st = self.hass.states.get(fan_entity)
         if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
@@ -719,17 +687,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         is_on = st.state == STATE_ON
         domain = fan_entity.split(".", 1)[0]
         if want_on and not is_on:
-            await self.hass.services.async_call(
-                domain, "turn_on", {ATTR_ENTITY_ID: fan_entity}, blocking=True
-            )
+            await self.hass.services.async_call(domain, "turn_on", {ATTR_ENTITY_ID: fan_entity}, blocking=True)
         elif not want_on and is_on:
             service = "turn_off"
             if domain == "fan":
                 # percentage fans: 0 % is the canonical off
                 service = "turn_off"
-            await self.hass.services.async_call(
-                domain, service, {ATTR_ENTITY_ID: fan_entity}, blocking=True
-            )
+            await self.hass.services.async_call(domain, service, {ATTR_ENTITY_ID: fan_entity}, blocking=True)
 
     async def _notify_alert(self, alert: dict[str, Any]) -> None:
         """Dispatch one alert dict to configured targets + persistent notif."""
@@ -742,22 +706,21 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             dname, _, sname = target.partition(".")
             try:
                 await self.hass.services.async_call(
-                    dname, sname,
+                    dname,
+                    sname,
                     {"title": title, "message": message},
                     blocking=True,
                 )
             except Exception as err:  # noqa: BLE001
                 _LOGGER.warning("Alert to %s failed: %s", target, err)
         await self.hass.services.async_call(
-            "persistent_notification", "create",
-            {"title": title, "message": message,
-             "notification_id": "smartgrow_" + alert["kind"]},
+            "persistent_notification",
+            "create",
+            {"title": title, "message": message, "notification_id": "smartgrow_" + alert["kind"]},
             blocking=True,
         )
 
-    async def _dispatch_alerts(
-        self, now: float, inputs: SensorInputs, params: Any, result: dict[str, Any]
-    ) -> None:
+    async def _dispatch_alerts(self, now: float, inputs: SensorInputs, params: Any, result: dict[str, Any]) -> None:
         """Evaluate out-of-range conditions and notify configured targets."""
         degraded = result.get("degraded", {})
         band_low = params.effective_band_low(inputs.stage, inputs.is_day)
@@ -794,7 +757,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 dname, _, sname = target.partition(".")
                 try:
                     await self.hass.services.async_call(
-                        dname, sname,
+                        dname,
+                        sname,
                         {"title": title, "message": message},
                         blocking=True,
                     )
@@ -802,9 +766,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _LOGGER.warning("Alert to %s failed: %s", target, err)
             # Always surface in HA itself, even with 0 targets configured.
             await self.hass.services.async_call(
-                "persistent_notification", "create",
-                {"title": title, "message": message,
-                 "notification_id": "smartgrow_" + alert["kind"]},
+                "persistent_notification",
+                "create",
+                {"title": title, "message": message, "notification_id": "smartgrow_" + alert["kind"]},
                 blocking=True,
             )
 
@@ -829,9 +793,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return "on"
         return "off"
 
-    def _record(
-        self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs
-    ) -> None:
+    def _record(self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs) -> None:
         self.trace.append(
             DecisionRecord(
                 ts=time.time(),
@@ -943,22 +905,18 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if dehum:
                 dst = self.hass.states.get(dehum)
                 want_dehum = decision.fan_target >= 100  # mirrors fan demand
-                if dst is not None and dst.state not in (
-                    STATE_UNKNOWN, STATE_UNAVAILABLE
-                ):
+                if dst is not None and dst.state not in (STATE_UNKNOWN, STATE_UNAVAILABLE):
                     dehum_on = dst.state == STATE_ON
                     domain = dehum.split(".", 1)[0]
-                    service = ("turn_on" if want_dehum else "turn_off")
-                    if dehum_on != want_dehum and domain in (
-                        "humidifier", "switch"
-                    ):
+                    service = "turn_on" if want_dehum else "turn_off"
+                    if dehum_on != want_dehum and domain in ("humidifier", "switch"):
                         await self.hass.services.async_call(
-                            domain, service,
-                            {ATTR_ENTITY_ID: dehum}, blocking=True,
+                            domain,
+                            service,
+                            {ATTR_ENTITY_ID: dehum},
+                            blocking=True,
                         )
-                        _LOGGER.debug(
-                            "Drying: dehum %s -> %s", dehum, service
-                        )
+                        _LOGGER.debug("Drying: dehum %s -> %s", dehum, service)
 
             alerts = drying.drying_alerts(
                 inputs.tent_rh,
@@ -1069,9 +1027,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return "on"
         return "off"
 
-    def _record(
-        self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs
-    ) -> None:
+    def _record(self, kind: str, action: str, reason: str, fan_target: int, inputs: SensorInputs) -> None:
         self.trace.append(
             DecisionRecord(
                 ts=time.time(),
@@ -1126,9 +1082,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Create a repair issue when the adaptation watchdog trips."""
         from .repairs import async_create_watchdog_issue
 
-        await async_create_watchdog_issue(
-            self.hass, self.entry, self.engine.disabled_reason
-        )
+        await async_create_watchdog_issue(self.hass, self.entry, self.engine.disabled_reason)
 
     # -- staleness ---------------------------------------------------------------
     def stale_seconds(self) -> float | None:
@@ -1148,15 +1102,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         entity_reg = dr.async_get(self.hass)
         return [
             entry.entity_id
-            for entry in async_entries_for_config_entry(
-                entity_reg, self.entry.entry_id  # type: ignore[arg-type]
-            )
+            for entry in async_entries_for_config_entry(entity_reg, self.entry.entry_id)  # type: ignore[arg-type]
         ]
 
 
-def async_get_coordinator(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> SmartGrowCoordinator:
+def async_get_coordinator(hass: HomeAssistant, entry: ConfigEntry) -> SmartGrowCoordinator:
     """Fetch the coordinator stored by async_setup_entry."""
     runtime = hass.data[DOMAIN][entry.entry_id]
     return runtime["coordinator"]
@@ -1164,9 +1114,6 @@ def async_get_coordinator(
 
 class CoordinatorError(HomeAssistantError):
     """Raised when MCP tools cannot reach the coordinator."""
-
-
-
 
 
 # Re-exported for the entity platforms.

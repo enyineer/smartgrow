@@ -49,9 +49,7 @@ class DryRunWarningSensor(SmartGrowEntity, BinarySensorEntity):
     _attr_name = "SmartGrow legacy automation warning"
     _attr_icon = "mdi:alert"
 
-    def __init__(
-        self, coordinator: SmartGrowCoordinator, entry: ConfigEntry, hass: HomeAssistant
-    ) -> None:
+    def __init__(self, coordinator: SmartGrowCoordinator, entry: ConfigEntry, hass: HomeAssistant) -> None:
         super().__init__(coordinator, entry)
         self._attr_unique_id = _uid(entry, "dry_run_warning")
         self._legacy_triggered: dict[str, float] = {}
@@ -65,9 +63,7 @@ class DryRunWarningSensor(SmartGrowEntity, BinarySensorEntity):
             if entity_id
         ]
         if watch:
-            self._unsubs.append(
-                async_track_state_change_event(hass, watch, self._handle_legacy_state)
-            )
+            self._unsubs.append(async_track_state_change_event(hass, watch, self._handle_legacy_state))
 
     async def async_will_remove_from_hass(self) -> None:
         for unsub in self._unsubs:
@@ -96,10 +92,7 @@ class DryRunWarningSensor(SmartGrowEntity, BinarySensorEntity):
         return {
             "legacy_entities": dict(self._legacy_triggered),
             "hint": (
-                (
-                    "Legacy automations are still actuating. Disable them, then turn "
-                    "dry_run off."
-                )
+                ("Legacy automations are still actuating. Disable them, then turn " "dry_run off.")
                 if self.is_on
                 else None
             ),

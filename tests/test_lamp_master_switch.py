@@ -1,4 +1,3 @@
-
 """Regression: lamp master switch (failsafe mains plug) drives together with dimmer.
 
 The Growlampe is a dimmable light plus a "Growlampe Master" smart plug that fully
@@ -28,6 +27,7 @@ def _make_coordinator(hass, entry_data):
         CONF_TENT_RH_ENTITY: "sensor.h",
         **entry_data,
     }
+
     async def _noop_coro():
         return None
 
@@ -62,10 +62,13 @@ def _set(hass, eid, state):
 
 async def test_apply_lamp_drives_both(hass):
     """With dimmer + master configured, both receive the same service call."""
-    coord = _make_coordinator(hass, {
-        CONF_LAMP_ENTITY: "light.growlampe_light_0",
-        CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
-    })
+    coord = _make_coordinator(
+        hass,
+        {
+            CONF_LAMP_ENTITY: "light.growlampe_light_0",
+            CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
+        },
+    )
     # First call: master state unset -> verification fails -> ONE retry for
     # the master (the dimmer has no verification retry). This pins the retry.
     await coord._apply_lamp(True)
@@ -94,10 +97,13 @@ async def test_apply_lamp_single_when_no_master(hass):
 
 async def test_phase_master_off_is_night(hass):
     """Dimmer reports on but master off -> the lamp cannot light -> night."""
-    coord = _make_coordinator(hass, {
-        CONF_LAMP_ENTITY: "light.growlampe_light_0",
-        CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
-    })
+    coord = _make_coordinator(
+        hass,
+        {
+            CONF_LAMP_ENTITY: "light.growlampe_light_0",
+            CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
+        },
+    )
     _set(hass, "light.growlampe_light_0", STATE_ON)
     _set(hass, "switch.growlampe_master", STATE_OFF)
     assert coord._phase() == "night"
@@ -106,10 +112,13 @@ async def test_phase_master_off_is_night(hass):
 
 async def test_phase_master_on_is_day(hass):
     """Dimmer on + master on -> day."""
-    coord = _make_coordinator(hass, {
-        CONF_LAMP_ENTITY: "light.growlampe_light_0",
-        CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
-    })
+    coord = _make_coordinator(
+        hass,
+        {
+            CONF_LAMP_ENTITY: "light.growlampe_light_0",
+            CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
+        },
+    )
     _set(hass, "light.growlampe_light_0", STATE_ON)
     _set(hass, "switch.growlampe_master", STATE_ON)
     assert coord._phase() == "day"
@@ -124,10 +133,13 @@ async def test_phase_master_unavailable_is_unknown_not_off(hass):
     unavailable -> None (unknown); dimmer stays authoritative; alerts fire
     only on a real 'off' state.
     """
-    coord = _make_coordinator(hass, {
-        CONF_LAMP_ENTITY: "light.growlampe_light_0",
-        CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
-    })
+    coord = _make_coordinator(
+        hass,
+        {
+            CONF_LAMP_ENTITY: "light.growlampe_light_0",
+            CONF_LAMP_SWITCH_ENTITY: "switch.growlampe_master",
+        },
+    )
     _set(hass, "light.growlampe_light_0", STATE_ON)
     _set(hass, "switch.growlampe_master", STATE_UNAVAILABLE)
     assert coord._lamp_switch_is_on() is None
@@ -140,5 +152,4 @@ async def test_lamp_switch_in_optional_schema():
     from custom_components.smartgrow.config_flow import _entity_schema
 
     schema = _entity_schema({})
-    assert any(getattr(k, "schema", k) == CONF_LAMP_SWITCH_ENTITY or
-               str(k) == CONF_LAMP_SWITCH_ENTITY for k in schema)
+    assert any(getattr(k, "schema", k) == CONF_LAMP_SWITCH_ENTITY or str(k) == CONF_LAMP_SWITCH_ENTITY for k in schema)

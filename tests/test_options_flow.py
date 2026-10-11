@@ -1,4 +1,5 @@
 """Options flow must initialize without touching the read-only config_entry property."""
+
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.smartgrow.const import DOMAIN

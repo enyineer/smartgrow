@@ -29,10 +29,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up the schedule time entities."""
     coordinator = async_get_coordinator(hass, entry)
-    async_add_entities([
-        LightsOnTime(coordinator, entry),
-        LightsOffTime(coordinator, entry),
-    ])
+    async_add_entities(
+        [
+            LightsOnTime(coordinator, entry),
+            LightsOffTime(coordinator, entry),
+        ]
+    )
 
 
 def _parse(value: str | None, default: str) -> time:

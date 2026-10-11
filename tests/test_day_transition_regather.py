@@ -7,6 +7,7 @@ vpd_high alert evaluated against the NIGHT band for one tick — vpd >= 1.61
 (day band territory) fired a spurious vpd_high at every lights_on
 transition. The coordinator now re-gathers once when day-ness diverged.
 """
+
 import asyncio
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -33,13 +34,16 @@ def test_update_regathers_after_schedule_flips_lamp(hass):
 
     from homeassistant.const import STATE_OFF, STATE_ON
 
-    c = _make(hass, {
-        "name": "Growbox 1",
-        "fan_entity": "fan.f",
-        "tent_temp_entity": "sensor.t",
-        "tent_rh_entity": "sensor.rh",
-        "lamp_entity": "light.lamp",
-    })
+    c = _make(
+        hass,
+        {
+            "name": "Growbox 1",
+            "fan_entity": "fan.f",
+            "tent_temp_entity": "sensor.t",
+            "tent_rh_entity": "sensor.rh",
+            "lamp_entity": "light.lamp",
+        },
+    )
     hass.states.async_set("fan.f", "on")
     hass.states.async_set("sensor.t", "25.0")
     hass.states.async_set("sensor.rh", "60")
@@ -55,6 +59,7 @@ def test_update_regathers_after_schedule_flips_lamp(hass):
     c._apply_schedule = fake_schedule
     c._wavemaker_tick = AsyncMock()
     from custom_components.smartgrow.logic.params import ControlParams
+
     c.options_rt = SimpleNamespace(control=ControlParams(), dry_run=False)
     c.engine = MagicMock()
     c.engine.check_watchdog.return_value = True

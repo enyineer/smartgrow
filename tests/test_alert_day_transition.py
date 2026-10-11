@@ -7,6 +7,7 @@ _dispatch_alerts then re-read the now-off lamp and announced
 Day-ness for the lamp alert must come from the SCHEDULE verdict evaluated
 at dispatch time, not from the stale inputs snapshot.
 """
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -21,8 +22,14 @@ def _engine():
 def test_engine_semantics_unchanged():
     """The engine itself keeps firing when told is_day=True + lamp dark."""
     out = _engine().evaluate(
-        1000.0, vpd=1.55, band_low=1.5, band_high=1.65,
-        is_day=True, lamp_on=False, master_on=True, degraded={},
+        1000.0,
+        vpd=1.55,
+        band_low=1.5,
+        band_high=1.65,
+        is_day=True,
+        lamp_on=False,
+        master_on=True,
+        degraded={},
     )
     assert [m for m in out if m["kind"] == "lamp_day_off"]
 
@@ -37,8 +44,12 @@ def test_dispatch_uses_schedule_day_not_stale_inputs():
     c.alerts = _engine()
     c.options_rt = SimpleNamespace(notify_targets=[])
     c.entry = MagicMock()
-    c.entry.data = {"name": "Growbox 1", "fan_entity": "fan.f",
-                    "tent_temp_entity": "sensor.t", "tent_rh_entity": "sensor.rh"}
+    c.entry.data = {
+        "name": "Growbox 1",
+        "fan_entity": "fan.f",
+        "tent_temp_entity": "sensor.t",
+        "tent_rh_entity": "sensor.rh",
+    }
     c.entry.options = {}
     # schedule verdict: night (returns False)
     c._schedule_wants_day = lambda t: False
@@ -53,6 +64,7 @@ def test_dispatch_uses_schedule_day_not_stale_inputs():
 
     c.alerts = SpyEngine()
     import asyncio
+
     asyncio.get_event_loop().run_until_complete(
         c._dispatch_alerts(
             1000.0,

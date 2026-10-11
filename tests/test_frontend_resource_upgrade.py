@@ -1,4 +1,3 @@
-
 """Regression: stale versioned lovelace resource URLs must be upgraded.
 
 v0.7.7's guard only matched the plain ``/smartgrow/smartgrow-card.js`` URL, so a
@@ -6,6 +5,7 @@ stored ``/smartgrow/v0.7.8/...`` survived a version bump; once the integration
 restarted with a newer version the old static path vanished (404) and Lovelace
 rendered "Configuration error".
 """
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 

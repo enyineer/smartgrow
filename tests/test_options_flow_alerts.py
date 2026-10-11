@@ -3,6 +3,7 @@
 Also verifies the notify-targets selector is dynamic (list of the box's
 notify services) and that submitting options stores them.
 """
+
 import json
 
 import voluptuous_serialize
@@ -17,9 +18,7 @@ def _converted(schema):
     return voluptuous_serialize.convert(schema, custom_serializer=cv.custom_serializer)
 
 
-async def test_options_schema_serializes_with_alert_fields(
-    hass, enable_custom_integrations
-):
+async def test_options_schema_serializes_with_alert_fields(hass, enable_custom_integrations):
     entry = MockConfigEntry(domain=DOMAIN, data={"dry_run": True}, options={})
     entry.add_to_hass(hass)
 

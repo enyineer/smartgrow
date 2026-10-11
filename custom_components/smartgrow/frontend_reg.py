@@ -25,9 +25,7 @@ _BASE_URL = "/smartgrow/smartgrow-card.js"
 # Versioned PATH (not just query): companion-app webviews have been observed
 # serving heuristically cached bytes for the same path regardless of query.
 # A fresh path per release guarantees a fresh fetch.
-_VERSION = json.loads(
-    (pathlib.Path(__file__).parent / "manifest.json").read_text()
-)["version"]
+_VERSION = json.loads((pathlib.Path(__file__).parent / "manifest.json").read_text())["version"]
 _VERSIONED_PATH = f"/smartgrow/v{_VERSION}/smartgrow-card.js"
 _URL = _VERSIONED_PATH
 
@@ -52,9 +50,7 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
     collection = lovelace_data.resources
     # YAML-mode collections have no create API.
     if type(collection).__name__ != "ResourceStorageCollection":
-        _LOGGER.info(
-            "Lovelace resources in YAML mode; add %s as a module resource manually", _URL
-        )
+        _LOGGER.info("Lovelace resources in YAML mode; add %s as a module resource manually", _URL)
         return
     items = collection.async_items()
     for item in items:
@@ -118,9 +114,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
     # 404'd after each release. aiohttp resolves exact static resources
     # before dynamic ones, so the current version still hits the static
     # path and older versions fall through to the wildcard.
-    hass.http.app.router.add_route(
-        "GET", "/smartgrow/{v:.+}/smartgrow-card.js", _serve_current_card
-    )
+    hass.http.app.router.add_route("GET", "/smartgrow/{v:.+}/smartgrow-card.js", _serve_current_card)
     # Single import source: ONLY the awaited Lovelace storage resource.
     # add_extra_js_url eagerly injected <script type=module> into EVERY HA
     # page; on the dashboard this raced HA's own resource loader (two

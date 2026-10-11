@@ -271,9 +271,7 @@ class TestDehumControl:
 
     def test_options_reconfigure_triggers(self) -> None:
         """Options reconfigure: lower dry floor AND sat trigger together."""
-        p = P.with_updates(
-            dehum_sat_trigger=50.0, dehum_dry_floor=50.0, dehum_severity=0.2
-        )
+        p = P.with_updates(dehum_sat_trigger=50.0, dehum_dry_floor=50.0, dehum_severity=0.2)
         # Lowered thresholds let the assist hold an ON run inside the window
         # even with moderate fan; the hold (below_band/hold_to_depth) would
         # fire anyway below the band, so assert in-window ON semantics:

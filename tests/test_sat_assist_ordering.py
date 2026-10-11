@@ -6,6 +6,7 @@ evaluated saturation_assist before band_edge_guard, so the assist
 restarted the unit immediately after every completed pull (20 cycles/24h,
 running mid-band) — defeating the in-band hysteresis window.
 """
+
 from custom_components.smartgrow.logic import dehumid_control
 from custom_components.smartgrow.logic.params import ControlParams, SensorInputs
 
@@ -13,9 +14,16 @@ P = ControlParams()
 
 
 def si(vpd, fan_pct, lung_rh):
-    return SensorInputs(tent_temp=25.0, tent_rh=58.0, lung_temp=25.1,
-                        lung_rh=lung_rh, vpd=vpd, fan_pct=fan_pct,
-                        is_day=False, stage="Flowering")
+    return SensorInputs(
+        tent_temp=25.0,
+        tent_rh=58.0,
+        lung_temp=25.1,
+        lung_rh=lung_rh,
+        vpd=vpd,
+        fan_pct=fan_pct,
+        is_day=False,
+        stage="Flowering",
+    )
 
 
 def test_live_failure_case_stays_off():

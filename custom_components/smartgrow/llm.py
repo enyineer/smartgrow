@@ -47,9 +47,7 @@ TOOLS_PROMPT = (
 
 
 @callback
-def async_get_tools(
-    hass: HomeAssistant, llm_context: LLMContext, api_id: str
-) -> LLMTools | None:
+def async_get_tools(hass: HomeAssistant, llm_context: LLMContext, api_id: str) -> LLMTools | None:
     """Return SmartGrow's tools for the Assist/MCP API."""
     if api_id != LLM_API_ASSIST:
         return None
@@ -93,9 +91,7 @@ class GetClimateSummaryTool(_SmartGrowTool):
         "absolute humidity, VPD vs band, fan target and dehumidifier state."
     )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         inputs = coordinator.last_inputs
         if inputs is None:
@@ -139,15 +135,11 @@ class GetControlTraceTool(_SmartGrowTool):
         super().__init__(hass)
         self.parameters = vol.Schema(
             {
-                vol.Optional("limit", default=20): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=200)
-                ),
+                vol.Optional("limit", default=20): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
             }
         )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         limit = int(tool_input.tool_args.get("limit", 20))
         trace = list(reversed(coordinator.trace[-limit:]))
@@ -161,9 +153,7 @@ class GetAdaptationStateTool(_SmartGrowTool):
         "adapted parameters with confidence and watchdog status."
     )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         return {"success": True, "result": coordinator.engine.snapshot()}
 
@@ -180,18 +170,12 @@ class SetTargetsTool(_SmartGrowTool):
         self.parameters = vol.Schema(
             {
                 vol.Required("stage"): vol.In(STAGES),
-                vol.Required("band_low_day"): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.0, max=5.0)
-                ),
-                vol.Required("band_low_night"): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.0, max=5.0)
-                ),
+                vol.Required("band_low_day"): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
+                vol.Required("band_low_night"): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
             }
         )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         args = tool_input.tool_args
         coordinator.options_rt.control = coordinator.options_rt.control.with_updates(
@@ -220,15 +204,11 @@ class SetAdaptationTool(_SmartGrowTool):
         self.parameters = vol.Schema(
             {
                 vol.Required("enabled"): bool,
-                vol.Optional("aggressiveness", default=1.0): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.1, max=3.0)
-                ),
+                vol.Optional("aggressiveness", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
             }
         )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         engine = coordinator.engine
         engine.enabled = bool(tool_input.tool_args["enabled"])
@@ -245,9 +225,7 @@ class ForceRecalibrateTool(_SmartGrowTool):
         "hysteresis widening and oscillation counters)."
     )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         result = coordinator.engine.force_recalibrate(time.time())
         return {"success": True, "result": result}
@@ -261,9 +239,7 @@ class GetParameterExplanationsTool(_SmartGrowTool):
         "expected effect of changing it."
     )
 
-    async def async_call(
-        self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext
-    ) -> JsonObjectType:
+    async def async_call(self, hass: HomeAssistant, tool_input: ToolInput, llm_context: LLMContext) -> JsonObjectType:
         coordinator = _one_coordinator(hass)
         return {"success": True, "result": explain_parameters(coordinator)}
 
@@ -282,41 +258,28 @@ def explain_parameters(coordinator: Any) -> dict[str, Any]:
         },
         "fan_floor_night": {
             "value": control.fan_floor_night,
-            "why": (
-                "proven default" if control.fan_floor_night == 20.0 else "user-tuned"
-            ),
+            "why": ("proven default" if control.fan_floor_night == 20.0 else "user-tuned"),
             "effect": "minimum ventilation % at night (noise + cold protection)",
         },
         "delta_gain": engine.adapted_value("delta_gain", control.delta_gain)
         | {"effect": "fan % per g/m^3 moisture gap tent vs lung room"},
-        "dehum_vpd_margin": engine.adapted_value(
-            "dehum_vpd_margin", control.dehum_vpd_margin
-        )
+        "dehum_vpd_margin": engine.adapted_value("dehum_vpd_margin", control.dehum_vpd_margin)
         | {
             "effect": (
-                "anti-churn hysteresis around the VPD band; larger = fewer "
-                "on/off flips (the 26-flip-night lesson)"
+                "anti-churn hysteresis around the VPD band; larger = fewer " "on/off flips (the 26-flip-night lesson)"
             )
         },
         "dehum_sat_trigger": {
             "value": control.dehum_sat_trigger,
-            "why": (
-                "proven default" if control.dehum_sat_trigger == 70.0 else "user-tuned"
-            ),
+            "why": ("proven default" if control.dehum_sat_trigger == 70.0 else "user-tuned"),
             "effect": (
-                "fan % at which the dehumidifier assists (fan at its limit = "
-                "ventilation alone insufficient)"
+                "fan % at which the dehumidifier assists (fan at its limit = " "ventilation alone insufficient)"
             ),
         },
         "dehum_dry_floor": {
             "value": control.dehum_dry_floor,
-            "why": (
-                "proven default" if control.dehum_dry_floor == 44.0 else "user-tuned"
-            ),
-            "effect": (
-                "lung-room RH below which the dehumidifier must stop "
-                "(protects the intake air)"
-            ),
+            "why": ("proven default" if control.dehum_dry_floor == 44.0 else "user-tuned"),
+            "effect": ("lung-room RH below which the dehumidifier must stop " "(protects the intake air)"),
         },
         "adaptation": engine.snapshot(),
         "current_band_low": control.effective_band_low(
@@ -361,4 +324,3 @@ class GetCameraSnapshotTool(_SmartGrowTool):
             "url": f"/local/smartgrow/{snapshot_name}",
             "note": "Fetch http(s)://<ha-address>{url} to analyse the image.",
         }
-
