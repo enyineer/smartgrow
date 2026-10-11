@@ -17,15 +17,33 @@ P = ControlParams()
 
 
 class TestStageTables:
+    # Drying is exempt: VPD is meaningless while drying (no transpiration) and
+    # the drying room wants COOL, stable temps, not a day/night split.
+    LIVING_STAGES = ("Seedling", "Vegetative", "Flowering")
+
     def test_night_bands_below_day(self) -> None:
-        for stage in STAGE_BANDS:
+        for stage in self.LIVING_STAGES:
             day, night = STAGE_BANDS[stage]
             assert night < day
 
     def test_night_temp_max_is_day_minus_3(self) -> None:
-        for stage in STAGE_TEMP_MAX:
+        for stage in self.LIVING_STAGES:
             day, night = STAGE_TEMP_MAX[stage]
             assert night == pytest.approx(day - 3.0)
+
+    def test_drying_stage_contract(self) -> None:
+        """Drying: near-zero VPD band (dehum cascade never chases VPD) and
+        cool, flat temps (15-22 C, no day/night split)."""
+        from custom_components.smartgrow.const import STAGES
+
+        assert "Drying" in STAGES
+        low_d, low_n = STAGE_BANDS["Drying"]
+        assert low_d <= 0.3 and low_n <= 0.3, "VPD law must not engage"
+        day_max, night_max = STAGE_TEMP_MAX["Drying"]
+        day_min, night_min = STAGE_TEMP_MIN["Drying"]
+        assert day_max <= 22.0 and night_max <= 22.0
+        assert day_min >= 14.0 and night_min >= 14.0
+        assert day_max == night_max and day_min == night_min
 
     def test_flowering_values_match_brief(self) -> None:
         assert STAGE_BANDS["Flowering"] == (1.5, 1.3)

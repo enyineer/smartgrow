@@ -65,7 +65,7 @@ from .const import (
     DOMAIN,
     FanDecisionDict,
 )
-from .logic import dehumid_control, fan_control
+from .logic import dehumid_control, drying, fan_control
 from .logic.params import ControlParams, SensorInputs
 
 _LOGGER = logging.getLogger(__name__)
@@ -172,6 +172,8 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_sample_ts: float | None = None  # availability/staleness
         self._wavemaker_last_toggle: float = 0.0
         self._wavemaker_seen_on: bool = False
+        self._drying_fan_demand: bool = False  # last drying fan demand
+        self._drying_alerts: dict[str, float] = {}  # kind -> last notify ts
         self.last_inputs: SensorInputs | None = None
 
     # -- entity id helpers -------------------------------------------------
@@ -700,6 +702,59 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._record("hum", "command", decision.reason, -1, inputs)
 
+    async def _apply_drying_fan(self, decision: Any) -> None:
+        """Drive the exhaust fan for the Drying stage (ON/OFF hysteresis)."""
+        fan_entity = self._source(CONF_FAN_ENTITY)
+        if not fan_entity:
+            return
+        want_on = decision.fan_target > 0
+        if self.options_rt.dry_run:
+            _LOGGER.debug(
+                "DRY-RUN drying fan -> %s (%s)", decision.action, decision.reason
+            )
+            return
+        st = self.hass.states.get(fan_entity)
+        if st is None or st.state in (STATE_UNKNOWN, STATE_UNAVAILABLE):
+            return
+        is_on = st.state == STATE_ON
+        domain = fan_entity.split(".", 1)[0]
+        if want_on and not is_on:
+            await self.hass.services.async_call(
+                domain, "turn_on", {ATTR_ENTITY_ID: fan_entity}, blocking=True
+            )
+        elif not want_on and is_on:
+            service = "turn_off"
+            if domain == "fan":
+                # percentage fans: 0 % is the canonical off
+                service = "turn_off"
+            await self.hass.services.async_call(
+                domain, service, {ATTR_ENTITY_ID: fan_entity}, blocking=True
+            )
+
+    async def _notify_alert(self, alert: dict[str, Any]) -> None:
+        """Dispatch one alert dict to configured targets + persistent notif."""
+        targets = self.options_rt.notify_targets
+        title = "SmartGrow alert"
+        message = "[" + alert["kind"] + "] " + alert["message"]
+        _LOGGER.warning("ALERT %s", message)
+        for target in targets:
+            target = target if target.startswith("notify.") else "notify." + target
+            dname, _, sname = target.partition(".")
+            try:
+                await self.hass.services.async_call(
+                    dname, sname,
+                    {"title": title, "message": message},
+                    blocking=True,
+                )
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.warning("Alert to %s failed: %s", target, err)
+        await self.hass.services.async_call(
+            "persistent_notification", "create",
+            {"title": title, "message": message,
+             "notification_id": "smartgrow_" + alert["kind"]},
+            blocking=True,
+        )
+
     async def _dispatch_alerts(
         self, now: float, inputs: SensorInputs, params: Any, result: dict[str, Any]
     ) -> None:
@@ -836,6 +891,60 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             pass  # keep the pre-schedule snapshot
 
         now = time.time()
+
+        # ---- Drying stage: RH-driven, lamp-off, no VPD law ----------------
+        # While the stage select is Drying the harvest is hanging in the tent:
+        # the exhaust fan's only job is holding tent RH inside the drying
+        # window (55-62%), the lamp must stay OFF, and the VPD-based
+        # fan/dehum cascades are meaningless (no transpiration). Alerts swap
+        # to mold-risk / too-fast-dry.
+        if (self._current_stage() or "") == "Drying":
+            # enforce lamp + master OFF (schedule must not relight the tent)
+            if hasattr(self, "_apply_schedule"):
+                lamp = self.source_entities.get("lamp", "")
+                if lamp:
+                    st = self.hass.states.get(lamp)
+                    if st is not None and st.state == STATE_ON:
+                        await self._apply_lamp(False)
+                master = self.source_entities.get("lamp_switch", "")
+                if master:
+                    mst = self.hass.states.get(master)
+                    if mst is not None and mst.state == STATE_ON:
+                        await self._apply_lamp(False, master=True)
+
+            decision = drying.compute_drying_fan(
+                inputs.tent_rh,
+                self.options_rt.control.drying_rh_on,
+                self.options_rt.control.drying_rh_off,
+                self._drying_fan_demand,
+            )
+            self._drying_fan_demand = decision.fan_target >= 100
+            await self._apply_drying_fan(decision)
+            alerts = drying.drying_alerts(
+                inputs.tent_rh,
+                self.options_rt.control.drying_rh_floor,
+                now,
+                last_alerts=self._drying_alerts,
+            )
+            for a in alerts:
+                await self._notify_alert(a)
+            result: dict[str, Any] = {
+                "inputs": inputs,
+                "ts": now,
+                "phase": "drying",
+                "stage": "Drying",
+                "degraded": {
+                    "lung": False,
+                    "lamp": not self.source_entities.get("lamp"),
+                    "vpd_sensor": False,
+                    "dehum": not self.source_entities.get("dehum"),
+                },
+                "fan": decision,
+            }
+            self.last_fan_decision = decision
+            self.async_set_updated_data(result)
+            return
+
         base = self.options_rt.control
         # Adaptation may rewrite gains/margins (watchdog-guarded). The engine
         # applies the widened band-depth target and gain factor; when the

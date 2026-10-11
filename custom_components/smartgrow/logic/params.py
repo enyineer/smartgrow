@@ -8,18 +8,23 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
-STAGES: tuple[str, ...] = ("Seedling", "Vegetative", "Flowering")
+STAGES: tuple[str, ...] = ("Seedling", "Vegetative", "Flowering", "Drying")
 
 # VPD band *lows* (day, night) per stage. Highs are for display only.
 STAGE_BANDS: dict[str, tuple[float, float]] = {
     "Seedling": (0.8, 0.6),
     "Vegetative": (1.1, 0.9),
     "Flowering": (1.5, 1.3),
+    # Drying: VPD is meaningless (no living transpiration). A near-zero band
+    # low keeps the dehum cascade from chasing VPD targets; RH is governed by
+    # the dedicated drying hysteresis (drying_rh_on/off in ControlParams).
+    "Drying": (0.2, 0.2),
 }
 STAGE_BANDS_HIGH: dict[str, tuple[float, float]] = {
     "Seedling": (1.1, 0.9),
     "Vegetative": (1.5, 1.3),
     "Flowering": (1.8, 1.6),
+    "Drying": (0.8, 0.6),
 }
 
 # max_temp (day, night): night = day - 3. min_temp (day, night).
@@ -27,11 +32,13 @@ STAGE_TEMP_MAX: dict[str, tuple[float, float]] = {
     "Seedling": (28.0, 25.0),
     "Vegetative": (29.0, 26.0),
     "Flowering": (28.0, 25.0),
+    "Drying": (22.0, 22.0),
 }
 STAGE_TEMP_MIN: dict[str, tuple[float, float]] = {
     "Seedling": (20.0, 20.0),
     "Vegetative": (19.0, 19.0),
     "Flowering": (20.0, 18.0),
+    "Drying": (15.0, 15.0),
 }
 
 DEFAULT_STAGE = "Flowering"
@@ -74,6 +81,12 @@ class ControlParams:
     hum_hysteresis: float = 3.0
     hum_vpd_margin: float = 0.05
     hum_severity: float = 0.1  # severity backstop depth below band low
+
+    # Drying stage (RH-driven; replaces the VPD law while drying).
+    drying_rh_on: float = 62.0   # tent RH above this -> exhaust ON
+    drying_rh_off: float = 55.0  # tent RH below this -> exhaust OFF (hysteresis)
+    drying_rh_floor: float = 45.0  # never drive RH below this (too-fast dry)
+    drying_lamp_off: bool = True  # enforce lamp OFF during drying
 
     # VPD band overrides (0 = use stage default).
     band_low_day: float = 0.0

@@ -83,7 +83,7 @@ DEFAULTS: dict = {
     CONF_ALERT_COOLDOWN_MIN: 60,
 }
 
-STAGES = ("Seedling", "Vegetative", "Flowering")
+STAGES = ("Seedling", "Vegetative", "Flowering", "Drying")
 
 # Unique-id prefix per entity kind: smartgrow_{entry_id}_{name}
 UNIQUE_ID_TEMPLATE = "smartgrow_{entry_id}_{name}"

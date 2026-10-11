@@ -12,6 +12,8 @@ export const STAGE_BANDS: Record<string, { low: number; high: number }> = {
   Seedling: { low: 0.8, high: 1.1 },
   Vegetative: { low: 1.1, high: 1.4 },
   Flowering: { low: 1.5, high: 1.8 },
+  // Drying: VPD meaningless (no transpiration); integration runs RH hysteresis
+  Drying: { low: 0.2, high: 0.8 },
 };
 
 /** Kinds of known SmartGrow entities, used for prefix-based resolution. */
