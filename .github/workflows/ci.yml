@@ -14,7 +14,10 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install test dependencies (uv sync incl. test extra + dev group)
-        run: uv sync --extra test --group dev --no-editable
+        run: |
+          uv sync --extra test --group dev --no-editable
+          # belt & braces: no editable finder artifacts may remain in site-packages
+          find .venv -maxdepth 4 -name '__editable__*' -print -delete || true
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
