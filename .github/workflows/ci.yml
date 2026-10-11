@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.11"
-      - name: Install test dependencies
-        run: pip install pytest pytest-cov hypothesis ruff black
+          python-version: "3.13"
+      - name: Install test dependencies (uv sync incl. dev group)
+        run: uv sync --dev
       - name: Ruff
-        run: ruff check custom_components/smartgrow tests
+        run: uv run ruff check custom_components/smartgrow tests
       - name: Black (check)
-        run: black --check custom_components/smartgrow tests
+        run: uv run black --check custom_components/smartgrow tests
       - name: Pytest with coverage
         run: |
-          pytest tests/ \
+          uv run pytest tests/ \
             --cov=custom_components/smartgrow/logic \
             --cov=custom_components/smartgrow/adaptation \
             --cov-report=term --cov-fail-under=90
