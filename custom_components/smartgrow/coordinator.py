@@ -842,14 +842,25 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         stage_now = self._current_stage()
         if not stage_now:
             _LOGGER.warning("Stage select not restored yet — skipping actuation this cycle (fail-safe)")
+            # Same result SHAPE as a normal cycle: listeners read attributes of
+            # these objects, and missing keys crashed entity state writes
+            # ("Unexpected error updating listener"), wedging the coordinator.
+            # Values are the no-op equivalents.
             return {
                 "inputs": inputs,
                 "ts": time.time(),
                 "phase": "unknown",
                 "stage": "",
                 "stage_unknown": True,
-                "degraded": {"lung": False, "lamp": not self.source_entities.get("lamp"), "vpd_sensor": False},
+                "degraded": {
+                    "lung": False,
+                    "lamp": not self.source_entities.get("lamp"),
+                    "vpd_sensor": False,
+                    "dehum": not self.source_entities.get("dehum"),
+                },
                 "fan": None,
+                "dehum": None,
+                "hum": None,
             }
 
         # Lights schedule (day/night cycle): cheap check, every sample.
