@@ -169,3 +169,16 @@ async def test_flowering_stage_skips_drying_branch():
     c._current_stage = lambda: "Flowering"
     await c._async_update_data()
     c._apply_fan.assert_awaited()  # VPD law ran, not the drying hysteresis
+
+
+def test_drying_dehum_decision_published():
+    """The drying branch must OVERWRITE the dehum decision sensor with the
+    drying_rh_band decision — a stale pre-boot VPD decision ('on'/below_band)
+    made the card claim the dehum was running while it was off."""
+    import inspect
+
+    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
+
+    src = inspect.getsource(SmartGrowCoordinator)
+    assert 'reason="drying_rh_band"' in src
+    assert "last_dehum_decision = dehumid_control.DehumDecision(" in src

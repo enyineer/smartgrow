@@ -942,6 +942,24 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             blocking=True,
                         )
                         _LOGGER.debug("Drying: dehum %s -> %s", dehum, service)
+                # Publish the DRYING decision: without this the decision
+                # sensor keeps showing the stale pre-boot VPD decision
+                # ('on'/below_band) while the actual command stream is the
+                # RH band — the card then lies about the dehum.
+                self.last_dehum_decision = dehumid_control.DehumDecision(
+                    action=("on" if want_dehum else "off"),
+                    reason="drying_rh_band",
+                    lung_rh=inputs.lung_rh,
+                    dry_floor=0.0,
+                    sat_trigger=0.0,
+                    band_low=self.options_rt.control.drying_rh_off,
+                    band_depth=0.0,
+                    band_high=self.options_rt.control.drying_rh_on,
+                    vpd_margin=0.0,
+                    severity_depth=0.0,
+                    fan_pct=inputs.fan_pct,
+                    was_on=dehum_on,
+                )
 
             alerts = drying.drying_alerts(
                 inputs.tent_rh,
