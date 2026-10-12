@@ -426,7 +426,10 @@ class PhaseSensor(SmartGrowEntity, SensorEntity):
 
     @property
     def native_value(self) -> str:
-        return str(self.coordinator.data.get("phase", "unknown"))
+        data = self.coordinator.data
+        if not data:
+            return "unknown"
+        return str(data.get("phase", "unknown"))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
