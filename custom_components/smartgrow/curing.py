@@ -126,7 +126,12 @@ def evaluate_jar(
 
 
 def worst_status(statuses: list[JarStatus]) -> str:
-    """Aggregate status: worst of all jars, 'ok' when all fine."""
+    """Aggregate status: worst of all jars, 'ok' when all fine.
+
+    A jar reading 'unavailable' aggregates to 'sensors_down' — the literal
+    HA state 'unavailable' means the SENSOR entity is broken, which would
+    mask a real aggregate (and vice versa).
+    """
     rank = {
         "unavailable": 5,
         "too_cold": 4,
@@ -138,8 +143,9 @@ def worst_status(statuses: list[JarStatus]) -> str:
         "ok": 0,
     }
     if not statuses:
-        return "unavailable"
-    return max(statuses, key=lambda s: rank.get(s.status, 5)).status
+        return "sensors_down"
+    worst = max(statuses, key=lambda s: rank.get(s.status, 5))
+    return "sensors_down" if worst.status == "unavailable" else worst.status
 
 
 def alert_message(

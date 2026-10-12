@@ -133,7 +133,19 @@ class CuringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         st = self.hass.states.get(entity_id)
         friendly = st.attributes.get("friendly_name") if st else None
         if friendly:
-            return friendly.removesuffix(" temperature").removesuffix(" Temperatur").strip()
+            label = friendly
+            for suffix in (" temperature", " temperatur", " Temperature", " Temperatur"):
+                if label.lower().endswith(suffix):
+                    label = label[: -len(suffix)]
+                    break
+            # strip the BLE device's common prefixes: "Temp / RH ", "Temp/RH "
+            for prefix in ("Temp / RH ", "Temp/RH ", "Temp / RH-", "Temp/RH-"):
+                if label.startswith(prefix):
+                    label = label[len(prefix) :]
+                    break
+            label = label.strip()
+            if label:
+                return label
         stem = entity_id.split(".")[-1]
         return stem.removesuffix("_temperature").removesuffix("temperature").strip(" _")
 

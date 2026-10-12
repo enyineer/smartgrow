@@ -64,9 +64,9 @@ class TestAggregate:
     def test_worst_status_orders(self) -> None:
         assert worst_status([_jar(18, 62), _jar(18, 66)]) == "too_humid"
         assert worst_status([_jar(18, 62), _jar(26, 62)]) == "too_warm"
-        assert worst_status([_jar(26, 62), _jar(None, None)]) == "unavailable"
+        assert worst_status([_jar(26, 62), _jar(None, None)]) == "sensors_down"
         assert worst_status([_jar(18, 62), _jar(18, 63)]) == "ok"
-        assert worst_status([]) == "unavailable"
+        assert worst_status([]) == "sensors_down"
 
 
 class TestAlertMessage:
