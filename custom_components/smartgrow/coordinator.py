@@ -994,8 +994,13 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "fan": decision,
             }
             self.last_fan_decision = decision
-            self.async_set_updated_data(result)
-            return
+            # Return the result — the framework assigns self.data. Calling
+            # async_set_updated_data() INSIDE _async_update_data re-entered
+            # the coordinator (unsubscribed the pending refresh, then the
+            # outer `self.data = await ...` stored None), which left data
+            # permanently None-ish: the drying result was published to
+            # listeners once and every later read saw an empty dict.
+            return result
 
         base = self.options_rt.control
         # Adaptation may rewrite gains/margins (watchdog-guarded). The engine

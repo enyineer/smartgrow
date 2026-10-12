@@ -182,3 +182,16 @@ def test_drying_dehum_decision_published():
     src = inspect.getsource(SmartGrowCoordinator)
     assert 'reason="drying_rh_band"' in src
     assert "last_dehum_decision = dehumid_control.DehumDecision(" in src
+
+
+def test_drying_branch_returns_result_instead_of_set_updated_data():
+    """async_set_updated_data() inside _async_update_data re-enters the
+    coordinator: it assigned data, then the outer `self.data = await ...`
+    stored None — data was permanently None-ish and the phase sensor froze
+    at 'unknown' while control kept working (v0.12.4-0.12.11 bug)."""
+    import inspect
+
+    from custom_components.smartgrow.coordinator import SmartGrowCoordinator
+
+    src = inspect.getsource(SmartGrowCoordinator._async_update_data)
+    assert "self.async_set_updated_data(" not in src
