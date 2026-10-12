@@ -83,7 +83,7 @@ class ControlParams:
     hum_severity: float = 0.1  # severity backstop depth below band low
 
     # Drying stage (RH-driven; replaces the VPD law while drying).
-    drying_rh_on: float = 62.0  # tent RH above this -> exhaust ON
+    drying_rh_on: float = 58.0  # tent RH above this -> exhaust + dehum ON (mold guard)
     drying_rh_off: float = 55.0  # tent RH below this -> exhaust OFF (hysteresis)
     drying_rh_floor: float = 45.0  # never drive RH below this (too-fast dry)
     drying_lamp_off: bool = True  # enforce lamp OFF during drying

@@ -347,8 +347,8 @@ const w = globalThis,
   R = Array.isArray,
   T = "[ \t\n\f\r]",
   N = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,
-  H = /-->/g,
-  U = />/g,
+  U = /-->/g,
+  H = />/g,
   z = RegExp(`>|${T}(?:([^\\s"'>=/]+)(${T}*=${T}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`, "g"),
   D = /'/g,
   F = /"/g,
@@ -378,7 +378,7 @@ const Y = (t, e) => {
       l,
       c = -1,
       d = 0;
-    for (; d < s.length && (a.lastIndex = d, l = a.exec(s), null !== l);) d = a.lastIndex, a === N ? "!--" === l[1] ? a = H : void 0 !== l[1] ? a = U : void 0 !== l[2] ? (L.test(l[2]) && (i = RegExp("</" + l[2], "g")), a = z) : void 0 !== l[3] && (a = z) : a === z ? ">" === l[0] ? (a = i !== null && i !== void 0 ? i : N, c = -1) : void 0 === l[1] ? c = -2 : (c = a.lastIndex - l[2].length, o = l[1], a = void 0 === l[3] ? z : '"' === l[3] ? F : D) : a === F || a === D ? a = z : a === H || a === U ? a = N : (a = z, i = void 0);
+    for (; d < s.length && (a.lastIndex = d, l = a.exec(s), null !== l);) d = a.lastIndex, a === N ? "!--" === l[1] ? a = U : void 0 !== l[1] ? a = H : void 0 !== l[2] ? (L.test(l[2]) && (i = RegExp("</" + l[2], "g")), a = z) : void 0 !== l[3] && (a = z) : a === z ? ">" === l[0] ? (a = i !== null && i !== void 0 ? i : N, c = -1) : void 0 === l[1] ? c = -2 : (c = a.lastIndex - l[2].length, o = l[1], a = void 0 === l[3] ? z : '"' === l[3] ? F : D) : a === F || a === D ? a = z : a === U || a === H ? a = N : (a = z, i = void 0);
     const p = a === z && t[e + 1].startsWith("/>") ? " " : "";
     r += a === N ? s + O : c >= 0 ? (n.push(o), s.slice(0, c) + S + s.slice(c) + C + p) : s + C + (-2 === c ? e : p);
   }
@@ -1479,11 +1479,11 @@ function St(t, e, s) {
     R = "string" == typeof g.tent_temp_entity ? g.tent_temp_entity : void 0,
     T = "string" == typeof g.tent_rh_entity ? g.tent_rh_entity : void 0,
     N = At(t, R),
-    H = At(t, T),
-    U = "string" == typeof g.lung_temp_entity ? g.lung_temp_entity : void 0,
+    U = At(t, T),
+    H = "string" == typeof g.lung_temp_entity ? g.lung_temp_entity : void 0,
     z = "string" == typeof g.lung_rh_entity ? g.lung_rh_entity : void 0,
-    D = !(!U || !z),
-    F = D ? mt(At(t, U).state) : null,
+    D = !(!H || !z),
+    F = D ? mt(At(t, H).state) : null,
     L = D ? mt(At(t, z).state) : null;
   return {
     device: d,
@@ -1531,7 +1531,7 @@ function St(t, e, s) {
     lampEntity: "string" == typeof e.lamp ? e.lamp : null,
     masterEntity: x !== null && x !== void 0 ? x : null,
     tentTemp: N.missing ? null : mt(N.state),
-    tentRh: H.missing ? null : mt(H.state),
+    tentRh: U.missing ? null : mt(U.state),
     lungTemp: F,
     lungRh: L,
     lungConfigured: D,
@@ -1596,7 +1596,7 @@ function Rt(t) {
 }
 const Tt = new Map();
 const Nt = ["fan_target", "fan_dah_term", "fan_vpd_term", "fan_need_term", "fan_temp_term", "active_fan_term", "dah", "ah_tent", "ah_lung_room", "dehumidifier_decision", "dry_run", "cycles_24h"];
-class Ht extends at {
+class Ut extends at {
   setConfig(t) {
     this._config = t;
   }
@@ -1742,8 +1742,8 @@ class Ht extends at {
 }
 t([dt({
   attribute: !1
-})], Ht.prototype, "hass", void 0), t([pt()], Ht.prototype, "_config", void 0), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Ht);
-const Ut = "0.1.0",
+})], Ut.prototype, "hass", void 0), t([pt()], Ut.prototype, "_config", void 0), customElements.get("smartgrow-card-editor") || customElements.define("smartgrow-card-editor", Ut);
+const Ht = "0.1.0",
   zt = "smartgrow-card";
 class Dt extends at {
   constructor() {
@@ -2017,6 +2017,9 @@ class Dt extends at {
         } : t >= 65 ? {
           txt: "MOLD RISK — dry faster",
           cls: "warn"
+        } : t >= 58 ? {
+          txt: "venting — mold guard active",
+          cls: "ok"
         } : t <= 45 ? {
           txt: "drying too fast",
           cls: "warn"
@@ -2044,10 +2047,10 @@ class Dt extends at {
               ${a.txt}${r ? " · exhaust pulling" : " · exhaust idle"}
             </div>
             <div class="band-bar">
-              <div class="band-ok" style="left:${5 / 30 * 100}%; width:${17 / 30 * 100}%"></div>
+              <div class="band-ok" style="left:${5 / 30 * 100}%; width:${13 / 30 * 100}%"></div>
               ${null !== t ? B`<div class="band-marker ${"ok" === a.cls ? "" : a.cls}" style="left:${_t((t - 40) / 30 * 100, 0, 100)}%"></div>` : W}
             </div>
-            <div class="band-labels"><span>40 %</span><span>drying window 45–62 %</span><span>70 %</span></div>
+            <div class="band-labels"><span>40 %</span><span>target ≤ 58 % · mold guard</span><span>70 %</span></div>
           </div>
         </div>
 
@@ -2061,7 +2064,7 @@ class Dt extends at {
 
         <div class="chip-row">
           ${!0 === s.dryRun ? B`<span class="chip">DRY-RUN — no actuation</span>` : W}
-          <span class="chip">slow is good: 55–62 % RH</span>
+          <span class="chip">mold guard: exhaust + dehum above 58 %</span>
         </div>
       </ha-card>`;
     }
@@ -2371,4 +2374,4 @@ t([dt({
   description: "Grow-tent overview for the SmartGrow integration: fan gauge, VPD band, ΔAH sparkline, dehumidifier chip.",
   documentationURL: "https://github.com/niggo/smartgrow-card"
 });
-export { zt as CARD_NAME, Ut as CARD_VERSION, Dt as SmartGrowCard, Ht as SmartGrowCardEditor };
+export { zt as CARD_NAME, Ht as CARD_VERSION, Dt as SmartGrowCard, Ut as SmartGrowCardEditor };

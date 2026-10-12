@@ -2,11 +2,11 @@
 
 While the stage select is ``Drying`` the plant is harvested and hanging:
 transpiration is gone, VPD is meaningless, and the goals invert — the
-exhaust fan exists ONLY to keep tent RH inside the 55-62 % drying window
+exhaust fan exists ONLY to keep tent RH inside the 55-58 % drying window
 (below 45 % dries too fast = hay; above 65 % = mold). Lamp must stay OFF.
 
 The fan law for drying is a two-point hysteresis on tent RH:
-  RH >= drying_rh_on (62 %)  -> exhaust ON (100 %)
+  RH >= drying_rh_on (58 %)  -> exhaust + dehum ON (mold guard)
   RH <= drying_rh_off (55 %) -> exhaust OFF (0 %)
   in between                 -> hold previous output
 """

@@ -252,9 +252,11 @@ export class SmartGrowCard extends LitElement {
         ? { txt: "RH unknown", cls: "warn" }
         : rh >= 65
           ? { txt: "MOLD RISK — dry faster", cls: "warn" }
-          : rh <= 45
-            ? { txt: "drying too fast", cls: "warn" }
-            : { txt: "in drying window", cls: "ok" };
+          : rh >= 58
+            ? { txt: "venting — mold guard active", cls: "ok" }
+            : rh <= 45
+              ? { txt: "drying too fast", cls: "warn" }
+              : { txt: "in drying window", cls: "ok" };
       return html`<ha-card>
         <div class="header">
           <div class="title">${title}</div>
@@ -275,12 +277,12 @@ export class SmartGrowCard extends LitElement {
               ${status.txt}${fanOn ? " · exhaust pulling" : " · exhaust idle"}
             </div>
             <div class="band-bar">
-              <div class="band-ok" style="left:${(45 - 40) / 30 * 100}%; width:${(62 - 45) / 30 * 100}%"></div>
+              <div class="band-ok" style="left:${(45 - 40) / 30 * 100}%; width:${(58 - 45) / 30 * 100}%"></div>
               ${rh !== null
                 ? html`<div class="band-marker ${status.cls === "ok" ? "" : status.cls}" style="left:${clamp(((rh - 40) / 30) * 100, 0, 100)}%"></div>`
                 : nothing}
             </div>
-            <div class="band-labels"><span>40 %</span><span>drying window 45–62 %</span><span>70 %</span></div>
+            <div class="band-labels"><span>40 %</span><span>target ≤ 58 % · mold guard</span><span>70 %</span></div>
           </div>
         </div>
 
@@ -296,7 +298,7 @@ export class SmartGrowCard extends LitElement {
 
         <div class="chip-row">
           ${s.dryRun === true ? html`<span class="chip">DRY-RUN — no actuation</span>` : nothing}
-          <span class="chip">slow is good: 55–62 % RH</span>
+          <span class="chip">mold guard: exhaust + dehum above 58 %</span>
         </div>
       </ha-card>`;
     }

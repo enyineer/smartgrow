@@ -1,7 +1,7 @@
 """Drying stage: controller + coordinator branch tests.
 
 While the stage select is Drying:
-  - the exhaust fan runs a 55-62% RH hysteresis (ON above, OFF below, hold in
+  - the exhaust fan runs a 55-58% RH hysteresis (ON above, OFF below, hold in
     between), NOT the VPD law;
   - lamp + master are forced OFF every tick (schedule must not relight);
   - VPD fan/dehum cascades are skipped entirely;
@@ -85,7 +85,7 @@ def _coordinator(stage: str, rh: float | None, fan_state: str = "off"):
     from custom_components.smartgrow.logic.params import ControlParams
 
     ctl = ControlParams(
-        drying_rh_on=62.0,
+        drying_rh_on=58.0,
         drying_rh_off=55.0,
         drying_rh_floor=45.0,
         drying_lamp_off=True,
@@ -114,8 +114,9 @@ def _coordinator(stage: str, rh: float | None, fan_state: str = "off"):
 
 @pytest.mark.asyncio
 async def test_drying_branch_runs_fan_hysteresis():
-    """stage=Drying + RH 58 (inside band) -> fan holds OFF, no VPD cascade."""
-    c = _coordinator("Drying", rh=58.0)
+    """stage=Drying + RH 56 (inside 55-58 band) -> fan holds OFF, no VPD
+    cascade. (ON threshold is 58 since the mold-guard tightening.)"""
+    c = _coordinator("Drying", rh=56.0)
     c.async_set_updated_data = lambda data: None
     await c._async_update_data()
     # fan off held, no turn_on dispatched

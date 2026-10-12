@@ -896,7 +896,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # ---- Drying stage: RH-driven, lamp-off, no VPD law ----------------
         # While the stage select is Drying the harvest is hanging in the tent:
         # the exhaust fan's only job is holding tent RH inside the drying
-        # window (55-62%), the lamp must stay OFF, and the VPD-based
+        # window (55-58%), the lamp must stay OFF, and the VPD-based
         # fan/dehum cascades are meaningless (no transpiration). Alerts swap
         # to mold-risk / too-fast-dry.
         if (self._current_stage() or "") == "Drying":
