@@ -99,9 +99,9 @@ class FanTargetSensor(_TermSensor):
             return {}
         return {
             "dry_run": self.coordinator.options_rt.dry_run,
-            "cold": d.cold,
-            "cold_multiplier": d.cold_mult,
-            "min_fan": d.min_fan,
+            "cold": getattr(d, "cold", None),
+            "cold_multiplier": getattr(d, "cold_mult", None),
+            "min_fan": getattr(d, "min_fan", None),
         }
 
 
@@ -115,7 +115,7 @@ class FanDeltaTermSensor(_TermSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.fan_delta_term, 1) if d else None
+        return round(d.fan_delta_term, 1) if getattr(d, "fan_delta_term", None) is not None else None
 
 
 class FanVpdTermSensor(_TermSensor):
@@ -128,7 +128,7 @@ class FanVpdTermSensor(_TermSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.fan_vpd_term, 1) if d else None
+        return round(d.fan_vpd_term, 1) if getattr(d, "fan_vpd_term", None) is not None else None
 
 
 class FanNeedTermSensor(_TermSensor):
@@ -141,7 +141,7 @@ class FanNeedTermSensor(_TermSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.fan_need_term, 1) if d else None
+        return round(d.fan_need_term, 1) if getattr(d, "fan_need_term", None) is not None else None
 
 
 class FanTempTermSensor(_TermSensor):
@@ -173,7 +173,7 @@ class ActiveTermSensor(_TermSensor):
     @property
     def native_value(self) -> str | None:
         d = self._decision()
-        return d.active_term if d else None
+        return d.active_term if getattr(d, "active_term", None) is not None else None
 
 
 class SourcesSensor(SmartGrowEntity, SensorEntity):
@@ -263,12 +263,14 @@ class DAhSensor(_TermSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.d_ah, 2) if d else None
+        return round(d.d_ah, 2) if getattr(d, "d_ah", None) is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         d = self._decision()
         if not d:
+            return {}
+        if getattr(d, "ah_tent", None) is None:
             return {}
         return {"ah_tent": round(d.ah_tent, 2), "ah_lung": round(d.ah_lung, 2)}
 
@@ -283,7 +285,7 @@ class AhTentSensor(DAhSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.ah_tent, 2) if d else None
+        return round(d.ah_tent, 2) if getattr(d, "ah_tent", None) is not None else None
 
 
 class AhLungSensor(DAhSensor):
@@ -296,7 +298,7 @@ class AhLungSensor(DAhSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.ah_lung, 2) if d else None
+        return round(d.ah_lung, 2) if getattr(d, "ah_lung", None) is not None else None
 
 
 class DehumDecisionSensor(SmartGrowEntity, SensorEntity):
