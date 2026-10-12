@@ -27,7 +27,12 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up SmartGrow diagnostic sensors."""
+    """Set up SmartGrow diagnostic sensors (grow devices only)."""
+    if entry.data.get("device_type") == "curing":
+        from .curing_sensor import async_setup_entry as curing_setup
+
+        await curing_setup(hass, entry, async_add_entities)
+        return
     coordinator = async_get_coordinator(hass, entry)
     entities: list[SensorEntity] = [
         FanTargetSensor(coordinator, entry),

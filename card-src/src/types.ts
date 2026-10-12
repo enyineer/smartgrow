@@ -19,6 +19,8 @@ export type SmartGrowCardConfig = {
   dehum_power_entity?: string;
   /** Watts above which the dehum counts as running (default 15). */
   dehum_power_on_w?: number;
+  /** Curing summary sensor — auto-discovered when a curing device exists. */
+  curing_summary_entity?: string;
 };
 
 export type SmartGrowEntities = {

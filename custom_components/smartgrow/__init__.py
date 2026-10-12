@@ -9,9 +9,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import CONF_DRY_RUN, DEFAULTS, DOMAIN
-from .coordinator import RuntimeOptions, SmartGrowCoordinator
+from .coordinator import RuntimeOptions, SmartGrowCoordinator  # noqa: F401 — re-export
 from .frontend_reg import CARD_URL, async_register_frontend, remove_extra_js_url
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,13 +35,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up SmartGrow from a config entry."""
-    coordinator = SmartGrowCoordinator(hass, entry)
+    """Set up SmartGrow from a config entry (grow or curing device)."""
+    device_type = entry.data.get("device_type", "grow")
+    if device_type == "curing":
+        from .curing_coordinator import CuringCoordinator
+
+        coordinator: DataUpdateCoordinator = CuringCoordinator(hass, entry)
+        platforms = ["sensor"]
+    else:
+        coordinator = SmartGrowCoordinator(hass, entry)
+        platforms = PLATFORMS
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
-        "options": RuntimeOptions.from_entry(entry),
+        "device_type": device_type,
     }
-    if not hass.data.get(f"{DOMAIN}_frontend_registered"):
+    if device_type != "curing" and not hass.data.get(f"{DOMAIN}_frontend_registered"):
         try:
             await async_register_frontend(hass)
             hass.data[f"{DOMAIN}_frontend_registered"] = True
@@ -48,8 +57,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.warning("SmartGrow card registration failed: %s", err)
             hass.data[f"{DOMAIN}_frontend_registered"] = False
     await coordinator.async_config_entry_first_refresh()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, platforms)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
+    if device_type == "curing":
+        return True
 
     async def _async_clear_source(call) -> None:
         """Remove a source-entity key from entry data (device/service panel)."""

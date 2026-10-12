@@ -693,3 +693,118 @@ export function historyToPoints(
   }
   return out;
 }
+
+
+/**
+ * Curing-device support.
+ *
+ * A curing SmartGrow device publishes a summary sensor
+ * (sensor.<prefix>_curing_summary, state = worst jar status, attrs: ok_count,
+ * total, temp_band, rh_band, needs_attention) plus one sensor per jar
+ * (sensor.<prefix>_curing_<jar>, attrs: temperature, humidity, reasons).
+ * The curing view replaces the grow view entirely: no VPD, no actuators.
+ */
+
+export interface CuringJar {
+  entityId: string;
+  name: string;
+  status: string;
+  temp: number | null;
+  rh: number | null;
+  reasons: string[];
+}
+
+export interface CuringState {
+  summaryEntity: string;
+  worst: string;
+  okCount: number | null;
+  total: number | null;
+  tempBand: [number, number] | null;
+  rhBand: [number, number] | null;
+  needsAttention: string[];
+  jars: CuringJar[];
+}
+
+/** Find the curing summary sensor, if a curing device exists. */
+export function discoverCuringSummary(
+  hass: HomeAssistant | undefined
+): string | null {
+  if (!hass?.states) return null;
+  for (const eid of Object.keys(hass.states)) {
+    if (eid.endsWith("_curing_summary")) return eid;
+  }
+  return null;
+}
+
+const Curing_STATUS_OK = new Set(["ok", "temp_only", "rh_only"]);
+
+function jarNameFromEntityId(entityId: string, friendly: string | null): string {
+  if (friendly) {
+    const stripped = friendly.replace(/^curing\s+/i, "").trim();
+    if (stripped) return stripped;
+  }
+  const stem = entityId.split(".").pop() ?? entityId;
+  return stem;
+}
+
+/** Parse the curing summary + per-jar sensors into render-ready state. */
+export function parseCuringState(
+  hass: HomeAssistant,
+  summaryEntityId: string
+): CuringState | null {
+  const summary = hass.states?.[summaryEntityId];
+  if (!summary) return null;
+  const a = summary.attributes ?? {};
+  const band = (v: unknown): [number, number] | null =>
+    Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === "number")
+      ? [v[0] as number, v[1] as number]
+      : null;
+  const state: CuringState = {
+    summaryEntity: summaryEntityId,
+    worst: String(summary.state ?? "unknown"),
+    okCount: typeof a.ok_count === "number" ? a.ok_count : null,
+    total: typeof a.total === "number" ? a.total : null,
+    tempBand: band(a.temp_band),
+    rhBand: band(a.rh_band),
+    needsAttention: Array.isArray(a.needs_attention)
+      ? (a.needs_attention as string[])
+      : [],
+    jars: [],
+  };
+  // Per-jar sensors: same prefix, `_curing_` + jar name
+  const prefixMatch = summaryEntityId.match(/^sensor\.(.+)_curing_summary$/);
+  const prefix = prefixMatch ? prefixMatch[1] : null;
+  if (prefix) {
+    const jarRe = new RegExp(`^sensor\\.${prefix}_curing_(.+)$`);
+    for (const eid of Object.keys(hass.states)) {
+      if (eid === summaryEntityId) continue;
+      if (eid.includes("_curing_summary")) continue; // summary + its derivatives are not jars
+      const m = eid.match(jarRe);
+      if (!m) continue;
+      const st = hass.states[eid];
+      if (!st) continue;
+      const attrs = st.attributes ?? {};
+      const num = (v: unknown): number | null =>
+        typeof v === "number" ? v : typeof v === "string" && v !== "" && !isNaN(Number(v)) ? Number(v) : null;
+      state.jars.push({
+        entityId: eid,
+        name: jarNameFromEntityId(eid, (attrs.friendly_name as string) ?? null),
+        status: String(st.state ?? "unknown"),
+        temp: num(attrs.temperature),
+        rh: num(attrs.humidity),
+        reasons: Array.isArray(attrs.reasons) ? (attrs.reasons as string[]) : [],
+      });
+    }
+    state.jars.sort((x, y) => x.entityId.localeCompare(y.entityId));
+  }
+  return state;
+}
+
+export function curingIsFine(state: CuringState): boolean {
+  return Curing_STATUS_OK.has(state.worst);
+}
+
+/** True when an individual jar status counts as fine (no alert). */
+export function curingStatusIsFine(status: string): boolean {
+  return Curing_STATUS_OK.has(status);
+}

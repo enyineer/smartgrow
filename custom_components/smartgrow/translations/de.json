@@ -2,7 +2,28 @@
   "config": {
     "step": {
       "user": {
-        "title": "SmartGrow einrichten",
+        "title": "SmartGrow Einrichtung",
+        "description": "Was soll dieses Gerät steuern?",
+        "data": {
+          "device_type": "Gerätetyp",
+          "name": "Gerätename (z. B. 'Growbox 1' oder 'Curing-Gläser')"
+        },
+        "data_description": {
+          "device_type": "Grow-Zelt-Geräte steuern Aktoren (Lüfter, Lampe, Entfeuchter). Curing-Geräte überwachen nur Gläser und alarmieren bei Abweichungen — keine Aktorik, kein Regelalgorithmus, kann neben einem Grow laufen.",
+          "name": "Wird auf dem Gerät und der Karte angezeigt."
+        }
+      },
+      "extras": {
+        "title": "Bestehende Automatisierungen (optional)",
+        "description": "Falls du bereits Lüfter-/Entfeuchter-Automatisierungen nutzt, wähle sie hier aus – SmartGrow warnt solange sie im Probemodus noch aktiv eingreifen.",
+        "data": {
+          "legacy_vent_automation": "Vorhandene Lüfter-Automatisierung",
+          "legacy_dehum_automation": "Vorhandene Entfeuchter-Automatisierung",
+          "stage": "Aktuelle Grow-Phase"
+        }
+      },
+      "grow": {
+        "title": "Grow-Zelt Einrichtung",
         "description": "Wähle die Entitäten, die SmartGrow beobachten soll. Der Probemodus bleibt an, bis du umstellst.",
         "data": {
           "fan_entity": "Abluftlüfter (prozentregelbar)",
@@ -15,20 +36,36 @@
           "lamp_entity": "Lampen-Entität (optional; steuert Tag/Nacht)",
           "stage_entity": "Stage-Auswahl (optional)",
           "dry_run": "Probemodus (empfohlen: an)"
+        },
+        "curing": {
+          "title": "Curing-Gläser Einrichtung",
+          "description": "Wähle den Temperatursensor in jedem Curing-Glas — der Luftfeuchtigkeits-Sensor am selben Gerät wird automatisch gefunden. Zielbereiche setzen; es wird nichts geschaltet, dieses Gerät beobachtet nur und alarmiert.",
+          "data": {
+            "jar_temp_entities": "Glas-Temperatursensoren (einer pro Glas)",
+            "curing_temp_min": "Minimale Temperatur (°C)",
+            "curing_temp_max": "Maximale Temperatur (°C)",
+            "curing_rh_min": "Minimale Luftfeuchtigkeit (% rF)",
+            "curing_rh_max": "Maximale Luftfeuchtigkeit (% rF)",
+            "curing_alert_cooldown_h": "Alarm-Pause pro Glas (Stunden)"
+          }
         }
       },
-      "extras": {
-        "title": "Bestehende Automatisierungen (optional)",
-        "description": "Falls du bereits Lüfter-/Entfeuchter-Automatisierungen nutzt, wähle sie hier aus – SmartGrow warnt solange sie im Probemodus noch aktiv eingreifen.",
+      "curing": {
+        "title": "Curing-Gläser Einrichtung",
+        "description": "Wähle den Temperatursensor in jedem Curing-Glas — der Luftfeuchtigkeits-Sensor am selben Gerät wird automatisch gefunden. Zielbereiche setzen; es wird nichts geschaltet, dieses Gerät beobachtet nur und alarmiert.",
         "data": {
-          "legacy_vent_automation": "Vorhandene Lüfter-Automatisierung",
-          "legacy_dehum_automation": "Vorhandene Entfeuchter-Automatisierung",
-          "stage": "Aktuelle Grow-Phase"
+          "jar_temp_entities": "Glas-Temperatursensoren (einer pro Glas)",
+          "curing_temp_min": "Minimale Temperatur (°C)",
+          "curing_temp_max": "Maximale Temperatur (°C)",
+          "curing_rh_min": "Minimale Luftfeuchtigkeit (% rF)",
+          "curing_rh_max": "Maximale Luftfeuchtigkeit (% rF)",
+          "curing_alert_cooldown_h": "Alarm-Pause pro Glas (Stunden)"
         }
       }
     },
     "error": {
-      "entities_already_configured": "One or more of these entities is already used by another SmartGrow entry. Each tent needs its own sensors/fan/dehumidifier."
+      "entities_already_configured": "One or more of these entities is already used by another SmartGrow entry. Each tent needs its own sensors/fan/dehumidifier.",
+      "curing_no_jars": "Wähle mindestens einen Glas-Temperatursensor."
     },
     "abort": {
       "already_configured": "Dieses Sensorpaar ist bereits konfiguriert."

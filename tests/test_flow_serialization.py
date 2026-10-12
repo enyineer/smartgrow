@@ -82,7 +82,7 @@ def test_entity_schema_helper_never_double_wraps():
 
 
 async def test_user_schema_serializes(hass, enable_custom_integrations):
-    """Setup dialog: filtered pickers, no 500."""
+    """Setup dialog: device-type select, no 500."""
     flow = SmartGrowConfigFlow()
     flow.hass = hass
     flow._data = {}
@@ -91,7 +91,34 @@ async def test_user_schema_serializes(hass, enable_custom_integrations):
     _assert_clean(_converted(result["data_schema"]), "user")
 
     blob = json.dumps(_converted(result["data_schema"]))
-    assert '"entity"' in blob, "user schema lost its entity pickers"
+    assert '"select"' in blob, "user schema lost its device-type selector"
+    assert "curing" in blob, "device-type selector lost the curing option"
+
+
+async def test_grow_step_schema_serializes(hass, enable_custom_integrations):
+    """Grow branch: filtered entity pickers still serialize cleanly."""
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._data = {"device_type": "grow"}
+    result = await flow.async_step_grow()
+    assert result["type"] == "form"
+    assert result["step_id"] == "grow"
+    blob = json.dumps(_converted(result["data_schema"]))
+    assert '"entity"' in blob, "grow schema lost its entity pickers"
+
+
+async def test_curing_step_schema_serializes(hass, enable_custom_integrations):
+    """Curing branch: multi jar picker + bands, serializes cleanly."""
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._data = {"device_type": "curing"}
+    result = await flow.async_step_curing()
+    assert result["type"] == "form"
+    assert result["step_id"] == "curing"
+    blob = json.dumps(_converted(result["data_schema"]))
+    assert '"entity"' in blob, "curing schema lost its jar picker"
+    assert "jar_temp_entities" in blob
+    assert "curing_rh_max" in blob
 
 
 async def test_reconfigure_schema_serializes(hass, enable_custom_integrations):

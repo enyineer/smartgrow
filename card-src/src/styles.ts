@@ -446,4 +446,57 @@ export const cardStyles = css`
       grid-template-columns: repeat(2, 1fr);
     }
   }
+
+  /* ---- Curing view ------------------------------------------------------ */
+  .jar-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .jar {
+    border: 1px solid var(--sgc-divider);
+    border-radius: 8px;
+    padding: 6px 8px;
+    min-width: 0;
+  }
+  .jar-ok {
+    border-color: var(--sgc-ok, #2e7d32);
+  }
+  .jar-bad {
+    border-color: var(--sgc-warn, #ef6c00);
+    background: rgba(239, 108, 0, 0.08);
+  }
+  .jar-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .jar-reading {
+    display: flex;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--sgc-primary, var(--primary-text-color));
+    margin-top: 2px;
+  }
+  .jar-missing {
+    color: var(--sgc-secondary);
+    font-style: italic;
+  }
+  .jar-reasons {
+    font-size: 0.62rem;
+    color: var(--sgc-warn, #ef6c00);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .phase-chip.curing {
+    background: rgba(46, 125, 50, 0.18);
+  }
+  .phase-chip.curing.alert {
+    background: rgba(239, 108, 0, 0.22);
+  }
 `;

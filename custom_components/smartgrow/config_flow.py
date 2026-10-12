@@ -22,10 +22,17 @@ from homeassistant.helpers.selector import (
 from .const import (
     CONF_CAMERA_ENTITY,
     CONF_CLEAR_OPTIONAL_SOURCES,
+    CONF_CURING_ALERT_COOLDOWN_H,
+    CONF_CURING_RH_MAX,
+    CONF_CURING_RH_MIN,
+    CONF_CURING_TEMP_MAX,
+    CONF_CURING_TEMP_MIN,
     CONF_DEHUM_ENTITY,
+    CONF_DEVICE_TYPE,
     CONF_DRY_RUN,
     CONF_FAN_ENTITY,
     CONF_HUM_ENTITY,
+    CONF_JAR_TEMP_ENTITIES,
     CONF_LAMP_ENTITY,
     CONF_LAMP_SWITCH_ENTITY,
     CONF_LEGACY_DEHUM_AUTOMATION,
@@ -41,7 +48,10 @@ from .const import (
     CONF_WAVEMAKER_EVERY_MIN,
     CONF_WAVEMAKER_MODE,
     CONF_WAVEMAKER_RUN_S,
+    CURING_DEFAULTS,
     DEFAULTS,
+    DEVICE_TYPE_CURING,
+    DEVICE_TYPE_GROW,
     DOMAIN,
     STAGES,
     WAVEMAKER_MODE_NONE,
@@ -141,7 +151,79 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
-        """Step 1: entities and dry-run."""
+        """Step 1: device type (grow controller or curing monitor)."""
+        if user_input is not None:
+            self._data.update(user_input)
+            if self._data.get(CONF_DEVICE_TYPE) == DEVICE_TYPE_CURING:
+                return await self.async_step_curing()
+            self._data.setdefault(CONF_DEVICE_TYPE, DEVICE_TYPE_GROW)
+            return await self.async_step_grow()
+
+        schema = {
+            vol.Required(CONF_DEVICE_TYPE, default=DEVICE_TYPE_GROW): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        {"value": t, "label": lbl}
+                        for t, lbl in (
+                            (DEVICE_TYPE_GROW, "Grow tent (climate control)"),
+                            (DEVICE_TYPE_CURING, "Curing jars (monitoring only)"),
+                        )
+                    ]
+                )
+            ),
+            vol.Optional(CONF_NAME, default=""): str,
+        }
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(schema))
+
+    async def async_step_curing(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Curing branch: pick jar sensors + bands; no actuators exist here."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            self._data.update(user_input)
+            jars = self._data.get(CONF_JAR_TEMP_ENTITIES) or []
+            if not jars:
+                errors["base"] = "curing_no_jars"
+            else:
+                await self.async_set_unique_id("curing|" + "|".join(sorted(jars)))
+                self._abort_if_unique_id_configured()
+                data = {k: v for k, v in self._data.items() if k != CONF_NAME}
+                data[CONF_DEVICE_TYPE] = DEVICE_TYPE_CURING
+                return self.async_create_entry(
+                    title=(
+                        f"SmartGrow {self._data.get(CONF_NAME)}".strip()
+                        if self._data.get(CONF_NAME)
+                        else "SmartGrow Curing"
+                    ),
+                    data=data,
+                )
+
+        merged = {**CURING_DEFAULTS, **self._data}
+        schema = {
+            vol.Required(
+                CONF_JAR_TEMP_ENTITIES,
+                description={"suggested_value": merged.get(CONF_JAR_TEMP_ENTITIES)},
+            ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)),
+            vol.Required(CONF_CURING_TEMP_MIN, default=merged[CONF_CURING_TEMP_MIN]): vol.All(
+                vol.Coerce(float), vol.Range(min=-10, max=40)
+            ),
+            vol.Required(CONF_CURING_TEMP_MAX, default=merged[CONF_CURING_TEMP_MAX]): vol.All(
+                vol.Coerce(float), vol.Range(min=-10, max=40)
+            ),
+            vol.Required(CONF_CURING_RH_MIN, default=merged[CONF_CURING_RH_MIN]): vol.All(
+                vol.Coerce(float), vol.Range(min=0, max=100)
+            ),
+            vol.Required(CONF_CURING_RH_MAX, default=merged[CONF_CURING_RH_MAX]): vol.All(
+                vol.Coerce(float), vol.Range(min=0, max=100)
+            ),
+            vol.Required(
+                CONF_CURING_ALERT_COOLDOWN_H,
+                default=merged[CONF_CURING_ALERT_COOLDOWN_H],
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=72)),
+        }
+        return self.async_show_form(step_id="curing", data_schema=vol.Schema(schema), errors=errors)
+
+    async def async_step_grow(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Grow branch: entities and dry-run (the original step 1)."""
         errors: dict[str, str] = {}
         if user_input is not None:
             self._data.update(user_input)
@@ -186,7 +268,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             ),
             vol.Required(CONF_DRY_RUN, default=True): bool,
         }
-        return self.async_show_form(step_id="user", data_schema=vol.Schema(schema), errors=errors)
+        return self.async_show_form(step_id="grow", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_extras(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Step 2: legacy automations (optional) and initial stage."""

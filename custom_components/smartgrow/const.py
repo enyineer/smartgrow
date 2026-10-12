@@ -85,6 +85,33 @@ DEFAULTS: dict = {
 
 STAGES = ("Seedling", "Vegetative", "Flowering", "Drying")
 
+# --- Device types -----------------------------------------------------------
+# A SmartGrow config entry is EITHER a grow controller (tent actuators) OR a
+# curing monitor (jar sensors only, no actuators). Two device types make
+# "cure and grow at the same time" possible: separate devices, separate
+# dashboards, and a curing entry physically has no actuator config to
+# misfire. Default 'grow' keeps existing entries unchanged.
+CONF_DEVICE_TYPE = "device_type"
+DEVICE_TYPE_GROW = "grow"
+DEVICE_TYPE_CURING = "curing"
+DEVICE_TYPES = (DEVICE_TYPE_GROW, DEVICE_TYPE_CURING)
+
+# --- Curing device config keys ---------------------------------------------
+CONF_JAR_TEMP_ENTITIES = "jar_temp_entities"  # list[sensor entity_id]
+CONF_CURING_TEMP_MIN = "curing_temp_min"  # deg C
+CONF_CURING_TEMP_MAX = "curing_temp_max"
+CONF_CURING_RH_MIN = "curing_rh_min"  # %
+CONF_CURING_RH_MAX = "curing_rh_max"
+CONF_CURING_ALERT_COOLDOWN_H = "curing_alert_cooldown_h"  # hours
+
+CURING_DEFAULTS: dict = {
+    CONF_CURING_TEMP_MIN: 15.0,
+    CONF_CURING_TEMP_MAX: 23.0,
+    CONF_CURING_RH_MIN: 55.0,
+    CONF_CURING_RH_MAX: 65.0,
+    CONF_CURING_ALERT_COOLDOWN_H: 6.0,
+}
+
 # Unique-id prefix per entity kind: smartgrow_{entry_id}_{name}
 UNIQUE_ID_TEMPLATE = "smartgrow_{entry_id}_{name}"
 

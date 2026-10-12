@@ -12,6 +12,10 @@ import {
   resolveEntityIds,
   applySourceEntities,
   discoverPrefix,
+  discoverCuringSummary,
+  parseCuringState,
+  curingIsFine,
+  curingStatusIsFine,
   getBacking,
   dehumChip,
   normalizeTerm,
@@ -147,8 +151,82 @@ export class SmartGrowCard extends LitElement {
     `;
   }
 
+  private _renderCuring(summaryEntity: string) {
+    const curing = parseCuringState(this.hass!, summaryEntity);
+    if (!curing) return html``;
+    const title = this._config?.title ?? "Curing";
+    const fine = curingIsFine(curing);
+    const statusCls = fine ? "ok" : "warn";
+    const statusTxt = curing.worst === "ok"
+      ? "all jars in band"
+      : curing.worst === "unavailable"
+        ? "jars unreachable"
+        : curing.worst.replace(/_/g, " ");
+    const tb = curing.tempBand;
+    const rb = curing.rhBand;
+    return html`<ha-card>
+      <div class="header">
+        <div class="title">${title}</div>
+        <div class="stage">Curing</div>
+        <div class="phase-chip curing ${statusCls === "ok" ? "drying" : "alert"}">
+          ${curing.okCount ?? "?"}/${curing.total ?? "?"} ok
+        </div>
+        <div class="header-icons"></div>
+      </div>
+
+      <div class="gauge-row">
+        <div class="gauge">
+          <div class="fan-big">${statusTxt}</div>
+          <div class="fan-sub">
+            ${tb ? `${tb[0]}–${tb[1]} °C` : ""}${tb && rb ? " · " : ""}${rb ? `${rb[0]}–${rb[1]} % RH` : ""}
+          </div>
+        </div>
+      </div>
+
+      ${curing.jars.length
+        ? html`<div class="jar-grid">
+            ${curing.jars.map(
+              (jar) => html`
+                <div class="jar ${curingStatusIsFine(jar.status) ? "jar-ok" : "jar-bad"}">
+                  <div class="jar-name">${jar.name}</div>
+                  <div class="jar-reading">
+                    ${jar.temp !== null ? html`<span>${jar.temp.toFixed(1)} °C</span>` : nothing}
+                    ${jar.rh !== null ? html`<span>${Math.round(jar.rh)} %</span>` : nothing}
+                    ${jar.temp === null && jar.rh === null ? html`<span class="jar-missing">no data</span>` : nothing}
+                  </div>
+                  ${jar.reasons.length
+                    ? html`<div class="jar-reasons">${jar.reasons.join(", ")}</div>`
+                    : nothing}
+                </div>
+              `
+            )}
+          </div>`
+        : html`<div class="setup-hint">
+            <div>Jar sensors not found yet — first coordinator cycle pending.</div>
+          </div>`}
+
+      ${curing.needsAttention.length
+        ? html`<div class="alert-strip">
+            check: ${curing.needsAttention.join(", ")}
+          </div>`
+        : nothing}
+    </ha-card>`;
+  }
+
   protected render() {
     if (!this._config || !this.hass) return html``;
+
+    // ---- Curing device: dedicated view ----------------------------------
+    // A curing SmartGrow device publishes *_curing_summary + per-jar sensors
+    // and owns NO actuators. When such a device exists, this card renders the
+    // curing jar grid INSTEAD of the grow view (a card per device type).
+    const curingEntity =
+      this._config.curing_summary_entity ??
+      discoverCuringSummary(this.hass);
+    if (curingEntity && this.hass.states?.[curingEntity]) {
+      return this._renderCuring(curingEntity);
+    }
+
     const ids = this._ids();
     const s = parseSmartGrowState(this.hass, ids, VPD_BAND_RANGE);
     const now = Date.now();
