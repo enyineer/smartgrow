@@ -78,6 +78,5 @@ def test_gate_result_shape_matches_normal_cycle():
     src = inspect.getsource(SmartGrowCoordinator._async_update_data)
     gate = src.split("not stage_now")[1].split("# Lights schedule")[0]
     gate_keys = set(re.findall(r'"(\w+)":', gate))
-    normal_keys = set(re.findall(r'"(\w+)":', src.split("now = time.time()")[-1]))
     missing = {"inputs", "ts", "phase", "stage", "degraded", "fan"} - gate_keys
     assert not missing, f"gate result missing keys: {missing}"
