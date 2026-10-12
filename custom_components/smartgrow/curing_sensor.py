@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .curing_coordinator import CuringCoordinator
@@ -41,16 +42,23 @@ def _uid(entry: ConfigEntry, name: str) -> str:
     return f"smartgrow_{entry.entry_id}_{name}"
 
 
-class _CuringEntity(SensorEntity):
-    """Base: curing coordinator entity wiring."""
+class _CuringEntity(CoordinatorEntity[CuringCoordinator], SensorEntity):
+    """Base: curing coordinator entity wiring (registers update listeners)."""
 
     _attr_has_entity_name = True
     coordinator: CuringCoordinator
     entry: ConfigEntry
 
     def __init__(self, coordinator: CuringCoordinator, entry: ConfigEntry) -> None:
-        self.coordinator = coordinator
+        super().__init__(coordinator)
         self.entry = entry
+
+    async def async_added_to_hass(self) -> None:
+        """Rebind to the CURRENT coordinator (entry reload creates a new one)."""
+        runtime = self.hass.data["smartgrow"].get(self.entry.entry_id)
+        if runtime is not None and runtime["coordinator"] is not self.coordinator:
+            self.coordinator = runtime["coordinator"]
+        await super().async_added_to_hass()
 
     @property
     def device_info(self):

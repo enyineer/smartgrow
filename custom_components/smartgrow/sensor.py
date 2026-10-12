@@ -437,9 +437,4 @@ class PhaseSensor(SmartGrowEntity, SensorEntity):
         return {
             "stage": data.get("stage", ""),
             "source": "configured lamp_entity",
-            "debug_entry_id": getattr(self.coordinator, "entry", None) and self.coordinator.entry.entry_id,
-            "debug_stage_now": getattr(self.coordinator, "_current_stage", lambda: "?")(),
-            "debug_data_keys": sorted(data.keys()) if isinstance(data, dict) else str(type(data)),
-            "debug_data_ts": data.get("ts") if isinstance(data, dict) else None,
-            "debug_last_success": getattr(self.coordinator, "last_update_success", None),
         }

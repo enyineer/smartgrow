@@ -41,6 +41,10 @@ class StageSelect(SmartGrowEntity, SelectEntity, RestoreEntity):
 
     async def async_added_to_hass(self) -> None:
         """Restore last stage, or follow the configured source entity."""
+        # Base rebinding first: on entry reload the CURRENT coordinator must
+        # be acquired or this select keeps the dead instance (and the
+        # coordinator loses its listener + stops refreshing).
+        await super().async_added_to_hass()
         last = await self.async_get_last_state()
         if last is not None and last.state in STAGES:
             self._attr_current_option = last.state

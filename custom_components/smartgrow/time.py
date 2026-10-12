@@ -58,6 +58,7 @@ class _ScheduleTimeBase(SmartGrowEntity, TimeEntity, RestoreEntity):
         self._attr_native_value = _parse(entry.data.get(key), default)
 
     async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()  # rebind to the CURRENT coordinator
         last = await self.async_get_last_state()
         if last is not None and last.state not in (None, "unknown", "unavailable"):
             try:

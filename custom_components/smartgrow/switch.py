@@ -43,6 +43,7 @@ class DryRunSwitch(SmartGrowEntity, SwitchEntity, RestoreEntity):
         self._attr_is_on = coordinator.options_rt.dry_run
 
     async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()  # rebind to the CURRENT coordinator
         last = await self.async_get_last_state()
         if last is not None and last.state in ("on", "off"):
             self._attr_is_on = last.state == "on"
@@ -89,6 +90,7 @@ class AdaptationSwitch(SmartGrowEntity, SwitchEntity, RestoreEntity):
         self._attr_is_on = coordinator.options_rt.adaptation_enabled
 
     async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()  # rebind to the CURRENT coordinator
         last = await self.async_get_last_state()
         if last is not None and last.state in ("on", "off"):
             self._attr_is_on = last.state == "on"
