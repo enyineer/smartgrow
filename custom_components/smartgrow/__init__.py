@@ -98,7 +98,13 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Unload exactly the platforms the entry was set up with: un-forwarded
+    # platforms make async_unload_platforms fail (curing entries hit this:
+    # failed_unload on every reload). Re-derive from device_type, and keep
+    # the sensor-platform dispatch in mind (curing forwards ["sensor"]).
+    device_type = entry.data.get("device_type", "grow")
+    platforms = ["sensor"] if device_type == "curing" else PLATFORMS
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, platforms)
     if unload_ok and not hass.data[DOMAIN]:
         remove_extra_js_url(hass, CARD_URL)
         hass.data.pop(f"{DOMAIN}_frontend_registered", None)

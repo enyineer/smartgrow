@@ -147,3 +147,17 @@ async def test_grow_entry_still_gets_full_platforms(hass, enable_custom_integrat
     await hass.async_block_till_done()
     # entity id is device-qualified (smartgrow_growbox_1_smartgrow_*)
     assert hass.states.get("sensor.smartgrow_growbox_1_smartgrow_configured_sources") is not None
+
+
+async def test_curing_entry_reloads_cleanly(hass, enable_custom_integrations, _no_sibling):
+    """Regression: unloading un-forwarded platforms made reload fail
+    (failed_unload) because async_unload_entry passed ALL grow platforms."""
+    entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA)
+    entry.add_to_hass(hass)
+    _set_states(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.smartgrow_curing_jars_curing_status") is not None
