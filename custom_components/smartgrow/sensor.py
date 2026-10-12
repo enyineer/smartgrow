@@ -154,7 +154,7 @@ class FanTempTermSensor(_TermSensor):
     @property
     def native_value(self) -> float | None:
         d = self._decision()
-        return round(d.fan_temp_term, 1) if d else None
+        return round(d.fan_temp_term, 1) if getattr(d, "fan_temp_term", None) is not None else None
 
 
 class ActiveTermSensor(_TermSensor):
@@ -328,14 +328,14 @@ class DehumDecisionSensor(SmartGrowEntity, SensorEntity):
         if not d:
             return {}
         return {
-            "reason": d.reason,
-            "band_low": d.band_low,
+            "reason": getattr(d, "reason", None),
+            "band_low": getattr(d, "band_low", None),
             "band_depth": getattr(d, "band_depth", None),
             "band_high": getattr(d, "band_high", None),
-            "vpd_margin": d.vpd_margin,
-            "fan_pct": d.fan_pct,
-            "lung_rh": d.lung_rh,
-            "was_on": d.was_on,
+            "vpd_margin": getattr(d, "vpd_margin", None),
+            "fan_pct": getattr(d, "fan_pct", None),
+            "lung_rh": getattr(d, "lung_rh", None),
+            "was_on": getattr(d, "was_on", None),
         }
 
 
