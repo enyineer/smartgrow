@@ -280,8 +280,14 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         - fan switch-only -> fan_pct 100/0 from state (the cascade needs a number)
         """
         src = self.source_entities
-        # Stage lives on the integration-owned select entity.
-        stage = self._current_stage() or "Flowering"
+        # Stage lives on the integration-owned select entity. UNKNOWN stage
+        # must NOT default to Flowering: at HA boot the select restores late
+        # (~20 min after restart) and the VPD path then evaluated the
+        # Flowering-night band and COMMANDED THE DEHUMIDIFIER ON (below_band)
+        # while the tent is in Drying. Unknown stage -> 'Drying' semantics is
+        # wrong too; the right fail-safe is: skip actuation this cycle (see
+        # _async_update_data, stage_known gate).
+        stage = self._current_stage()
 
         tent_temp = self._read_float(src["tent_temp"])
         tent_rh = self._read_float(src["tent_rh"])
@@ -827,6 +833,25 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.last_inputs = inputs
         self.last_sample_ts = time.time()
 
+        # STAGE-KNOWN GATE: the stage select restores LATE after an HA boot
+        # (observed ~20 min). With an unknown stage, NEITHER control path may
+        # actuate: the VPD path assumed Flowering-night and commanded the
+        # dehumidifier ON ('below_band') in a Drying tent — once per boot and
+        # again on every setup retry while a sensor flapped. Fail SAFE: watch
+        # only (sensors/decisions still publish) until the stage is known.
+        stage_now = self._current_stage()
+        if not stage_now:
+            _LOGGER.warning("Stage select not restored yet — skipping actuation this cycle (fail-safe)")
+            return {
+                "inputs": inputs,
+                "ts": time.time(),
+                "phase": "unknown",
+                "stage": "",
+                "stage_unknown": True,
+                "degraded": {"lung": False, "lamp": not self.source_entities.get("lamp"), "vpd_sensor": False},
+                "fan": None,
+            }
+
         # Lights schedule (day/night cycle): cheap check, every sample.
         try:
             await self._apply_schedule()
@@ -976,8 +1001,11 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._apply_fan(decision, inputs)
             result["fan"] = decision
 
-        # Dehumidifier: proven 5-minute cadence.
-        if now - self.last_dehum_ts >= DEHUM_CADENCE_S:
+        # Dehumidifier: proven 5-minute cadence. Belt & braces: an empty stage
+        # must never reach the VPD band tables (boot-time select restore lag);
+        # the stage gate above already returns early — this guards the path
+        # for any future caller that reaches here with stage unset.
+        if now - self.last_dehum_ts >= DEHUM_CADENCE_S and inputs.stage:
             self.last_dehum_ts = now
             decision = dehumid_control.compute_dehum(inputs, params, self.dehum_on)
             self.last_dehum_decision = decision

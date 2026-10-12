@@ -48,6 +48,20 @@ def test_update_regathers_after_schedule_flips_lamp(hass):
     hass.states.async_set("sensor.t", "25.0")
     hass.states.async_set("sensor.rh", "60")
     hass.states.async_set("light.lamp", STATE_OFF)  # night
+    # The stage-known gate (boot failsafe) requires a known stage; register a
+    # stage select the way the integration would:
+    from homeassistant.helpers import entity_registry as er
+
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    reg = er.async_get(hass)
+    reg.async_get_or_create(
+        "select",
+        DOMAIN,
+        f"{entry.entry_id}_stage",
+        config_entry=entry,
+        suggested_object_id="growbox_1_smartgrow_stage",
+    )
+    hass.states.async_set("select.growbox_1_smartgrow_stage", "Flowering")
 
     pre = c._gather_inputs()
     assert pre.is_day is False
