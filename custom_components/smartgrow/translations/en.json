@@ -92,10 +92,6 @@
     },
     "abort": {
       "already_configured": "This tent sensor pair is already configured."
-    },
-    "data_description": {
-      "device_type": "Grow tent devices control actuators (fan, lamp, dehumidifier). Curing devices only monitor jars and alert on deviations — no actuator config, no control law, safe to run next to a grow.",
-      "name": "Shown on the device and card."
     }
   },
   "options": {
