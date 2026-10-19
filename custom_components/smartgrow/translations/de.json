@@ -61,6 +61,18 @@
           "curing_rh_max": "Maximale Luftfeuchtigkeit (% rF)",
           "curing_alert_cooldown_h": "Alarm-Pause pro Glas (Stunden)"
         }
+      },
+      "curing_reconfigure": {
+        "title": "Curing-Gläser",
+        "description": "Aktive Glas-Sensoren und Zielbereiche anpassen.",
+        "data": {
+          "jar_temp_entities": "Glas-Temperatursensoren (einer pro Glas)",
+          "curing_temp_min": "Minimale Temperatur (°C)",
+          "curing_temp_max": "Maximale Temperatur (°C)",
+          "curing_rh_min": "Minimale Luftfeuchtigkeit (% rF)",
+          "curing_rh_max": "Maximale Luftfeuchtigkeit (% rF)",
+          "curing_alert_cooldown_h": "Alarm-Pause pro Glas (Stunden)"
+        }
       }
     },
     "error": {

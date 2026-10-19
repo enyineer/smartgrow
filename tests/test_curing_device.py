@@ -161,3 +161,29 @@ async def test_curing_entry_reloads_cleanly(hass, enable_custom_integrations, _n
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     assert hass.states.get("sensor.smartgrow_curing_jars_curing_status") is not None
+
+
+async def test_reconfigure_routes_curing_entries_to_curing_schema(hass, enable_custom_integrations, _no_sibling):
+    """Reconfiguring a curing entry must show the curing form, not the grow
+    entity schema (which would demand fan/tent entities the device has)."""
+    import json as _json
+
+    from custom_components.smartgrow.config_flow import SmartGrowConfigFlow
+
+    entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_DATA)
+    entry.add_to_hass(hass)
+    _set_states(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    flow = SmartGrowConfigFlow()
+    flow.hass = hass
+    flow._get_reconfigure_entry = lambda: entry
+    result = await flow.async_step_reconfigure()
+    assert result["type"] == "form"
+    assert result["step_id"] == "curing_reconfigure"
+    names = [k.schema for k in result["data_schema"].schema]
+    assert "jar_temp_entities" in names
+    assert "fan_entity" not in names
+    blob = _json.dumps(names)
+    assert "curing_rh_max" in blob

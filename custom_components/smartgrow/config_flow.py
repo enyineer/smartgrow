@@ -141,6 +141,32 @@ def _wavemaker_schema(merged: dict[str, Any]) -> dict:
     }
 
 
+def _curing_schema(merged: dict[str, Any]) -> dict:
+    """Single source of truth for the curing fields (setup + reconfigure)."""
+    return {
+        vol.Required(
+            CONF_JAR_TEMP_ENTITIES,
+            description={"suggested_value": merged.get(CONF_JAR_TEMP_ENTITIES)},
+        ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)),
+        vol.Required(CONF_CURING_TEMP_MIN, default=merged[CONF_CURING_TEMP_MIN]): vol.All(
+            vol.Coerce(float), vol.Range(min=-10, max=40)
+        ),
+        vol.Required(CONF_CURING_TEMP_MAX, default=merged[CONF_CURING_TEMP_MAX]): vol.All(
+            vol.Coerce(float), vol.Range(min=-10, max=40)
+        ),
+        vol.Required(CONF_CURING_RH_MIN, default=merged[CONF_CURING_RH_MIN]): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=100)
+        ),
+        vol.Required(CONF_CURING_RH_MAX, default=merged[CONF_CURING_RH_MAX]): vol.All(
+            vol.Coerce(float), vol.Range(min=0, max=100)
+        ),
+        vol.Required(
+            CONF_CURING_ALERT_COOLDOWN_H,
+            default=merged[CONF_CURING_ALERT_COOLDOWN_H],
+        ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=72)),
+    }
+
+
 class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the SmartGrow config flow."""
 
@@ -197,29 +223,7 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data=data,
                 )
 
-        merged = {**CURING_DEFAULTS, **self._data}
-        schema = {
-            vol.Required(
-                CONF_JAR_TEMP_ENTITIES,
-                description={"suggested_value": merged.get(CONF_JAR_TEMP_ENTITIES)},
-            ): EntitySelector(EntitySelectorConfig(domain="sensor", device_class="temperature", multiple=True)),
-            vol.Required(CONF_CURING_TEMP_MIN, default=merged[CONF_CURING_TEMP_MIN]): vol.All(
-                vol.Coerce(float), vol.Range(min=-10, max=40)
-            ),
-            vol.Required(CONF_CURING_TEMP_MAX, default=merged[CONF_CURING_TEMP_MAX]): vol.All(
-                vol.Coerce(float), vol.Range(min=-10, max=40)
-            ),
-            vol.Required(CONF_CURING_RH_MIN, default=merged[CONF_CURING_RH_MIN]): vol.All(
-                vol.Coerce(float), vol.Range(min=0, max=100)
-            ),
-            vol.Required(CONF_CURING_RH_MAX, default=merged[CONF_CURING_RH_MAX]): vol.All(
-                vol.Coerce(float), vol.Range(min=0, max=100)
-            ),
-            vol.Required(
-                CONF_CURING_ALERT_COOLDOWN_H,
-                default=merged[CONF_CURING_ALERT_COOLDOWN_H],
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=72)),
-        }
+        schema = _curing_schema({**CURING_DEFAULTS, **self._data})
         return self.async_show_form(step_id="curing", data_schema=vol.Schema(schema), errors=errors)
 
     async def async_step_grow(self, user_input: dict[str, Any] | None = None) -> FlowResult:
@@ -295,6 +299,31 @@ class SmartGrowConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return {"reconfigure": True}
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Reconfigure: route by device type (grow entities / curing jars)."""
+        entry = self._get_reconfigure_entry()  # provided by ConfigFlow
+        if entry.data.get(CONF_DEVICE_TYPE) == DEVICE_TYPE_CURING:
+            return await self.async_step_curing_reconfigure(user_input)
+        return await self.async_step_grow_reconfigure(user_input)
+
+    async def async_step_curing_reconfigure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Reconfigure a curing entry: jar list + bands."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            jars = user_input.get(CONF_JAR_TEMP_ENTITIES) or []
+            if not jars:
+                errors["base"] = "curing_no_jars"
+            else:
+                new_data = {**entry.data, **user_input}
+                self.hass.config_entries.async_update_entry(entry, data=new_data)
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reconfigure_successful")
+
+        merged = {**CURING_DEFAULTS, **entry.data}
+        schema = _curing_schema(merged)
+        return self.async_show_form(step_id="curing_reconfigure", data_schema=vol.Schema(schema), errors=errors)
+
+    async def async_step_grow_reconfigure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Reconfigure: update source entities in place."""
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()  # provided by ConfigFlow

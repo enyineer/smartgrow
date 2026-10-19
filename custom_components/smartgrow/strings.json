@@ -84,6 +84,18 @@
           "curing_rh_max": "Maximum humidity (% RH)",
           "curing_alert_cooldown_h": "Alert cooldown per jar (hours)"
         }
+      },
+      "curing_reconfigure": {
+        "title": "Curing jars",
+        "description": "Update the active jar sensors and target bands.",
+        "data": {
+          "jar_temp_entities": "Jar temperature sensors (one per jar)",
+          "curing_temp_min": "Minimum temperature (°C)",
+          "curing_temp_max": "Maximum temperature (°C)",
+          "curing_rh_min": "Minimum humidity (% RH)",
+          "curing_rh_max": "Maximum humidity (% RH)",
+          "curing_alert_cooldown_h": "Alert cooldown per jar (hours)"
+        }
       }
     },
     "error": {
