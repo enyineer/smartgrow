@@ -243,6 +243,30 @@ export class SmartGrowCard extends LitElement {
     // ---- Drying stage: dedicated representation -------------------------
     // No VPD band, no lamp/wave tiles, no terms — the tent is a drying room:
     // RH + fan state + mold/too-fast warnings are the whole story.
+    if (s.stage === "Curing") {
+      // Tent is empty - the cure lives in the jars (curing device card).
+      // This view is a quiet readout: nothing actuates in this stage.
+      const rh = s.tentRh;
+      return html`<ha-card>
+        <div class="header">
+          <div class="title">${title}</div>
+          <div class="stage">Curing</div>
+          <div class="phase-chip curing">idle</div>
+          <div class="header-icons"></div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge">
+            <div class="fan-big">${rh !== null ? `${Math.round(rh)} %` : "—"}</div>
+            <div class="fan-sub">tent RH (empty tent)</div>
+          </div>
+        </div>
+        <div class="chip-row">
+          <span class="chip">tent idle — cure is in the jars</span>
+          <span class="chip">no actuation in this stage</span>
+        </div>
+      </ha-card>`;
+    }
+
     if (s.stage === "Drying") {
       const rh = s.tentRh;
       const rhTxt = rh !== null ? `${Math.round(rh)} %` : "—";

@@ -196,3 +196,82 @@ def test_drying_branch_returns_result_instead_of_set_updated_data():
 
     src = inspect.getsource(SmartGrowCoordinator._async_update_data)
     assert "self.async_set_updated_data(" not in src
+
+
+@pytest.mark.asyncio
+async def test_dry_run_gates_drying_dehum_and_wavemaker():
+    """Dry-run must gate EVERY drying actuation path.
+
+    Live gap (2026-10): flipping dry-run ON in Drying still commanded the
+    dehumidifier (direct service call, no gate) and the wavemaker force-off
+    - the user asked for zero actuation after jarring and dry-run would
+    have lied. The dehum decision still publishes; no service calls out.
+    """
+    c = _coordinator("Drying", rh=70.0, fan_state="off")  # RH above threshold
+    c.options_rt.dry_run = True
+    c._apply_lamp = AsyncMock()
+    c._wavemaker_tick = AsyncMock()
+    c.hass.states.get = lambda eid: {
+        "fan.f": SimpleNamespace(state="off"),
+        "light.lamp": SimpleNamespace(state="off"),
+        "switch.master": SimpleNamespace(state="off"),
+        "switch.umwalzpumpe": SimpleNamespace(state="on"),  # wm on
+        "humidifier.h": SimpleNamespace(state="off"),
+    }.get(eid)
+    c.entry.data["wavemaker_entity"] = "switch.umwalzpumpe"
+    c.entry.data["dehum_entity"] = "humidifier.h"
+    c.last_dehum_decision = None
+    await c._async_update_data()
+    # fan turn_on gated:
+    fan_calls = [call for call in c.hass.services.async_call.call_args_list if call.args[:2] == ("fan", "turn_on")]
+    assert fan_calls == [], "dry-run must not command the fan"
+    # dehum turn_on gated:
+    humid_calls = [call for call in c.hass.services.async_call.call_args_list if call.args[0] == "humidifier"]
+    assert humid_calls == [], "dry-run must not command the dehumidifier"
+    # wavemaker force-off gated:
+    wm_calls = [call for call in c.hass.services.async_call.call_args_list if call.args[:2] == ("switch", "turn_off")]
+    assert wm_calls == [], "dry-run must not command the wavemaker"
+    # decision still published (honest display):
+    assert c.last_dehum_decision is not None
+    assert c.last_dehum_decision.action == "on"  # WOULD be on, but wasn't commanded
+
+
+@pytest.mark.asyncio
+async def test_curing_stage_is_watch_only():
+    """Stage 'Curing' = tent empty: NO actuation at all (fan, dehum, lamp
+    schedule included), even at extreme RH. Cure is watched by the curing
+    device, not the grow controller."""
+    c = _coordinator("Curing", rh=80.0)  # absurd RH - still nothing commanded
+    c.options_rt.dry_run = False
+    c._apply_lamp = AsyncMock()
+    c._apply_schedule = AsyncMock()
+    c._wavemaker_tick = AsyncMock()
+    c.hass.states.get = lambda eid: {
+        "fan.f": SimpleNamespace(state="off"),
+        "light.lamp": SimpleNamespace(state="off"),
+        "switch.master": SimpleNamespace(state="off"),
+        "humidifier.h": SimpleNamespace(state="off"),
+    }.get(eid)
+    c.entry.data["dehum_entity"] = "humidifier.h"
+    c.last_dehum_decision = None
+    await c._async_update_data()
+    # NOTHING commanded:
+    assert c.hass.services.async_call.call_args_list == [], "Curing stage must not actuate anything"
+    # watch-only result published:
+    assert c.last_inputs is not None
+
+
+def test_curing_stage_in_select_options():
+    from custom_components.smartgrow.const import STAGES
+
+    assert "Curing" in STAGES
+
+
+def test_band_tables_curing_falls_back():
+    """Band lookups with stage 'Curing' must not KeyError (fallback defaults)."""
+    from custom_components.smartgrow.logic.params import ControlParams
+
+    p = ControlParams()
+    assert p.effective_band_low("Curing", True) is not None
+    assert p.band_high("Curing", False) is not None
+    assert p.temp_max("Curing", True) is not None

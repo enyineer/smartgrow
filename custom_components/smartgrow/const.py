@@ -83,7 +83,9 @@ DEFAULTS: dict = {
     CONF_ALERT_COOLDOWN_MIN: 60,
 }
 
-STAGES = ("Seedling", "Vegetative", "Flowering", "Drying")
+# "Curing" = tent is empty, cure is in the jars: the grow device acts as
+# none of the tent actuators (watch-only) until the next grow starts.
+STAGES = ("Seedling", "Vegetative", "Flowering", "Drying", "Curing")
 
 # --- Device types -----------------------------------------------------------
 # A SmartGrow config entry is EITHER a grow controller (tent actuators) OR a

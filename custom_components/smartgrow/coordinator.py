@@ -863,6 +863,27 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "hum": None,
             }
 
+        # CURING stage: the tent is empty - the cure lives in the jars and is
+        # watched by the curing device. Watch-only, lamp schedule included:
+        # an empty tent must not be relit or vented. Flip to any grow stage
+        # to re-arm actuation.
+        if stage_now == "Curing":
+            return {
+                "inputs": inputs,
+                "ts": time.time(),
+                "phase": "curing",
+                "stage": "Curing",
+                "degraded": {
+                    "lung": False,
+                    "lamp": not self.source_entities.get("lamp"),
+                    "vpd_sensor": False,
+                    "dehum": not self.source_entities.get("dehum"),
+                },
+                "fan": None,
+                "dehum": None,
+                "hum": None,
+            }
+
         # Lights schedule (day/night cycle): cheap check, every sample.
         try:
             await self._apply_schedule()
@@ -928,7 +949,7 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # Entity source: merged data+options (source_entities has no
             # wavemaker key - the pump is configured via CONF_WAVEMAKER_ENTITY).
             wm = merged.get(CONF_WAVEMAKER_ENTITY, "")
-            if wm:
+            if wm and not self.options_rt.dry_run:
                 wst = self.hass.states.get(wm)
                 if wst is not None and wst.state == STATE_ON:
                     await self._async_switch(wm, False)
@@ -945,7 +966,9 @@ class SmartGrowCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     dehum_on = dst.state == STATE_ON
                     domain = dehum.split(".", 1)[0]
                     service = "turn_on" if want_dehum else "turn_off"
-                    if dehum_on != want_dehum and domain in ("humidifier", "switch"):
+                    if self.options_rt.dry_run:
+                        _LOGGER.debug("DRY-RUN drying dehum -> %s (%s)", service, "rh_band")
+                    elif dehum_on != want_dehum and domain in ("humidifier", "switch"):
                         await self.hass.services.async_call(
                             domain,
                             service,
