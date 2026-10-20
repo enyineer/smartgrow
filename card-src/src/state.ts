@@ -731,7 +731,9 @@ export function discoverCuringSummary(
 ): string | null {
   if (!hass?.states) return null;
   for (const eid of Object.keys(hass.states)) {
-    if (eid.endsWith("_curing_summary")) return eid;
+    if (eid.endsWith("_curing_summary") || eid.endsWith("_curing_status")) {
+      return eid;
+    }
   }
   return null;
 }
@@ -739,8 +741,14 @@ export function discoverCuringSummary(
 const Curing_STATUS_OK = new Set(["ok", "temp_only", "rh_only"]);
 
 function jarNameFromEntityId(entityId: string, friendly: string | null): string {
+  const hay = `${friendly ?? ""} ${entityId}`;
+  const glas = hay.match(/glas[_ -]?(\d+)/i);
+  if (glas) return `Glas ${glas[1]}`;
   if (friendly) {
-    const stripped = friendly.replace(/^curing\s+/i, "").trim();
+    const stripped = friendly
+      .replace(/^smartgrow\s+curing\s+/i, "")
+      .replace(/^curing\s+/i, "")
+      .trim();
     if (stripped) return stripped;
   }
   const stem = entityId.split(".").pop() ?? entityId;
@@ -772,13 +780,17 @@ export function parseCuringState(
     jars: [],
   };
   // Per-jar sensors: same prefix, `_curing_` + jar name
-  const prefixMatch = summaryEntityId.match(/^sensor\.(.+)_curing_summary$/);
+  const prefixMatch = summaryEntityId.match(
+    /^sensor\.(.+)_curing_(?:summary|status)$/
+  );
   const prefix = prefixMatch ? prefixMatch[1] : null;
   if (prefix) {
     const jarRe = new RegExp(`^sensor\\.${prefix}_curing_(.+)$`);
     for (const eid of Object.keys(hass.states)) {
       if (eid === summaryEntityId) continue;
-      if (eid.includes("_curing_summary")) continue; // summary + its derivatives are not jars
+      if (eid.includes("_curing_summary") || eid.includes("_curing_status")) {
+        continue; // summary + its derivatives are not jars
+      }
       const m = eid.match(jarRe);
       if (!m) continue;
       const st = hass.states[eid];

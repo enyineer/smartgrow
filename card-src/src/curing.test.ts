@@ -26,11 +26,18 @@ function hassWith(states: Record<string, { state: string; attributes?: Record<st
 }
 
 describe("curing state", () => {
-  it("discovers the summary sensor", () => {
+  it("discovers the summary sensor (live _curing_status shape)", () => {
     const hass = hassWith({
-      "sensor.jars_curing_summary": { state: "ok" },
+      "sensor.smartgrow_curing_curing_status": { state: "ok" },
       "sensor.growbox_1_smartgrow_fan_target": { state: "40" },
     });
+    expect(discoverCuringSummary(hass)).toBe(
+      "sensor.smartgrow_curing_curing_status"
+    );
+  });
+
+  it("still discovers the legacy _curing_summary shape", () => {
+    const hass = hassWith({ "sensor.jars_curing_summary": { state: "ok" } });
     expect(discoverCuringSummary(hass)).toBe("sensor.jars_curing_summary");
   });
 
@@ -41,9 +48,9 @@ describe("curing state", () => {
     expect(discoverCuringSummary(hass)).toBeNull();
   });
 
-  it("parses summary + jars", () => {
+  it("parses summary + jars (live entity id shape)", () => {
     const hass = hassWith({
-      "sensor.jars_curing_summary": {
+      "sensor.smartgrow_curing_curing_status": {
         state: "too_warm",
         attributes: {
           ok_count: 1,
@@ -53,29 +60,32 @@ describe("curing state", () => {
           needs_attention: ["Glas 2"],
         },
       },
-      "sensor.jars_curing_glas_1": {
+      "sensor.smartgrow_curing_curing_temp_rh_glas_1_temperature": {
         state: "ok",
         attributes: { temperature: 18.1, humidity: 62, reasons: [] },
       },
-      "sensor.jars_curing_glas_2": {
+      "sensor.smartgrow_curing_curing_temp_rh_glas_2_temperature": {
         state: "too_warm",
         attributes: { temperature: 26.2, humidity: 60, reasons: ["temp 26.2 > 23 °C"] },
       },
       // a non-jar sensor that must NOT be picked up:
-      "sensor.jars_curing_summary_x": { state: "something" },
+      "sensor.smartgrow_curing_curing_summary_x": { state: "something" },
     });
-    const s = parseCuringState(hass, "sensor.jars_curing_summary")!;
+    const s = parseCuringState(hass, "sensor.smartgrow_curing_curing_status")!;
     expect(s.worst).toBe("too_warm");
     expect(s.okCount).toBe(1);
     expect(s.total).toBe(2);
     expect(s.tempBand).toEqual([15, 23]);
     expect(s.needsAttention).toEqual(["Glas 2"]);
     expect(s.jars.map((j) => j.entityId)).toEqual([
-      "sensor.jars_curing_glas_1",
-      "sensor.jars_curing_glas_2",
+      "sensor.smartgrow_curing_curing_temp_rh_glas_1_temperature",
+      "sensor.smartgrow_curing_curing_temp_rh_glas_2_temperature",
     ]);
     expect(s.jars[0].temp).toBe(18.1);
     expect(s.jars[1].status).toBe("too_warm");
+    // "Glas N" label extracted from the entity id
+    expect(s.jars[0].name).toBe("Glas 1");
+    expect(s.jars[1].name).toBe("Glas 2");
   });
 
   it("classifies fine statuses", () => {

@@ -217,12 +217,14 @@ export class SmartGrowCard extends LitElement {
     if (!this._config || !this.hass) return html``;
 
     // ---- Curing device: dedicated view ----------------------------------
-    // A curing SmartGrow device publishes *_curing_summary + per-jar sensors
+    // A curing SmartGrow device publishes *_curing_status + per-jar sensors
     // and owns NO actuators. When such a device exists, this card renders the
     // curing jar grid INSTEAD of the grow view (a card per device type).
+    // mode: "grow" opts OUT - for a tent dashboard card next to the jar card.
     const curingEntity =
-      this._config.curing_summary_entity ??
-      discoverCuringSummary(this.hass);
+      this._config.mode === "grow"
+        ? null
+        : this._config.curing_summary_entity ?? discoverCuringSummary(this.hass);
     if (curingEntity && this.hass.states?.[curingEntity]) {
       return this._renderCuring(curingEntity);
     }
